@@ -4,7 +4,7 @@
 use yii\helpers\Html;
 use yii\helpers\Url;
 
-$appName = Yii::$app->name ?? 'Research Information System (RIS)';
+$appName = 'Research Information System (RIS)';
 $year    = date('Y');
 ?>
 <footer class="pc-footer">

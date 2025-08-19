@@ -32,33 +32,42 @@ class LoginForm extends Model
 
     public function login(): bool
     {
-        if (!$this->validate()) return false;
-
         try {
-            /** @var \app\components\ApiAuthService $auth */
-            $auth = \Yii::$app->apiAuth;
-            $token = $auth->login($this->username, $this->password);
+            // 1) เรียก authen/login เพื่อรับ JWT
+            $token = Yii::$app->apiAuth->login($this->username, $this->password);
 
-            $user = \app\models\User::fromToken($token);
+            // 2) สร้าง User จาก JWT
+            $user = User::fromToken($token);
 
-            // ถ้าหมดอายุแล้วไม่ให้เข้า
-            if ($user->isExpired()) {
-                $this->addError('username', 'โทเค็นหมดอายุแล้ว กรุณาลองใหม่อีกครั้ง');
-                return false;
+            // 3) ดึงโปรไฟล์แนบให้ UI ใช้
+            try {
+                $profile = Yii::$app->apiAuth->getProfileByPersonalId((string)$user->id);
+                $user->setProfile($profile);
+            } catch (\Throwable $e) {
+                Yii::warning('Login profile fetch failed: '.$e->getMessage(), 'auth.profile');
             }
 
-            // เก็บลง session
+            // 4) เก็บลง session + login
             Yii::$app->session->set('identity', $user->toArray());
+            $duration = $this->rememberMe ? 3600*24*30 : 0;
+            $ok = Yii::$app->user->login($user, $duration);
 
-            $duration = $this->rememberMe ? 3600 * 24 * 30 : 0;
-            return Yii::$app->user->login($user, $duration);
+            // 5) ตั้งคุกกี้ SSO (ปรับโดเมนให้ตรงระบบจริงของคุณ)
+            // DEV บน localhost: ใส่ domain=null, secure=false ได้
+            Yii::$app->response->cookies->add(new Cookie([
+                'name'     => 'hrm-sci-token',
+                'value'    => $token,
+                'domain'   => '.sci-sskru.com',        // TODO: ปรับให้ตรงโดเมนแม่ร่วม (หรือ null)
+                'path'     => '/',
+                'httpOnly' => true,
+                'secure'   => true,                   // ใช้ HTTPS จริง
+                'sameSite' => Cookie::SAME_SITE_LAX,  // หรือ SAME_SITE_NONE + Secure ถ้าจำเป็น
+                'expire'   => $user->exp ?? (time()+7*24*3600),
+            ]));
 
-        } catch (\DomainException $e) {
-            $this->addError('password', $e->getMessage());
-            return false;
+            return $ok;
         } catch (\Throwable $e) {
-            \Yii::error($e->getMessage(), 'auth.api');
-            $this->addError('username', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ยืนยันตัวตนได้');
+            $this->addError('password', 'เข้าสู่ระบบไม่สำเร็จ: '.$e->getMessage());
             return false;
         }
     }

@@ -20,12 +20,6 @@ $config = [
             'key' => '4f1g23a12aa', // ตั้งค่า secret key ที่ใช้ในการเข้ารหัส
             'jwtValidationData' => \sizeg\jwt\JwtValidationData::class,
         ],
-        'hrmApi' => [
-            'class' => 'app\components\HRMApiService',
-        ],
-        'apiAuth' => [
-            'class' => app\components\ApiAuthService::class,
-        ],
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC',
@@ -34,29 +28,45 @@ $config = [
             'class' => 'yii\caching\FileCache',
         ],
         'user' => [
-            //'identityClass' => 'app\models\User',
             'identityClass' => app\models\User::class,
             'enableAutoLogin' => true,
-        ],
+            'loginUrl' => ['site/login'],
+            ],
         'apiClient' => [
             'class' => \yii\httpclient\Client::class,
-            'baseUrl' => 'https://sci-sskru.com',
-            'transport' => \yii\httpclient\CurlTransport::class, // หรือ StreamTransport
+            'baseUrl' => 'https://sci-sskru.acom', // TODO: ปรับให้ตรง, แล้วเรียก setUrl('/authen/...') ใน service
+            'transport' => \yii\httpclient\CurlTransport::class,
             'formatters' => [
                 \yii\httpclient\Client::FORMAT_JSON => \yii\httpclient\JsonFormatter::class,
             ],
-            'on beforeSend' => function ($event) {
+            'on beforeSend' => function ($e) {
                 $id = Yii::$app->user->identity;
-                if ($id && !empty($id->access_token) && !$event->request->getHeaders()->has('Authorization')) {
-                    $event->request->addHeaders(['Authorization' => 'Bearer '.$id->access_token]);
+                if ($id && !empty($id->access_token) && !$e->request->getHeaders()->has('Authorization')) {
+                $e->request->addHeaders(['Authorization' => 'Bearer '.$id->access_token]);
                 }
             },
         ],
         'apiAuth' => [
             'class' => app\components\ApiAuthService::class,
+            ],
+        'sso' => [
+            'class' => app\components\HrmSciSso::class,
+            'cookieName' => 'hrm-sci-token',
+            'publicKeyPem' => '',          // TODO: วาง RS256 public key PEM (โปรดักชันต้องใส่)
+            'allowUnsafeDecode' => false,  // DEV เท่านั้นที่ควรเป็น true
+            'leeway' => 60,
+            'expectedIss' => null,
+            'expectedAud' => null,
         ],
-        // (ถ้าต้องการแคช)
-        'cache' => ['class' => \yii\caching\FileCache::class],
+            'cache' => ['class' => \yii\caching\FileCache::class],
+        // Auto SSO: guest เท่านั้น
+        'on beforeRequest' => function () {
+            if (Yii::$app->user->isGuest) {
+            try { Yii::$app->sso->tryAutoLoginFromCookie(); } catch (\Throwable $e) {
+                Yii::warning('SSO auto-login failed: '.$e->getMessage(), 'sso');
+            }
+            }
+        },
         
         'errorHandler' => [
             'errorAction' => 'site/error',
@@ -84,7 +94,7 @@ $config = [
             'enableStrictParsing' => false,
             'rules' => [],
         ],
-        
+
     ],
     'params' => $params,
 

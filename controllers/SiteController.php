@@ -49,8 +49,17 @@ class SiteController extends Controller
 
     public function actionLogout()
     {
-        Yii::$app->user->logout();
+        // ลบคุกกี้ SSO ทั้งแบบไม่มีโดเมนและแบบโดเมนร่วม (กันพลาด)
+        Yii::$app->response->cookies->remove('hrm-sci-token');
+        Yii::$app->response->cookies->remove(new \yii\web\Cookie([
+            'name' => 'hrm-sci-token',
+            'domain' => '.sci-sskru.com',
+            'path' => '/',
+        ]));
+
         Yii::$app->session->remove('identity');
+        Yii::$app->user->logout(true);
+        Yii::$app->session->regenerateID(true);
         return $this->goHome();
     }
 
