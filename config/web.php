@@ -23,6 +23,9 @@ $config = [
         'hrmApi' => [
             'class' => 'app\components\HRMApiService',
         ],
+        'apiAuth' => [
+            'class' => app\components\ApiAuthService::class,
+        ],
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC',
@@ -31,9 +34,30 @@ $config = [
             'class' => 'yii\caching\FileCache',
         ],
         'user' => [
-            'identityClass' => 'app\models\User',
+            //'identityClass' => 'app\models\User',
+            'identityClass' => app\models\User::class,
             'enableAutoLogin' => true,
         ],
+        'apiClient' => [
+            'class' => \yii\httpclient\Client::class,
+            'baseUrl' => 'https://sci-sskru.com',
+            'transport' => \yii\httpclient\CurlTransport::class, // หรือ StreamTransport
+            'formatters' => [
+                \yii\httpclient\Client::FORMAT_JSON => \yii\httpclient\JsonFormatter::class,
+            ],
+            'on beforeSend' => function ($event) {
+                $id = Yii::$app->user->identity;
+                if ($id && !empty($id->access_token) && !$event->request->getHeaders()->has('Authorization')) {
+                    $event->request->addHeaders(['Authorization' => 'Bearer '.$id->access_token]);
+                }
+            },
+        ],
+        'apiAuth' => [
+            'class' => app\components\ApiAuthService::class,
+        ],
+        // (ถ้าต้องการแคช)
+        'cache' => ['class' => \yii\caching\FileCache::class],
+        
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],

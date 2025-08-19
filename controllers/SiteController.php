@@ -12,65 +12,24 @@ use app\models\ContactForm;
 
 class SiteController extends Controller
 {
-    /**
-     * {@inheritdoc}
-     */
     public function behaviors()
     {
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout'],
+                'only' => ['logout', 'index'],
                 'rules' => [
-                    [
-                        'actions' => ['logout'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
-                ],
-            ],
-            'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'logout' => ['post'],
+                    ['allow' => true, 'roles' => ['@']], // ต้องล็อกอินก่อน
                 ],
             ],
         ];
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function actions()
-    {
-        return [
-            'error' => [
-                'class' => 'yii\web\ErrorAction',
-            ],
-            'captcha' => [
-                'class' => 'yii\captcha\CaptchaAction',
-                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
-            ],
-        ];
-    }
-
-    /**
-     * Displays homepage.
-     *
-     * @return string
-     */
     public function actionIndex()
     {
         return $this->render('index');
     }
 
-    /**
-     * Login action.
-     *
-     * @return Response|string
-     */
-
-/*
     public function actionLogin()
     {
         if (!Yii::$app->user->isGuest) {
@@ -87,85 +46,45 @@ class SiteController extends Controller
             'model' => $model,
         ]);
     }
-*/
 
-        public function actionLogin()
-        {
-            $model = new \app\models\LoginForm();
-
-            if ($model->load(Yii::$app->request->post()) && $model->login()) {
-                return $this->redirect(['site/index']);
-            }
-
-            return $this->render('login', [
-                'model' => $model,
-            ]);
-        }
-
-        public function actionLogout()
-        {
-            Yii::$app->session->remove('jwt_token'); // ล้าง token
-            return $this->redirect(['site/login']);
-        }
-
-        public function actionProfile()
-        {
-            $token = Yii::$app->session->get('jwt_token');
-            if (!$token) {
-                return $this->redirect(['site/login']);
-            }
-
-            $client = new \yii\httpclient\Client(['baseUrl' => Yii::$app->request->hostInfo]);
-            $response = $client->createRequest()
-                ->setMethod('GET')
-                ->setUrl(['auth/profile'])
-                ->addHeaders(['Authorization' => 'Bearer ' . $token])
-                ->send();
-
-            if ($response->isOk && $response->data['status'] === 'success') {
-                return $this->renderContent('<pre>' . print_r($response->data, true) . '</pre>');
-            }
-
-            return $this->renderContent('Token invalid or expired.');
-        }
-    /**
-     * Logout action.
-     *
-     * @return Response
-     */
-    /*
     public function actionLogout()
     {
         Yii::$app->user->logout();
-
+        Yii::$app->session->remove('identity');
         return $this->goHome();
     }
-*/
-    /**
-     * Displays contact page.
-     *
-     * @return Response|string
-     */
-    public function actionContact()
-    {
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
-            Yii::$app->session->setFlash('contactFormSubmitted');
 
-            return $this->refresh();
+    public function actionPingAuth($u = '3331000521623', $p = '3331000521623')
+    {
+        $res = Yii::$app->apiClient->createRequest()
+            ->setMethod('POST')
+            ->setUrl('/authen/login')
+            ->setFormat(\yii\httpclient\Client::FORMAT_JSON)
+            ->setData(['uname' => (string)$u, 'pwd' => (string)$p])
+            ->send();
+
+        $data = $res->getData();
+        $claims = [];
+        if (is_array($data ?? null) && !empty($data['token'])) {
+            $parts = explode('.', $data['token']);
+            if (count($parts) >= 2) {
+                $payload = $parts[1] . str_repeat('=', (4 - strlen($parts[1]) % 4) % 4);
+                $claims = json_decode(base64_decode(strtr($payload, '-_', '+/')), true);
+            }
         }
-        return $this->render('contact', [
-            'model' => $model,
+
+        return $this->asJson([
+            'http_ok' => $res->isOk,
+            'http_status' => $res->statusCode,
+            'has_token' => !empty($data['token']),
+            'claims' => $claims,
         ]);
     }
-
-    /**
-     * Displays about page.
-     *
-     * @return string
-     */
-    public function actionAbout()
+    public function actionMyProfile()
     {
-        return $this->render('about');
+        // ดึงโปรไฟล์ของผู้ใช้ปัจจุบัน (ใช้ token + personal_id จาก JWT)
+        $profile = \Yii::$app->apiAuth->getMyProfile();
+        return $this->render('my-profile', ['profile' => $profile]);
     }
+
 }

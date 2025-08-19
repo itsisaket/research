@@ -1,16 +1,17 @@
 <?php
-
 namespace app\models;
 
 use Yii;
 use yii\base\Model;
-use yii\httpclient\Client;
+use app\components\ApiAuthService;
 
 class LoginForm extends Model
 {
     public $username;
     public $password;
-    public $rememberMe = false;
+    public $rememberMe = true;
+
+    private $_user; // User identity
 
     public function rules()
     {
@@ -20,33 +21,45 @@ class LoginForm extends Model
         ];
     }
 
-    public function login()
+    public function attributeLabels()
     {
-        try {
-            $client = new Client(['baseUrl' => Yii::$app->request->hostInfo]);
+        return [
+            'username' => 'ชื่อผู้ใช้ / เลขบัตร',
+            'password' => 'รหัสผ่าน',
+            'rememberMe' => 'จดจำฉันไว้ในระบบ',
+        ];
+    }
 
-            $response = $client->createRequest()
-                ->setMethod('POST')
-                ->setUrl(['auth/login-api'])  // ✅ ควรใช้ API โดยเฉพาะ ไม่ใช้ login HTML
-                ->setData([
-                    'uname' => $this->username,
-                    'pwd' => $this->password,
-                ])
-                ->send();
-            Yii::info("RAW response content: " . $response->content, __METHOD__);
-            if ($response->isOk && isset($response->data['status']) && $response->data['status'] === 'success') {
-                Yii::$app->session->set('jwt_token', $response->data['token']);
-                Yii::$app->session->setFlash('success', 'Login success');
-                return true;
+    public function login(): bool
+    {
+        if (!$this->validate()) return false;
+
+        try {
+            /** @var \app\components\ApiAuthService $auth */
+            $auth = \Yii::$app->apiAuth;
+            $token = $auth->login($this->username, $this->password);
+
+            $user = \app\models\User::fromToken($token);
+
+            // ถ้าหมดอายุแล้วไม่ให้เข้า
+            if ($user->isExpired()) {
+                $this->addError('username', 'โทเค็นหมดอายุแล้ว กรุณาลองใหม่อีกครั้ง');
+                return false;
             }
 
-            $message = $response->data['message'] ?? 'Login failed';
-            $this->addError('password', $message);
-        } catch (\Throwable $e) {
-            Yii::error("Login API error: " . $e->getMessage(), __METHOD__);
-            $this->addError('password', 'Unable to connect to authentication server.');
-        }
+            // เก็บลง session
+            Yii::$app->session->set('identity', $user->toArray());
 
-        return false;
+            $duration = $this->rememberMe ? 3600 * 24 * 30 : 0;
+            return Yii::$app->user->login($user, $duration);
+
+        } catch (\DomainException $e) {
+            $this->addError('password', $e->getMessage());
+            return false;
+        } catch (\Throwable $e) {
+            \Yii::error($e->getMessage(), 'auth.api');
+            $this->addError('username', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ยืนยันตัวตนได้');
+            return false;
+        }
     }
 }
