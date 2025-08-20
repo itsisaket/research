@@ -34,7 +34,7 @@ $config = [
             ],
         'apiClient' => [
             'class' => \yii\httpclient\Client::class,
-            'baseUrl' => 'https://sci-sskru.acom', // TODO: ปรับให้ตรง, แล้วเรียก setUrl('/authen/...') ใน service
+            'baseUrl' => 'https://sci-sskru.com', // TODO: ปรับให้ตรง, แล้วเรียก setUrl('/authen/...') ใน service
             'transport' => \yii\httpclient\CurlTransport::class,
             'formatters' => [
                 \yii\httpclient\Client::FORMAT_JSON => \yii\httpclient\JsonFormatter::class,

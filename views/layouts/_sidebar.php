@@ -33,24 +33,29 @@ $user = Yii::$app->user->identity ?? null;
           <i class="ti ti-apps"></i>
         </li>
         <li class="pc-item">
-          <a class="pc-link" href="<?= Url::home() ?>">
+          <a class="pc-link" href="<?= Url::to(['/account']) ?>">
             <span class="pc-micon"><i class="ti ti-typography"></i></span>
             <span class="pc-mtext">นักวิจัย</span>
           </a>
         </li>
         <li class="pc-item">
-          <a class="pc-link" href="<?= Url::home() ?>">
+          <a class="pc-link" href="<?= Url::to(['/researchpro']) ?>">
             <span class="pc-micon"><i class="ti ti-color-swatch"></i></span>
             <span class="pc-mtext">งานวิจัย</span>
           </a>
         </li>
         <li class="pc-item">
-          <a class="pc-link" href="<?= Url::home() ?>">
+          <a class="pc-link" href="<?= Url::to(['/article']) ?>">
             <span class="pc-micon"><i class="ti ti-plant-2"></i></span>
             <span class="pc-mtext">การตีพิมพ์เผยแพร่</span>
           </a>
         </li>
-
+        <li class="pc-item">
+          <a class="pc-link" href="<?= Url::to(['/utilization']) ?>">
+            <span class="pc-micon"><i class="ti ti-plant-2"></i></span>
+            <span class="pc-mtext">นำไปใช้ประโยชน์</span>
+          </a>
+        </li>
         <li class="pc-item pc-caption">
           <label>สำหรับนักวิจัย</label>
           <i class="ti ti-news"></i>
