@@ -28,7 +28,7 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'index'],
+                'only' => ['logout'],
                 'rules' => [
                     ['allow' => true, 'roles' => ['@']], // ต้องล็อกอินก่อน
                 ],

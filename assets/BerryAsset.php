@@ -14,8 +14,10 @@ class BerryAsset extends AssetBundle
         'template/berry/fonts/feather.css',
         'template/berry/fonts/fontawesome.css',
         'template/berry/fonts/material.css',
-        'template/berry/css/style.css',
         'template/berry/css/style-preset.css',
+        'template/berry/css/style.css',
+       
+        'template/berry/css/custom.css', 
     ];
 
     public $js = [

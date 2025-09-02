@@ -13,21 +13,25 @@ File: style.css
   --pc-heading-color: #343a40;
   --pc-active-background: #e9ecef;
   --pc-sidebar-background: #fff;
-  --pc-sidebar-color: #616161;
+ --pc-sidebar-color: #616161;
   --pc-sidebar-color-rgb: 57, 70, 95;
-  --pc-sidebar-submenu-border-color: var(--bs-gray-300);
-  --pc-sidebar-active-color: #6c757d;
+  --pc-sidebar-submenu-border-color: var(--bs-gray-300); 
+  --pc-sidebar-active-color: #6c757d; 
   --pc-sidebar-active-color-rgb: 108, 117, 125;
-  --pc-sidebar-shadow: none;
-  --pc-sidebar-caption-color: #212121;
-  --pc-sidebar-border: none;
+  --pc-sidebar-shadow: none; 
+  --pc-sidebar-caption-color: #212121; 
+  --pc-sidebar-border: none; 
   --pc-header-background: #fff;
   --pc-header-color: #616161;
   --pc-header-shadow: none;
   --pc-card-box-shadow: none;
   --pc-header-submenu-background: #ffffff;
   --pc-header-submenu-color: #111936;
+  
 }
+
+
+
 
 body {
   font-feature-settings: "salt";
@@ -16160,7 +16164,7 @@ pre[class*=language-] > code {
     2. Custom css end
 ==========================  **/
 .pc-sidebar {
-  background: var(--pc-sidebar-background);
+  background: var(--pc-sidebar-background); 
   width: 260px;
   position: fixed;
   top: 0;
@@ -16228,6 +16232,7 @@ pre[class*=language-] > code {
 .pc-sidebar .pc-mtext {
   text-transform: capitalize;
 }
+
 .pc-sidebar .pc-link {
   display: block;
   padding: 13px 20px;
@@ -16239,6 +16244,8 @@ pre[class*=language-] > code {
 .pc-sidebar .pc-link:focus, .pc-sidebar .pc-link.active, .pc-sidebar .pc-link:hover {
   text-decoration: none;
 }
+
+
 .pc-sidebar .pc-navbar > .pc-item {
   margin: 0 16px;
 }
@@ -16342,6 +16349,7 @@ pre[class*=language-] > code {
   bottom: 0;
   top: 0;
 }
+/*
 .pc-sidebar .pc-badge {
   margin-right: 5px;
   display: inline-flex;
@@ -16356,6 +16364,12 @@ pre[class*=language-] > code {
   float: right;
   background: var(--bs-primary);
 }
+*/
+.pc-sidebar .pc-badge {
+  background: var(--pc-sidebar-active-color); /* badge = ม่วงเข้ม */
+}
+
+
 .pc-sidebar .pc-navbar-card {
   position: relative;
   overflow: hidden;
@@ -17046,7 +17060,9 @@ pre[class*=language-] > code {
 }
 
 body {
-  background-color: var(--pc-sidebar-background);
+  /* background-color: var(--pc-sidebar-background); */
+  background-color: #a855f7 !important;  /* BG ม่วง */
+
 }
 
 .loader-bg {

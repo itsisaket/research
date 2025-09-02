@@ -10,19 +10,19 @@ $tz = new \DateTimeZone('Asia/Bangkok');
 $h  = (int) (new \DateTime('now', $tz))->format('G');
 $greet = $h < 12 ? 'Good Morning' : ($h < 18 ? 'Good Afternoon' : 'Good Evening');
 
-/* ดึง profile */
-$sessionIdentity = Yii::$app->session->get('identity') ?? [];
+/* ดึง profile (บังคับเป็น array) */
+$sessionIdentityRaw = Yii::$app->session->get('identity');
+$sessionIdentity = is_array($sessionIdentityRaw) ? $sessionIdentityRaw : [];
 $profileRaw = $sessionIdentity['profile'] ?? ($id->profile ?? null);
 $profile    = is_array($profileRaw) ? $profileRaw : [];
 
-/* ถ้า profile ยังไม่ใช่อาร์เรย์ และมี personal_id → ลองโหลดจาก API (หนึ่งครั้ง) */
+/* ถ้า profile ยังไม่ใช่อาร์เรย์ และผู้ใช้ล็อกอิน → ลองโหลดจาก API หนึ่งครั้ง */
 if (empty($profile) && !$user->isGuest) {
     $personalId = null;
-    // กรณี $id->profile เป็นสตริง เช่น "333100052162"
+
     if (is_string($id->profile ?? null) && preg_match('/^\d{10,13}$/', $id->profile)) {
         $personalId = $id->profile;
     } else {
-        // ปกติใช้จาก identity id/username
         $personalId = (string)($id->id ?? $id->username ?? '');
     }
 
@@ -31,11 +31,12 @@ if (empty($profile) && !$user->isGuest) {
             $fetched = Yii::$app->apiAuth->getProfileByPersonalId($personalId);
             if (is_array($fetched)) {
                 $profile = $fetched;
-                // อัปเดตกลับเข้า session ให้ใช้ได้ทุกที่
+                // อัปเดต session identity ให้ส่วนอื่นใช้ได้
                 $sessionIdentity['profile'] = $profile;
                 Yii::$app->session->set('identity', $sessionIdentity);
-                // ถ้าต้องการให้ $id->profile เป็นอาร์เรย์ด้วย
-                if (property_exists($id, 'profile')) {
+
+                // ถ้าต้องการ sync กลับเข้า identity object (เช็กให้ชัวร์ว่าเป็น object)
+                if (is_object($id) && property_exists($id, 'profile')) {
                     $id->profile = $profile;
                 }
             }
@@ -46,12 +47,13 @@ if (empty($profile) && !$user->isGuest) {
 }
 
 /* ชื่อที่จะแสดง */
-$displayName = 'คุณ'.trim(
-    ($profile['first_name'] ?? '') . ' ' .
-    ($profile['last_name'] ?? '')
-);
-if ($displayName === '') {
-    $displayName = $id ? ($id->name ?? $id->username ?? 'Guest') : 'Guest';
+$first = trim((string)($profile['first_name'] ?? ''));
+$last  = trim((string)($profile['last_name'] ?? ''));
+$baseName = trim($first.' '.$last);
+if ($baseName !== '') {
+    $displayName = 'คุณ '.$baseName;
+} else {
+    $displayName = $id ? ((string)($id->name ?? $id->username ?? 'Guest')) : 'Guest';
 }
 
 /* บทบาท/ตำแหน่งย่อ */
@@ -84,15 +86,13 @@ if ($avatarUrl !== $fallback) {
     $v = '';
     if (!empty($profile['updated_at'])) {
         $v = (string)$profile['updated_at'];
-    } elseif ($id && property_exists($id, 'iat') && isset($id->iat)) {
+    } elseif (is_object($id) && property_exists($id, 'iat') && isset($id->iat)) {
         $v = (string)(int)$id->iat;
     }
     if ($v !== '') {
         $avatarUrlFinal .= (strpos($avatarUrlFinal, '?') === false ? '?' : '&') . 'v=' . rawurlencode($v);
     }
 }
-
-/* ใช้งานรูป (ตัวอย่าง) */
 ?>
 <!-- Header -->
 <header class="pc-header">
@@ -117,14 +117,13 @@ if ($avatarUrl !== $fallback) {
         <li class="dropdown pc-h-item header-user-profile">
           <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0"
              data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-            <?= Html::img($avatarUrlFinal, [
-                'alt' => 'user-image',
-                'class' => 'user-avtar',
-                //'decoding' => 'async',
-                //'referrerpolicy' => 'no-referrer',
-                'onerror' => "this.onerror=null;this.src='{$fallback}';",
-                'title' => trim($displayName)
-            ]) ?>
+              <?= Html::img($avatarUrlFinal, [
+                  'alt'   => Html::encode($displayName),
+                  'class' => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
+                  'style' => 'width:44px;height:44px;object-fit:cover;object-position:top;',
+                  'onerror' => "this.onerror=null;this.src='".Html::encode($fallback)."';",
+                  'title' => $displayName,
+              ]) ?>
             <span><i class="ti ti-settings"></i></span>
           </a>
 
@@ -146,6 +145,9 @@ if ($avatarUrl !== $fallback) {
                   <?= Html::encode($greet) ?>,
                   <span class="small text-muted"><?= Html::encode($displayName) ?></span>
                 </h4>
+                <?php if (!empty($displayRole)): ?>
+                  <div class="text-muted small"><?= Html::encode($displayRole) ?></div>
+                <?php endif; ?>
                 <hr />
               </div>
 
@@ -157,7 +159,7 @@ if ($avatarUrl !== $fallback) {
                 ) ?>
                 <?= Html::a(
                       '<i class="ti ti-settings"></i><span> Account Settings</span>',
-                      'https://sci-sskru.com/hrm/edit-personal',   // ลิงก์ภายนอกใส่เป็นสตริง
+                      'https://sci-sskru.com/hrm/edit-personal',
                       ['class'=>'dropdown-item','encode'=>false,'data-pjax'=>'0','target'=>'_blank','rel'=>'noopener noreferrer']
                 ) ?>
 
