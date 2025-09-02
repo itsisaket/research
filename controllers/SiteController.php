@@ -264,4 +264,24 @@ public function actionIndex()
         return $this->render('my-profile', ['profile' => $profile]);
     }
 
+        /**
+     * Displays contact page.
+     *
+     * @return Response|string
+     */
+    public function actionContact()
+    {
+        return $this->render('contact');
+    }
+
+    /**
+     * Displays about page.
+     *
+     * @return string
+     */
+    public function actionAbout()
+    {
+        return $this->render('about');
+    }
+
 }
