@@ -12,14 +12,12 @@ $this->params['breadcrumbs'][] = $this->title;
 </div>
 <hr>
 
+<!-- LocalStorage viewer -->
 <div class="container py-4">
   <p class="text-muted">ข้อมูลที่บันทึกไว้ใน localStorage:</p>
   <table class="table table-bordered">
     <thead>
-      <tr>
-        <th>Key</th>
-        <th>Value</th>
-      </tr>
+      <tr><th>Key</th><th>Value</th></tr>
     </thead>
     <tbody id="ls-table">
       <tr><td colspan="2" class="text-center">ไม่มีข้อมูลใน localStorage</td></tr>
@@ -27,77 +25,123 @@ $this->params['breadcrumbs'][] = $this->title;
   </table>
 </div>
 
+<!-- Profile result -->
 <div class="container py-4">
-  <h5>ข้อมูลผู้ใช้ (JSON จาก API /authen/profile)</h5>
+  <h5>ข้อมูลผู้ใช้ (JSON จาก API <code>/authen/profile</code>)</h5>
   <pre id="profile-json" style="background:#f8f9fa; padding:1rem; border:1px solid #ddd;">ยังไม่มีข้อมูล</pre>
 </div>
 
+<!-- List profiles result -->
 <div class="container py-4">
-  <h5>ข้อมูลรายชื่อ (JSON จาก API /authen/list-profiles)</h5>
+  <h5>ข้อมูลรายชื่อ (JSON จาก API <code>/authen/list-profiles</code>)</h5>
   <pre id="list-profiles-json" style="background:#f1f8ff; padding:1rem; border:1px solid #ddd;">ยังไม่มีข้อมูล</pre>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
-  const tbody = document.getElementById("ls-table");
-  const profileJson = document.getElementById("profile-json");
-  const listProfilesJson = document.getElementById("list-profiles-json");
+  const tbody            = document.getElementById("ls-table");
+  const profilePre       = document.getElementById("profile-json");
+  const listProfilesPre  = document.getElementById("list-profiles-json");
 
-  tbody.innerHTML = ""; // เคลียร์ข้อความเดิม
-
+  // ========== 1) แสดงค่า localStorage ==========
+  tbody.innerHTML = "";
   if (localStorage.length === 0) {
     tbody.innerHTML = "<tr><td colspan='2' class='text-center'>ไม่มีข้อมูล</td></tr>";
+  } else {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      const v = localStorage.getItem(k);
+      tbody.insertAdjacentHTML("beforeend", `<tr><td>${k}</td><td>${v}</td></tr>`);
+    }
+  }
+
+  // ========== 2) เตรียมเครื่องมือ ==========
+  // decode base64url -> string
+  function base64UrlDecode(str) {
+    try {
+      str = str.replace(/-/g, '+').replace(/_/g, '/');
+      const pad = str.length % 4;
+      if (pad) str += '='.repeat(4 - pad);
+      const bin = atob(str);
+      // พยายามถอดเป็น UTF-8 ถ้าแปลงไม่ได้ก็คืนค่าดิบ
+      try {
+        return decodeURIComponent(Array.from(bin).map(c =>
+          '%' + c.charCodeAt(0).toString(16).padStart(2,'0')
+        ).join(''));
+      } catch { return bin; }
+    } catch {
+      return "";
+    }
+  }
+
+  // parse JWT payload เป็น object
+  function parseJwt(token) {
+    if (!token || token.split('.').length < 2) return null;
+    const payloadStr = base64UrlDecode(token.split('.')[1]);
+    try { return JSON.parse(payloadStr); } catch { return null; }
+  }
+
+  // helper fetch: อ่าน error body เพื่อ debug ง่าย
+  async function fetchJson(url, opts) {
+    const res  = await fetch(url, opts);
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`${res.status} ${res.statusText}: ${text}`);
+    }
+    try { return JSON.parse(text); } catch { return text; }
+  }
+
+  function show(preEl, data) {
+    preEl.textContent = (typeof data === "string")
+      ? data
+      : JSON.stringify(data, null, 2);
+  }
+
+  // ========== 3) ดึง token จาก localStorage ==========
+  const token = localStorage.getItem("hrm-sci-token");
+  if (!token) {
+    profilePre.textContent      = "ไม่พบ hrm-sci-token ใน localStorage";
+    listProfilesPre.textContent = "ไม่พบ hrm-sci-token ใน localStorage";
     return;
   }
 
-  // แสดง localStorage ทั้งหมด
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    const value = localStorage.getItem(key);
-    const row = `<tr><td>${key}</td><td>${value}</td></tr>`;
-    tbody.insertAdjacentHTML("beforeend", row);
+  // ========== 4) ดึง personal_id จาก JWT (ไม่มี fallback) ==========
+  const payload = parseJwt(token) || {};
+  const personalId = payload.personal_id;
+  if (!personalId) {
+    profilePre.textContent      = "ไม่พบ personal_id ใน payload ของ token";
+    listProfilesPre.textContent = "ไม่พบ personal_id ใน payload ของ token";
+    return;
   }
 
-  // ตรวจสอบ token
-  const token = localStorage.getItem("hrm-sci-token");
-  if (token) {
-    try {
-      // === ดึง profile ===
-      const responseProfile = await fetch("https://sci-sskru.acom/authen/profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + token
-        },
-        body: JSON.stringify({
-          personal_id: "1349000000011"
-        })
-      });
+  // ========== 5) เรียก API จริง ==========
+  try {
+    // /authen/profile
+    const profileData = await fetchJson("https://sci-sskru.com/authen/profile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({ personal_id: personalId })
+    });
+    show(profilePre, profileData);
 
-      if (!responseProfile.ok) throw new Error("API profile Error " + responseProfile.status);
-      const dataProfile = await responseProfile.json();
-      profileJson.textContent = JSON.stringify(dataProfile, null, 2);
+    // /authen/list-profiles
+    const listData = await fetchJson("https://sci-sskru.com/authen/list-profiles", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({ personal_id: personalId })
+    });
+    show(listProfilesPre, listData);
 
-      // === ดึง list-profiles ===
-      const responseList = await fetch("https://sci-sskru.com/authen/list-profiles", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + token
-        },
-        body: JSON.stringify({
-          personal_id: "3331000521623"
-        })
-      });
-
-      if (!responseList.ok) throw new Error("API list-profiles Error " + responseList.status);
-      const dataList = await responseList.json();
-      listProfilesJson.textContent = JSON.stringify(dataList, null, 2);
-
-    } catch (err) {
-      profileJson.textContent = "โหลดข้อมูลไม่สำเร็จ: " + err.message;
-      listProfilesJson.textContent = "โหลดข้อมูลไม่สำเร็จ: " + err.message;
-    }
+  } catch (err) {
+    const msg = (err && err.message) ? err.message : String(err);
+    profilePre.textContent      = "โหลดข้อมูลไม่สำเร็จ: " + msg;
+    listProfilesPre.textContent = "โหลดข้อมูลไม่สำเร็จ: " + msg;
   }
 });
 </script>
