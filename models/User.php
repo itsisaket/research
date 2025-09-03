@@ -6,114 +6,50 @@ use yii\web\IdentityInterface;
 
 class User implements IdentityInterface
 {
-    /** Core identity (มาจาก JWT Claims) */
-    public $id;                 // personal_id หรือ uname
-    public $username;           // uname
-    public $name;               // ชื่อแสดงผล
-    public $email;
-    public $roles = [];
-    public $access_token;       // JWT ที่ใช้ login ครั้งนี้
+    public $id; public $username; public $name; public $email;
+    public $roles = []; public $access_token; public $exp; public $iat;
+    public $profile = [];
 
-    /** JWT times */
-    public $exp;                // unix timestamp
-    public $iat;                // unix timestamp
-
-    /** โปรไฟล์เต็มจาก SSO */
-    public $profile = [];       // ต้องเป็น array เสมอ
-
-    /** ===== IdentityInterface (จำเป็น) ===== */
     public static function findIdentity($id) {
-        // สำหรับ session-based เท่านั้น (ไม่ได้ค้น DB)
         $u = Yii::$app->session->get('__jwt_user__');
-        if ($u && isset($u['id']) && (string)$u['id'] === (string)$id) {
-            return self::fromArray($u);
-        }
-        return null;
+        return ($u && (string)$u['id']===(string)$id) ? self::fromArray($u) : null;
     }
-    public static function findIdentityByAccessToken($token, $type = null) { return null; }
-    public function getId() { return $this->id; }
-    public function getAuthKey() { return null; }
-    public function validateAuthKey($authKey) { return true; }
+    public static function findIdentityByAccessToken($token, $type=null){ return null; }
+    public function getId(){ return $this->id; }
+    public function getAuthKey(){ return null; }
+    public function validateAuthKey($authKey){ return true; }
 
-    /** ===== Helper ===== */
+    public static function fromArray(array $a): self { $u=new self; foreach($a as $k=>$v)$u->$k=$v;
+        if(!is_array($u->profile))$u->profile=[]; if(!is_array($u->roles))$u->roles=[]; return $u; }
 
-    private static function buildDisplayName(?array $profile, array $claims): string
-    {
-        $profile = is_array($profile) ? $profile : [];
-
-        $parts = [];
-        foreach (['title_name', 'first_name', 'last_name'] as $k) {
-            if (!empty($profile[$k])) {
-                $parts[] = trim((string)$profile[$k]);
-            }
-        }
-        if (!empty($parts)) {
-            return trim(implode(' ', $parts));
-        }
-        if (!empty($claims['name']))       return (string)$claims['name'];
-        if (!empty($claims['uname']))      return (string)$claims['uname'];
-        if (!empty($claims['personal_id']))return (string)$claims['personal_id'];
-        return '';
+    public static function fromClaims(array $c, string $jwt, array $profile=null): self {
+        $u=new self();
+        $u->id=$c['personal_id']??$c['uname']??null;
+        $u->username=$c['uname']??$c['personal_id']??null;
+        $u->name=self::buildDisplayName($profile,$c);
+        $u->email=$profile['email']??($c['email']??null);
+        $u->roles=is_array($c['roles']??null)?$c['roles']:[];
+        $u->access_token=$jwt; $u->iat=(int)($c['iat']??0); $u->exp=(int)($c['exp']??0);
+        $u->profile=is_array($profile)?$profile:[]; return $u;
+    }
+    private static function buildDisplayName(?array $p,array $c):string{
+        $p=is_array($p)?$p:[]; $parts=array_filter([$p['title_name']??null,$p['first_name']??null,$p['last_name']??null]);
+        if($parts) return trim(implode(' ',$parts));
+        return (string)($c['name']??$c['uname']??$c['personal_id']??'');
     }
 
-    public static function fromClaims(array $claims, string $jwt, array $profile = null): self
-    {
-        $u = new self();
-        $u->id       = $claims['personal_id'] ?? $claims['uname'] ?? null;
-        $u->username = $claims['uname'] ?? $claims['personal_id'] ?? null;
-        $u->name     = self::buildDisplayName($profile, $claims);
-        $u->email    = $profile['email'] ?? ($claims['email'] ?? null);
-        $u->roles    = isset($claims['roles']) && is_array($claims['roles']) ? $claims['roles'] : [];
-        $u->access_token = $jwt;
-
-        $u->iat = isset($claims['iat']) ? (int)$claims['iat'] : null;
-        $u->exp = isset($claims['exp']) ? (int)$claims['exp'] : null;
-
-        $u->profile = is_array($profile) ? $profile : [];
-        return $u;
+    public static function decodeJwtPayload(string $jwt): array {
+        $parts=explode('.',$jwt); if(count($parts)<2)return [];
+        $payload=$parts[1]; $payload.=str_repeat('=',(4-strlen($payload)%4)%4);
+        $json=base64_decode(strtr($payload,'-_','+/')); $a=json_decode($json,true); return is_array($a)?$a:[];
     }
+    public static function isExpired(array $claims): bool { return !isset($claims['exp']) || time()>=(int)$claims['exp']; }
 
-    public static function fromArray(array $arr): self
-    {
-        $u = new self();
-        foreach ($arr as $k=>$v) { $u->$k = $v; }
-        // กันกรณี roles/profile ไม่ใช่ array
-        if (!is_array($u->roles))   $u->roles = [];
-        if (!is_array($u->profile)) $u->profile = [];
-        return $u;
-    }
-
-    /** base64url decode JWT payload (ตัวเดียวพอ ไม่ซ้ำ) */
-    public static function decodeJwtPayload(string $jwt): array
-    {
-        $parts = explode('.', $jwt);
-        if (count($parts) < 2) return [];
-        $payload = $parts[1];
-        $payload .= str_repeat('=', (4 - strlen($payload) % 4) % 4);
-        $json = base64_decode(strtr($payload, '-_', '+/'));
-        $arr = json_decode($json, true);
-        return is_array($arr) ? $arr : [];
-    }
-
-    public static function isExpired(array $claims): bool
-    {
-        if (!isset($claims['exp'])) return true;
-        return time() >= (int)$claims['exp'];
-    }
-
-    /** เก็บลง session เพื่อใช้ findIdentity */
-    public function persistToSession(): void
-    {
+    public function persistToSession(): void {
         Yii::$app->session->set('__jwt_user__', [
-            'id'           => $this->id,
-            'username'     => $this->username,
-            'name'         => $this->name,
-            'email'        => $this->email,
-            'roles'        => $this->roles,
-            'access_token' => $this->access_token,
-            'iat'          => $this->iat,
-            'exp'          => $this->exp,
-            'profile'      => $this->profile,
+            'id'=>$this->id,'username'=>$this->username,'name'=>$this->name,'email'=>$this->email,
+            'roles'=>$this->roles,'access_token'=>$this->access_token,'iat'=>$this->iat,'exp'=>$this->exp,
+            'profile'=>$this->profile,
         ]);
     }
 }

@@ -1,45 +1,55 @@
 <?php
 
 $params = require __DIR__ . '/params.php';
-$db = require __DIR__ . '/db.php';
+$db     = require __DIR__ . '/db.php';
 
 $config = [
     'id' => 'Lasc SSKRU',
     'name' => 'ศูนย์วิจัย LASC มหาวิทยาลัยราชภัฏศรีสะเกษ',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
+
+    // อย่ากำหนด @web เอง (@web เป็น runtime alias)
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
-        '@web' => 'research/web/',  // ตั้งค่าให้ชี้ไปที่โฟลเดอร์ web
+        // '@web' => 'research/web/', // ❌ ลบออก
     ],
+
     'layout' => 'berry',
+
     'components' => [
+        // (ถ้าไม่ได้ใช้ sizeg/jwt จริง ๆ สามารถลบออกได้)
         'jwt' => [
             'class' => \sizeg\jwt\Jwt::class,
-            'key' => '4f1g23a12aa', // ตั้งค่า secret key ที่ใช้ในการเข้ารหัส
+            'key'   => '4f1g23a12aa', // TODO: เปลี่ยนเป็นค่า secret จริง (อย่า commit ลง repo)
             'jwtValidationData' => \sizeg\jwt\JwtValidationData::class,
         ],
+
         'request' => [
-            // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
-            'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC',
+            'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC', // TODO: เปลี่ยนเป็นค่า secret จริง
         ],
+
         'cache' => [
-            'class' => 'yii\caching\FileCache',
+            'class' => \yii\caching\FileCache::class,
         ],
+
         'user' => [
-            'identityClass' => app\models\User::class,
-            'enableAutoLogin' => true,
-            'loginUrl' => ['site/login'],
-            ],
-        // ใช้ httpclient เรียก SSO
-        'httpClient' => [
-            'class' => 'yii\httpclient\Client',
-            'transport' => 'yii\httpclient\CurlTransport',
+            'identityClass'   => \app\models\User::class,
+            'enableAutoLogin' => false,
+            'loginUrl'        => ['site/login'],
         ],
+
+        // httpclient ทั่วไป
+        'httpClient' => [
+            'class' => \yii\httpclient\Client::class,
+            'transport' => \yii\httpclient\CurlTransport::class,
+        ],
+
+        // ไคลเอนต์เรียก API ภายนอก (แนบ Bearer จาก identity ถ้ามี)
         'apiClient' => [
             'class' => \yii\httpclient\Client::class,
-            'baseUrl' => 'https://sci-sskru.com', // TODO: ปรับให้ตรง, แล้วเรียก setUrl('/authen/...') ใน service
+            'baseUrl' => 'https://sci-sskru.com', // TODO: ปรับให้ตรงระบบจริง
             'transport' => \yii\httpclient\CurlTransport::class,
             'formatters' => [
                 \yii\httpclient\Client::FORMAT_JSON => \yii\httpclient\JsonFormatter::class,
@@ -47,84 +57,85 @@ $config = [
             'on beforeSend' => function ($e) {
                 $id = Yii::$app->user->identity;
                 if ($id && !empty($id->access_token) && !$e->request->getHeaders()->has('Authorization')) {
-                $e->request->addHeaders(['Authorization' => 'Bearer '.$id->access_token]);
+                    $e->request->addHeaders(['Authorization' => 'Bearer ' . $id->access_token]);
                 }
             },
         ],
+
+        // service ดึงโปรไฟล์ผ่าน POST /authen/profile
         'apiAuth' => [
-            'class' => app\components\ApiAuthService::class,
-            ],
+            'class' => \app\components\ApiAuthService::class,
+        ],
+
+        // SSO helper (ถ้ามีคลาสนี้ในโปรเจกต์)
         'sso' => [
-            'class' => app\components\HrmSciSso::class,
+            'class' => \app\components\HrmSciSso::class,
             'cookieName' => 'hrm-sci-token',
-            'publicKeyPem' => '',          // TODO: วาง RS256 public key PEM (โปรดักชันต้องใส่)
-            'allowUnsafeDecode' => false,  // DEV เท่านั้นที่ควรเป็น true
+            'publicKeyPem' => '',          // TODO: ใส่ Public Key RS256 ตอน production
+            'allowUnsafeDecode' => false,  // DEV เท่านั้นถึงจะ true
             'leeway' => 60,
             'expectedIss' => null,
             'expectedAud' => null,
         ],
-            'cache' => ['class' => \yii\caching\FileCache::class],
-        // Auto SSO: guest เท่านั้น
-        'on beforeRequest' => function () {
-            if (Yii::$app->user->isGuest) {
-            try { Yii::$app->sso->tryAutoLoginFromCookie(); } catch (\Throwable $e) {
-                Yii::warning('SSO auto-login failed: '.$e->getMessage(), 'sso');
-            }
-            }
-        },
-        
+
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
+
         'mailer' => [
             'class' => \yii\symfonymailer\Mailer::class,
             'viewPath' => '@app/mail',
-            // send all mails to a file by default.
             'useFileTransport' => true,
         ],
+
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,
             'targets' => [
                 [
-                    'class' => 'yii\log\FileTarget',
+                    'class' => \yii\log\FileTarget::class,
                     'levels' => ['error', 'warning'],
                 ],
             ],
         ],
+
         'db' => $db,
-        
+
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'enableStrictParsing' => false,
             'rules' => [],
         ],
-
     ],
-    'params' => array_merge($params, [
-        // SSO login กลาง (ให้ SSO redirect กลับหน้าปัจจุบันได้)
-        'ssoLoginUrl'    => 'https://sci-sskru.com/hrm/login',
-        // โปรไฟล์ API (สเปคใหม่: POST + Authorization + body: personal_id)
-        'ssoProfileUrl'  => 'https://sci-sskru.com/authen/profile',
-    ]),
 
+    // ⬇️ ย้าย event มาไว้ "นอก" components (ระดับ root)
+    'on beforeRequest' => function () {
+        if (Yii::$app->user->isGuest) {
+            try {
+                Yii::$app->sso->tryAutoLoginFromCookie();
+            } catch (\Throwable $e) {
+                Yii::warning('SSO auto-login failed: ' . $e->getMessage(), 'sso');
+            }
+        }
+    },
+
+    'params' => array_merge($params, [
+        'ssoLoginUrl'   => 'https://sci-sskru.com/hrm/login',
+        'ssoProfileUrl' => 'https://sci-sskru.com/authen/profile', // POST + Bearer + {personal_id}
+    ]),
 ];
+
 /*
 if (YII_ENV_DEV) {
-    // configuration adjustments for 'dev' environment
     $config['bootstrap'][] = 'debug';
     $config['modules']['debug'] = [
-        'class' => 'yii\debug\Module',
-        // uncomment the following to add your IP if you are not connecting from localhost.
-        //'allowedIPs' => ['127.0.0.1', '::1'],
+        'class' => \yii\debug\Module::class,
     ];
-
     $config['bootstrap'][] = 'gii';
     $config['modules']['gii'] = [
-        'class' => 'yii\gii\Module',
-        // uncomment the following to add your IP if you are not connecting from localhost.
-        //'allowedIPs' => ['127.0.0.1', '::1'],
+        'class' => \yii\gii\Module::class,
     ];
 }
 */
+
 return $config;
