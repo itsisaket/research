@@ -1,7 +1,55 @@
 <?php
 use yii\helpers\Html;
 use yii\helpers\Json;
+
+use yii\helpers\Url;
+
+// ปลายทางหน้าโปรไฟล์ (ใช้ Yii ช่วยสร้าง URL ป้องกัน path เพี้ยน)
+$myProfileUrl = Url::to(['/site/my-profile'], true); // ได้เช่น https://domain/research/web/site/my-profile
+$ssoLoginUrl  = 'https://sci-sskru.com/hrm/login';   // (ถ้าต้องการเด้งไป SSO เมื่อ token หมดอายุ)
 ?>
+
+<script>
+(function(){
+  const TOKEN_KEY = 'hrm-sci-token';
+  const dest = <?= json_encode($myProfileUrl) ?>;
+  if (location.pathname.replace(/\/+$/,'').endsWith('/site/my-profile')) return;
+
+  const tok = localStorage.getItem(TOKEN_KEY);
+  if (!tok) return;
+
+  function decodePayload(jwt){
+    try {
+      const p = jwt.split('.')[1];
+      return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/')));
+    } catch(e){ return null; }
+  }
+  const claims = decodePayload(tok);
+  if (!claims || (claims.exp && (Date.now()/1000 >= claims.exp))){
+    localStorage.removeItem(TOKEN_KEY);
+    return;
+  }
+  const personalId = claims.personal_id || claims.uname || '';
+
+  // ให้ backend ของคุณ proxy ไป POST /authen/profile ตามสเปก
+  fetch('<?= \yii\helpers\Url::to(['/auth/profile']) ?>', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ token: tok, personal_id: personalId })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d && d.ok) {
+      // โปรไฟล์ใช้ได้ -> ไปหน้าโปรไฟล์
+      location.replace(dest);
+    } else {
+      // token ใช้ไม่ได้ -> เคลียร์
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  })
+  .catch(()=> localStorage.removeItem(TOKEN_KEY));
+})();
+</script>
 
 <hr>
 <h3>ข้อมูลทั้งหมด (All fields)</h3>

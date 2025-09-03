@@ -102,10 +102,10 @@ $config = [
 
     ],
     'params' => array_merge($params, [
-        // ใช้ login แบบ uname/pwd
-        'ssoLoginApi'   => 'https://sci-sskru.com/authen/login',
-        // ใช้ดึงโปรไฟล์/ตรวจสอบโทเค็น (ถ้ามี)
-        'ssoProfileUrl' => 'https://sci-sskru.com/authen/profile',
+        // SSO login กลาง (ให้ SSO redirect กลับหน้าปัจจุบันได้)
+        'ssoLoginUrl'    => 'https://sci-sskru.com/hrm/login',
+        // โปรไฟล์ API (สเปคใหม่: POST + Authorization + body: personal_id)
+        'ssoProfileUrl'  => 'https://sci-sskru.com/authen/profile',
     ]),
 
 ];

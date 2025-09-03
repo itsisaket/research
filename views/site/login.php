@@ -1,67 +1,55 @@
-<?php
-use yii\helpers\Url;
-$this->title = 'Login';
-?>
-<h1>Login</h1>
-
-<div class="row">
-  <div class="col-md-6">
-    <form action="<?= Url::to(['/auth/password-login']) ?>" method="post" class="card card-body shadow-sm">
-      <?= \yii\helpers\Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->getCsrfToken()) ?>
-      <div class="mb-3">
-        <label class="form-label">ชื่อผู้ใช้ (uname)</label>
-        <input name="uname" class="form-control" required>
-      </div>
-      <div class="mb-3">
-        <label class="form-label">รหัสผ่าน</label>
-        <input type="password" name="pwd" class="form-control" required>
-      </div>
-      <button class="btn btn-primary w-100">เข้าสู่ระบบ</button>
-      <?php if (Yii::$app->session->hasFlash('error')): ?>
-        <div class="text-danger mt-2"><?= Yii::$app->session->getFlash('error') ?></div>
-      <?php endif; ?>
-    </form>
-  </div>
-
-  <div class="col-md-6">
-    <div class="card card-body shadow-sm">
-      <label class="form-label">ทดสอบด้วย JWT (วางโทเค็น)</label>
-      <textarea id="jwt" class="form-control" rows="4" placeholder="eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."></textarea>
-      <button id="btn-jwt" class="btn btn-success mt-2 w-100">เข้าสู่ระบบด้วย JWT</button>
-      <div id="msg" class="text-danger mt-2"></div>
-    </div>
-  </div>
-</div>
+<div id="profile-box" class="card card-body" style="display:none"></div>
+<div id="err" class="text-danger mt-2"></div>
 
 <script>
 (function(){
   const TOKEN_KEY = 'hrm-sci-token';
+  const ssoLoginUrl = '<?= \yii\helpers\Url::to(Yii::$app->params['ssoLoginUrl']) ?>';
+  const token = localStorage.getItem(TOKEN_KEY);
 
-  // ย้าย token จากคุกกี้ชั่วคราว -> localStorage
-  function getCookie(name){
-    return document.cookie.split('; ').find(r=>r.startsWith(name+'='))?.split('=')[1];
-  }
-  const tok = getCookie('hrm-sci-token');
-  if (tok) {
-    localStorage.setItem(TOKEN_KEY, tok);
-    // เคลียร์คุกกี้ให้สะอาด (ปล่อยให้หมดอายุเองก็ได้)
-    document.cookie = 'hrm-sci-token=; Max-Age=0; path=/; SameSite=Lax';
+  // ถ้าไม่มี token → ส่งไปหน้า login ส่วนกลาง พร้อม redirect กลับ URL ปัจจุบัน
+  if (!token) {
+    const back = window.location.href;
+    window.location.href = ssoLoginUrl + '?redirect=' + encodeURIComponent(back);
+    return;
   }
 
-  // ปุ่ม login ด้วย JWT โดยตรง
-  document.getElementById('btn-jwt').addEventListener('click', async function(){
-    const t = document.getElementById('jwt').value.trim();
-    if (!t) { document.getElementById('msg').textContent = 'กรุณาวาง JWT'; return; }
-    localStorage.setItem(TOKEN_KEY, t);
+  // decode personal_id จาก payload (ถ้าอยากแน่ใจ ส่งไปให้เซิร์ฟเวอร์ถอดก็ได้)
+  function decodePayload(jwt){
+    try {
+      const p = jwt.split('.')[1];
+      return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/')));
+    } catch (e) { return null; }
+  }
+  const claims = decodePayload(token) || {};
+  const personalId = claims.personal_id || claims.uname || '';
 
-    const res = await fetch('<?= Url::to(['/auth/jwt-login']) ?>', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer '+t},
-      body: JSON.stringify({token: t})
-    });
-    const data = await res.json();
-    if (data.ok) { window.location.href = '<?= Url::to(['/site/index']) ?>'; }
-    else { document.getElementById('msg').textContent = 'ล็อกอินไม่ได้: ' + (data.error || 'UNKNOWN'); }
+  // เรียก proxy ฝั่งเรา ให้ไปติดต่อ POST /authen/profile (ของ SSO)
+  fetch('<?= \yii\helpers\Url::to(['/auth/profile']) ?>', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ token: token, personal_id: personalId })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.ok) throw new Error(d.error || 'FAILED');
+    const box = document.getElementById('profile-box');
+    const p = d.profile || {};
+    box.style.display = 'block';
+    box.innerHTML = `
+      <h5 class="mb-2">ข้อมูลผู้ใช้</h5>
+      <div><b>ชื่อ-สกุล:</b> ${(p.title_name||'')+' '+(p.first_name||'')+' '+(p.last_name||'')}</div>
+      <div><b>Personal ID:</b> ${personalId || '-'}</div>
+      <div><b>Email:</b> ${p.email || '-'}</div>
+      <div><b>หน่วยงาน:</b> ${p.dept_name || '-'}</div>
+    `;
+  })
+  .catch(err => {
+    // โทเค็นไม่ถูกต้อง/หมดอายุ → ล้างแล้วเด้งไป SSO
+    console.error(err);
+    localStorage.removeItem(TOKEN_KEY);
+    const back = window.location.href;
+    window.location.href = ssoLoginUrl + '?redirect=' + encodeURIComponent(back);
   });
 })();
 </script>

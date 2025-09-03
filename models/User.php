@@ -9,10 +9,10 @@ class User implements IdentityInterface
     /** Core identity (มาจาก JWT Claims) */
     public $id;                 // personal_id หรือ uname
     public $username;           // uname
-    public $name;               // ชื่อสำรอง (ถ้ามี)
+    public $name;               // ชื่อแสดงผล
     public $email;
     public $roles = [];
-    public $access_token;       // เก็บ JWT ที่ใช้ login ครั้งนี้
+    public $access_token;       // JWT ที่ใช้ login ครั้งนี้
 
     /** JWT times */
     public $exp;                // unix timestamp
@@ -36,15 +36,34 @@ class User implements IdentityInterface
     public function validateAuthKey($authKey) { return true; }
 
     /** ===== Helper ===== */
+
+    private static function buildDisplayName(?array $profile, array $claims): string
+    {
+        $profile = is_array($profile) ? $profile : [];
+
+        $parts = [];
+        foreach (['title_name', 'first_name', 'last_name'] as $k) {
+            if (!empty($profile[$k])) {
+                $parts[] = trim((string)$profile[$k]);
+            }
+        }
+        if (!empty($parts)) {
+            return trim(implode(' ', $parts));
+        }
+        if (!empty($claims['name']))       return (string)$claims['name'];
+        if (!empty($claims['uname']))      return (string)$claims['uname'];
+        if (!empty($claims['personal_id']))return (string)$claims['personal_id'];
+        return '';
+    }
+
     public static function fromClaims(array $claims, string $jwt, array $profile = null): self
     {
         $u = new self();
         $u->id       = $claims['personal_id'] ?? $claims['uname'] ?? null;
         $u->username = $claims['uname'] ?? $claims['personal_id'] ?? null;
-        $u->name     = $profile['title_name'].' '.$profile['first_name'].' '.$profile['last_name']
-                       ?? ($claims['name'] ?? ($claims['uname'] ?? ''));
+        $u->name     = self::buildDisplayName($profile, $claims);
         $u->email    = $profile['email'] ?? ($claims['email'] ?? null);
-        $u->roles    = $claims['roles'] ?? [];
+        $u->roles    = isset($claims['roles']) && is_array($claims['roles']) ? $claims['roles'] : [];
         $u->access_token = $jwt;
 
         $u->iat = isset($claims['iat']) ? (int)$claims['iat'] : null;
@@ -58,10 +77,13 @@ class User implements IdentityInterface
     {
         $u = new self();
         foreach ($arr as $k=>$v) { $u->$k = $v; }
+        // กันกรณี roles/profile ไม่ใช่ array
+        if (!is_array($u->roles))   $u->roles = [];
+        if (!is_array($u->profile)) $u->profile = [];
         return $u;
     }
 
-    /** base64url decode JWT payload */
+    /** base64url decode JWT payload (ตัวเดียวพอ ไม่ซ้ำ) */
     public static function decodeJwtPayload(string $jwt): array
     {
         $parts = explode('.', $jwt);
