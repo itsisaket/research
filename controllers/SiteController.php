@@ -235,7 +235,6 @@ public function actionIndex()
     {
         Yii::$app->user->logout();
         Yii::$app->session->remove('__jwt_user__');
-        // แนะนำให้ฝั่งหน้าเว็บลบ localStorage ด้วย (ดูสคริปต์ด้านล่าง)
         return $this->goHome();
     }
 

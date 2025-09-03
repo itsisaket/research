@@ -102,8 +102,10 @@ $config = [
 
     ],
     'params' => array_merge($params, [
-        'ssoProfileUrl' => 'https://sci-sskru.com/authen/profile', // ✅ ใส่ไว้ใน params
-        // 'jwtPublicKey' => "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----",
+        // ใช้ login แบบ uname/pwd
+        'ssoLoginApi'   => 'https://sci-sskru.com/authen/login',
+        // ใช้ดึงโปรไฟล์/ตรวจสอบโทเค็น (ถ้ามี)
+        'ssoProfileUrl' => 'https://sci-sskru.com/authen/profile',
     ]),
 
 ];
