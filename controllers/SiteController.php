@@ -214,7 +214,7 @@ public function actionIndex()
             'model' => $model,
         ]);
     }
-
+/*
     public function actionLogout()
     {
         // ลบคุกกี้ SSO ทั้งแบบไม่มีโดเมนและแบบโดเมนร่วม (กันพลาด)
@@ -228,6 +228,14 @@ public function actionIndex()
         Yii::$app->session->remove('identity');
         Yii::$app->user->logout(true);
         Yii::$app->session->regenerateID(true);
+        return $this->goHome();
+    }
+*/
+    public function actionLogout()
+    {
+        Yii::$app->user->logout();
+        Yii::$app->session->remove('__jwt_user__');
+        // แนะนำให้ฝั่งหน้าเว็บลบ localStorage ด้วย (ดูสคริปต์ด้านล่าง)
         return $this->goHome();
     }
 

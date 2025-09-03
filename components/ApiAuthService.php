@@ -7,106 +7,33 @@ use yii\httpclient\Client;
 
 class ApiAuthService extends Component
 {
-    /** POST /authen/login -> token */
-    public function login(string $username, string $password): string
+    public $profileUrl;   // e.g. https://sci-sskru.com/authen/profile
+
+    public function init()
     {
-        try {
-            $res = Yii::$app->apiClient->createRequest()
-                ->setMethod('POST')
-                ->setUrl('/authen/login') // baseUrl ดูที่ config/web.php
-                ->setFormat(Client::FORMAT_JSON)
-                ->addHeaders(['Accept' => 'application/json'])
-                ->setData(['uname' => trim($username), 'pwd' => $password])
-                ->send();
-        } catch (\Throwable $e) {
-            throw new \RuntimeException('เชื่อมต่อ Login API ไม่ได้: '.$e->getMessage(), 0, $e);
+        parent::init();
+        if (!$this->profileUrl) {
+            $this->profileUrl = Yii::$app->params['ssoProfileUrl'] ?? '';
         }
-
-        if (!$res->isOk) {
-            throw new \RuntimeException('Login API HTTP '.$res->statusCode);
-        }
-
-        $data = $res->getData();
-        $token = $data['token'] ?? null;
-        if (!$token && isset($data['status']) && $data['status']==='ok') {
-            $token = $data['token'] ?? null;
-        }
-        if (!$token) {
-            throw new \DomainException('ไม่พบ token จากเซิร์ฟเวอร์');
-        }
-        return (string)$token;
     }
 
-    /** POST /authen/profile -> ['profile'=>{...}] or root JSON */
-    public function getProfileByPersonalId(string $personalId, bool $forceRefresh=false): array
+    /** เรียก SSO เพื่อดึงโปรไฟล์ (และถือเป็นการ validate โทเค็นด้วย) */
+    public function fetchProfile(string $jwt): ?array
     {
-        $personalId = trim($personalId);
-        if ($personalId === '') throw new \DomainException('ต้องระบุรหัสประจำตัวประชาชน');
+        if (!$this->profileUrl) return null;
 
-        $ck = 'profile:'.$personalId;
-        if (!$forceRefresh && Yii::$app->has('cache')) {
-            $cached = Yii::$app->cache->get($ck);
-            if (is_array($cached)) return $cached;
-        }
+        $client = new Client(['transport' => 'yii\httpclient\CurlTransport']);
+        $resp = $client->createRequest()
+            ->setMethod('GET')
+            ->setUrl($this->profileUrl)
+            ->addHeaders(['Authorization' => 'Bearer '.$jwt])
+            ->send();
 
-        try {
-            $res = Yii::$app->apiClient->createRequest()
-                ->setMethod('POST')
-                ->setUrl('/authen/profile')
-                ->setFormat(Client::FORMAT_JSON)
-                ->addHeaders(['Accept' => 'application/json'])
-                ->setData(['personal_id' => $personalId])
-                ->send();
-        } catch (\Throwable $e) {
-            throw new \RuntimeException('เชื่อมต่อ Profile API ไม่ได้: '.$e->getMessage(), 0, $e);
-        }
+        if (!$resp->isOk) return null;
 
-        if ($res->statusCode === 401) {
-            if (!Yii::$app->user->isGuest) {
-                Yii::$app->user->logout(true);
-                Yii::$app->session->remove('identity');
-            }
-            throw new \DomainException('เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง');
-        }
-        if (!$res->isOk) {
-            throw new \RuntimeException('Profile API HTTP '.$res->statusCode);
-        }
-
-        $data = $res->getData();
-        $profile = (is_array($data['profile'] ?? null)) ? $data['profile'] : (is_array($data) ? $data : null);
-        if (!is_array($profile) || !$profile) {
-            throw new \DomainException('ไม่พบข้อมูลโปรไฟล์');
-        }
-
-        if (Yii::$app->has('cache')) Yii::$app->cache->set($ck, $profile, 300);
-        return $profile;
-    }
-
-    /** ใช้ personal_id จากโทเค็นของผู้ใช้ปัจจุบัน + อัปเดต session['identity']['profile'] */
-    public function getMyProfile(bool $forceRefresh=false): array
-    {
-        if (Yii::$app->user->isGuest) throw new \DomainException('กรุณาเข้าสู่ระบบ');
-        /** @var \app\models\User $id */
-        $id = Yii::$app->user->identity;
-
-        if (property_exists($id, 'exp') && $id->exp && time() >= (int)$id->exp) {
-            Yii::$app->user->logout(true);
-            Yii::$app->session->remove('identity');
-            throw new \DomainException('เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง');
-        }
-
-        $personalId = (string)($id->id ?? $id->username ?? '');
-        if ($personalId === '') throw new \DomainException('ไม่พบ personal_id ในโทเค็นผู้ใช้');
-
-        $profile = $this->getProfileByPersonalId($personalId, $forceRefresh);
-
-        $identityArr = Yii::$app->session->get('identity');
-        if (!is_array($identityArr)) {
-            $identityArr = method_exists($id, 'toArray') ? $id->toArray() : [];
-        }
-        $identityArr['profile'] = $profile;
-        Yii::$app->session->set('identity', $identityArr);
-
-        return $profile;
+        $data = $resp->getData();
+        // บางระบบห่อ { profile: {...} }
+        if (isset($data['profile']) && is_array($data['profile'])) return $data['profile'];
+        return is_array($data) ? $data : null;
     }
 }

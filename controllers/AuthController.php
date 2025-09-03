@@ -1,186 +1,113 @@
 <?php
-
 namespace app\controllers;
 
 use Yii;
-use yii\rest\Controller;
-use sizeg\jwt\Jwt;
-use yii\web\Response;
-
-use yii\filters\AccessControl;
+use yii\web\Controller;
 use yii\filters\VerbFilter;
-use app\models\LoginForm;
-use app\models\ContactForm;
+use yii\filters\ContentNegotiator;
+use yii\web\Response;
+use app\models\User;
+use app\components\ApiAuthService;
 
 class AuthController extends Controller
 {
-        /**
-     * {@inheritdoc}
-     */
+    // ปิด CSRF เฉพาะ action นี้ (เพราะเรียกแบบ JSON)
+    public $enableCsrfValidation = false;
+
     public function behaviors()
     {
         return [
-            'access' => [
-                'class' => AccessControl::class,
-                'only' => ['logout'],
-                'rules' => [
-                    [
-                        'actions' => ['logout'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
-                ],
-            ],
             'verbs' => [
                 'class' => VerbFilter::class,
-                'actions' => [
-                    'logout' => ['post'],
-                ],
+                'actions' => ['jwt-login' => ['POST']],
+            ],
+            'contentNegotiator' => [
+                'class' => ContentNegotiator::class,
+                'only' => ['jwt-login'],
+                'formats' => ['application/json' => Response::FORMAT_JSON],
             ],
         ];
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function actions()
+    /** POST /auth/jwt-login  (Authorization: Bearer <token>) หรือ JSON { "token": "..." } */
+    public function actionJwtLogin()
     {
-        return [
-            'error' => [
-                'class' => 'yii\web\ErrorAction',
-            ],
-            'captcha' => [
-                'class' => 'yii\captcha\CaptchaAction',
-                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
-            ],
-        ];
-    }
+        $req = Yii::$app->request;
+        $auth = $req->headers->get('Authorization', '');
+        $token = null;
 
-    /**
-     * Displays homepage.
-     *
-     * @return string
-     */
-    public function actionIndex()
-    {
-        return $this->render('index');
-    }
-    
-    /**
-     * แสดงฟอร์ม login และประมวลผลการ login ผ่าน LoginForm
-     */
-    public function actionLogin()
-    {
-        $model = new LoginForm();
-
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            $token = Yii::$app->session->get('jwt_token');
-            return $this->redirect(['auth/profile']);
+        if (preg_match('/Bearer\s+(.*)$/i', $auth, $m)) {
+            $token = trim($m[1]);
         }
-
-        // ✅ เพิ่มตรงนี้
-        return $this->render('login', [
-            'model' => $model,
-        ]);
-    }
-
-    /**
-     * สำหรับ API login: รับ POST แล้วส่ง JWT กลับเป็น JSON
-     */
-   public function actionLoginApi()
-    {
-        Yii::$app->response->format = Response::FORMAT_JSON;
-
-        if (!Yii::$app->request->isPost) {
-            return ['status' => 'error', 'message' => 'Method not allowed'];
-        }
-
-        $uname = Yii::$app->request->post('uname');
-        $pwd = Yii::$app->request->post('pwd');
-
-        if (!$uname || !$pwd) {
-            return ['status' => 'error', 'message' => 'Missing parameters'];
-        }
-
-        if ($uname === $pwd) {
-            $jwt = Yii::$app->jwt;
-            $token = $jwt->getBuilder()
-                ->issuedBy('https://sci-sskru.com/authen/login')
-                ->identifiedBy('4f1g23a12aa', true)
-                ->issuedAt(time())
-                ->expiresAt(time() + 3600)
-                ->withClaim('uid', $uname)
-                ->getToken($jwt->getSigner('HS256'), $jwt->getKey());
-
-            return [
-                'status' => 'success',
-                'token' => (string) $token,
-            ];
-        }
-
-        return ['status' => 'error', 'message' => 'Invalid credentials'];
-    }
-
-
-
-    /**
-     * API: ตรวจสอบ token และแสดงข้อมูลผู้ใช้
-     */
-    public function actionProfile()
-    {
-        Yii::$app->response->format = Response::FORMAT_JSON;
-
-        $authHeader = Yii::$app->request->headers->get('Authorization');
-        if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
-            return ['status' => 'error', 'message' => 'Authorization header missing or invalid'];
-        }
-
-        $tokenString = str_replace('Bearer ', '', $authHeader);
-
-        try {
-            $jwt = Yii::$app->jwt;
-            $parsed = $jwt->getParser()->parse($tokenString);
-            $validation = $jwt->getValidationData();
-            $validation->setIssuer('https://sci-sskru.com/authen/login');
-
-            if (!$parsed->validate($validation)) {
-                throw new \Exception("Invalid or expired token");
+        if (!$token) {
+            $json = $req->getRawBody();
+            if ($json) {
+                $arr = json_decode($json, true);
+                if (isset($arr['token'])) $token = $arr['token'];
             }
-
-            return [
-                'status' => 'success',
-                'uid' => $parsed->getClaim('uid'),
-                'data' => 'Your profile data here',
-            ];
-        } catch (\Exception $e) {
-            return ['status' => 'error', 'message' => $e->getMessage()];
         }
-    }
-
-    public function actionViewProfile()
-    {
-        // ดึง token จาก session แล้วเรียก API ภายนอก (HRM)
-        $token = Yii::$app->session->get('jwt_token');
-
-        $client = new \yii\httpclient\Client(['baseUrl' => 'https://sci-sskru.com/hrm-api/v1']);
-        $response = $client->createRequest()
-            ->setMethod('GET')
-            ->setUrl('profile')
-            ->addHeaders(['Authorization' => 'Bearer ' . $token])
-            ->send();
-
-        if ($response->isOk) {
-            return $this->render('profile', ['profile' => $response->data]);
+        if (!$token) {
+            Yii::$app->response->statusCode = 400;
+            return ['ok' => false, 'error' => 'TOKEN_MISSING'];
         }
 
-        return $this->render('profile', ['profile' => null]);
+        $claims = User::decodeJwtPayload($token);
+        if (!$claims) {
+            Yii::$app->response->statusCode = 401;
+            return ['ok' => false, 'error' => 'TOKEN_INVALID'];
+        }
+
+        // เช็คหมดอายุแบบเร็ว ๆ
+        if (User::isExpired($claims)) {
+            Yii::$app->response->statusCode = 401;
+            return ['ok' => false, 'error' => 'TOKEN_EXPIRED'];
+        }
+
+        // (แนะนำ) ตรวจสอบลายเซ็น RS256 กับ Public Key (ถ้ามี)
+        // ข้ามขั้นตอนนี้ได้ถ้าจะใช้วิธีเรียก profile จาก SSO เป็นตัว validate
+        // $verified = $this->verifyJwtRs256($token, Yii::$app->params['jwtPublicKey'] ?? null);
+
+        // ดึงโปรไฟล์จาก SSO (ถือเป็นการ validate จริง)
+        /** @var ApiAuthService $api */
+        $api = Yii::$app->get('apiAuth');
+        $profile = $api ? $api->fetchProfile($token) : null;
+
+        // สร้าง Identity แล้ว login
+        $user = User::fromClaims($claims, $token, $profile);
+        $duration = 3600 * 8; // 8 ชั่วโมง (หรือ 0 = session-only)
+        Yii::$app->user->login($user, $duration);
+        $user->persistToSession();
+
+        return [
+            'ok' => true,
+            'user' => [
+                'id'       => $user->id,
+                'username' => $user->username,
+                'name'     => $user->name,
+                'email'    => $user->email,
+                'roles'    => $user->roles,
+                'exp'      => $user->exp,
+            ],
+        ];
     }
 
-    public function actionLogout()
+    /** (ถ้าต้องการ) ตรวจลายเซ็น RS256 ด้วย Public Key */
+    private function verifyJwtRs256(string $jwt, ?string $publicKey): bool
     {
-        Yii::$app->session->remove('jwt_token');
-        Yii::$app->user->logout(); // สำหรับระบบ login ของ Yii ถ้ามี
-        return $this->goHome();
+        if (!$publicKey) return false;
+        $parts = explode('.', $jwt);
+        if (count($parts) !== 3) return false;
+
+        [$h, $p, $s] = $parts;
+        $data = $h.'.'.$p;
+        $sig = strtr($s, '-_', '+/');
+        $sig = base64_decode(str_pad($sig, strlen($sig) % 4 === 0 ? strlen($sig) : strlen($sig) + 4 - strlen($sig) % 4, '=', STR_PAD_RIGHT));
+
+        $key = openssl_pkey_get_public($publicKey);
+        if (!$key) return false;
+
+        $ok = openssl_verify($data, $sig, $key, OPENSSL_ALGO_SHA256) === 1;
+        openssl_free_key($key);
+        return $ok;
     }
 }
-

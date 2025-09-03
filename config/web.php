@@ -32,6 +32,11 @@ $config = [
             'enableAutoLogin' => true,
             'loginUrl' => ['site/login'],
             ],
+        // ใช้ httpclient เรียก SSO
+        'httpClient' => [
+            'class' => 'yii\httpclient\Client',
+            'transport' => 'yii\httpclient\CurlTransport',
+        ],
         'apiClient' => [
             'class' => \yii\httpclient\Client::class,
             'baseUrl' => 'https://sci-sskru.com', // TODO: ปรับให้ตรง, แล้วเรียก setUrl('/authen/...') ใน service
@@ -96,9 +101,10 @@ $config = [
         ],
 
     ],
-    'params' => $params,
-
-
+    'params' => array_merge($params, [
+        'ssoProfileUrl' => 'https://sci-sskru.com/authen/profile', // ✅ ใส่ไว้ใน params
+        // 'jwtPublicKey' => "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----",
+    ]),
 
 ];
 /*
