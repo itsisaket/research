@@ -2,70 +2,39 @@
 use yii\helpers\Html;
 use yii\helpers\Url;
 
+/** @var \yii\web\User $user */
 $user = Yii::$app->user;
-$id   = $user->identity ?? null;
+$identity = $user->identity ?? null;
 
 /* Greeting */
 $tz = new \DateTimeZone('Asia/Bangkok');
 $h  = (int) (new \DateTime('now', $tz))->format('G');
 $greet = $h < 12 ? 'Good Morning' : ($h < 18 ? 'Good Afternoon' : 'Good Evening');
 
-/* ดึง profile (บังคับเป็น array) */
-$sessionIdentityRaw = Yii::$app->session->get('identity');
-$sessionIdentity = is_array($sessionIdentityRaw) ? $sessionIdentityRaw : [];
-$profileRaw = $sessionIdentity['profile'] ?? ($id->profile ?? null);
+/* โปรไฟล์จาก identity (คาดว่าเป็น array เสมอจากโมเดล User ใหม่) */
+$profileRaw = $identity->profile ?? null;
 $profile    = is_array($profileRaw) ? $profileRaw : [];
 
-/* ถ้า profile ยังไม่ใช่อาร์เรย์ และผู้ใช้ล็อกอิน → ลองโหลดจาก API หนึ่งครั้ง */
-if (empty($profile) && !$user->isGuest) {
-    $personalId = null;
-
-    if (is_string($id->profile ?? null) && preg_match('/^\d{10,13}$/', $id->profile)) {
-        $personalId = $id->profile;
-    } else {
-        $personalId = (string)($id->id ?? $id->username ?? '');
-    }
-
-    if ($personalId !== '') {
-        try {
-            $fetched = Yii::$app->apiAuth->getProfileByPersonalId($personalId);
-            if (is_array($fetched)) {
-                $profile = $fetched;
-                // อัปเดต session identity ให้ส่วนอื่นใช้ได้
-                $sessionIdentity['profile'] = $profile;
-                Yii::$app->session->set('identity', $sessionIdentity);
-
-                // ถ้าต้องการ sync กลับเข้า identity object (เช็กให้ชัวร์ว่าเป็น object)
-                if (is_object($id) && property_exists($id, 'profile')) {
-                    $id->profile = $profile;
-                }
-            }
-        } catch (\Throwable $e) {
-            Yii::warning('Header lazy profile fetch failed: '.$e->getMessage(), 'ui.profile');
-        }
-    }
-}
-
-/* ชื่อที่จะแสดง */
+/* ชื่อแสดงผล (fallback ตามลำดับ) */
 $first = trim((string)($profile['first_name'] ?? ''));
 $last  = trim((string)($profile['last_name'] ?? ''));
 $baseName = trim($first.' '.$last);
 if ($baseName !== '') {
     $displayName = 'คุณ '.$baseName;
 } else {
-    $displayName = $id ? ((string)($id->name ?? $id->username ?? 'Guest')) : 'Guest';
+    $displayName = $identity ? ((string)($identity->name ?? $identity->username ?? 'Guest')) : 'Guest';
 }
 
-/* บทบาท/ตำแหน่งย่อ */
+/* บทบาท/ตำแหน่ง */
 $displayRole = $profile['academic_type_name']
     ?? $profile['employee_type_name']
     ?? $profile['category_type_name']
     ?? null;
 
 /* รูปโปรไฟล์ */
-$imgPathRaw = $profile['img'] ?? null;          // "/uploads/5.jpg" หรือ URL
+$imgPathRaw = $profile['img'] ?? null;             // "/uploads/5.jpg" หรือ URL
 $imgPath    = is_string($imgPathRaw) ? trim($imgPathRaw) : null;
-$authenBase = 'https://sci-sskru.com/authen';
+$authenBase = 'https://sci-sskru.com/authen';      // โดเมนของไฟล์รูปจาก SSO
 $fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 $avatarUrl  = $fallback;
 
@@ -86,8 +55,8 @@ if ($avatarUrl !== $fallback) {
     $v = '';
     if (!empty($profile['updated_at'])) {
         $v = (string)$profile['updated_at'];
-    } elseif (is_object($id) && property_exists($id, 'iat') && isset($id->iat)) {
-        $v = (string)(int)$id->iat;
+    } elseif (is_object($identity) && property_exists($identity, 'iat') && isset($identity->iat)) {
+        $v = (string)(int)$identity->iat;
     }
     if ($v !== '') {
         $avatarUrlFinal .= (strpos($avatarUrlFinal, '?') === false ? '?' : '&') . 'v=' . rawurlencode($v);
@@ -123,6 +92,7 @@ if ($avatarUrl !== $fallback) {
                   'style' => 'width:44px;height:44px;object-fit:cover;object-position:top;',
                   'onerror' => "this.onerror=null;this.src='".Html::encode($fallback)."';",
                   'title' => $displayName,
+                  'id'    => 'nav-avatar', // ให้ JS อัปเดตภายหลังได้
               ]) ?>
             <span><i class="ti ti-settings"></i></span>
           </a>
@@ -142,11 +112,13 @@ if ($avatarUrl !== $fallback) {
             <?php else: ?>
               <div class="dropdown-header">
                 <h4>
-                  <?= Html::encode($greet) ?>,
-                  <span class="small text-muted"><?= Html::encode($displayName) ?></span>
+                  <span id="nav-greet"><?= Html::encode($greet) ?></span>,
+                  <span class="small text-muted" id="nav-display-name"><?= Html::encode($displayName) ?></span>
                 </h4>
                 <?php if (!empty($displayRole)): ?>
-                  <div class="text-muted small"><?= Html::encode($displayRole) ?></div>
+                  <div class="text-muted small" id="nav-role"><?= Html::encode($displayRole) ?></div>
+                <?php else: ?>
+                  <div class="text-muted small" id="nav-role" style="display:none"></div>
                 <?php endif; ?>
                 <hr />
               </div>
@@ -164,11 +136,11 @@ if ($avatarUrl !== $fallback) {
                 ) ?>
 
                 <?php
-                  // Logout ใช้ POST (ปลอดภัย ไม่พึ่ง JS)
+                  // Logout ใช้ POST (ปลอดภัย) + data-action เพื่อลบ localStorage ด้วย JS
                   echo Html::beginForm(['site/logout'], 'post', ['class' => 'm-0', 'data-pjax' => '0']);
                   echo Html::submitButton(
                     '<i class="ti ti-logout"></i><span> Logout</span>',
-                    ['class' => 'dropdown-item text-start', 'encode' => false]
+                    ['class' => 'dropdown-item text-start', 'encode' => false, 'data-action' => 'logout']
                   );
                   echo Html::endForm();
                 ?>
@@ -180,3 +152,86 @@ if ($avatarUrl !== $fallback) {
     </div>
   </div>
 </header>
+
+<?php
+// === Lazy profile/Avatar update ทางฝั่ง client ถ้า identity->profile ยังว่าง ===
+$authProfileUrl = Url::to(['/auth/profile'], true);
+$defaultAvatar  = $fallback;
+$authenBaseJs   = $authenBase;
+$myProfileUrl   = Url::to(['/site/my-profile'], true);
+$js = <<<JS
+(function(){
+  const TOKEN_KEY = 'hrm-sci-token';
+  const tok = localStorage.getItem(TOKEN_KEY);
+  if (!tok) return;
+
+  // ถ้าใน server-render ยังไม่มีชื่อจริง ลองดึงโปรไฟล์แล้วอัปเดต UI
+  const hasServerName = document.getElementById('nav-display-name')?.textContent.trim() !== '' &&
+                        !document.getElementById('nav-display-name')?.textContent.includes('Guest');
+
+  if (!hasServerName) {
+    // decode payload เพื่อได้ personal_id (fallback ใช้ uname)
+    function decodePayload(jwt){
+      try{
+        const p = jwt.split('.')[1];
+        return JSON.parse(atob(p.replace(/-/g,'+').replace(/_/g,'/')));
+      }catch(e){ return null; }
+    }
+    const claims = decodePayload(tok) || {};
+    const personalId = claims.personal_id || claims.uname || '';
+
+    if (!personalId) return;
+
+    fetch('$authProfileUrl', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ token: tok, personal_id: personalId })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (!d || !d.ok) throw new Error(d?.error || 'PROFILE_FAIL');
+      const p = d.profile || {};
+
+      // ชื่อ-บทบาท
+      const name = [p.title_name, p.first_name, p.last_name].filter(Boolean).join(' ').trim();
+      const role = p.academic_type_name || p.employee_type_name || p.category_type_name || '';
+      const nameEl = document.getElementById('nav-display-name');
+      const roleEl = document.getElementById('nav-role');
+      if (name && nameEl) nameEl.textContent = 'คุณ ' + name;
+      if (roleEl) {
+        if (role) { roleEl.style.display=''; roleEl.textContent = role; }
+        else { roleEl.style.display='none'; roleEl.textContent = ''; }
+      }
+
+      // รูปโปรไฟล์
+      const imgRaw = p.img || '';
+      let imgUrl = '$defaultAvatar';
+      if (imgRaw) {
+        if (/^https?:\\/\\//i.test(imgRaw)) {
+          imgUrl = imgRaw;
+        } else {
+          imgUrl = ('$authenBaseJs'.replace(/\\/+$/,'') + '/' + String(imgRaw).replace(/^\\/+/, ''));
+        }
+      }
+      const v = p.updated_at ? String(p.updated_at) : (claims.iat ? String(parseInt(claims.iat)) : '');
+      if (imgUrl !== '$defaultAvatar' && v) {
+        imgUrl += (imgUrl.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(v);
+      }
+      const avatar = document.getElementById('nav-avatar');
+      if (avatar) { avatar.src = imgUrl; }
+    })
+    .catch(()=>{
+      // โทเค็นไม่ใช้การได้ → ไม่รบกวน UI, ให้ผู้ใช้ทำงานต่อหรือ re-login เอง
+    });
+  }
+
+  // ลบ token ตอน logout (ปุ่ม submit ใน dropdown)
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('[data-action="logout"]');
+    if (btn) {
+      try { localStorage.removeItem(TOKEN_KEY); } catch(e){}
+    }
+  });
+})();
+JS;
+$this->registerJs($js);
