@@ -5,7 +5,7 @@ use yii\helpers\Url;
 $user = Yii::$app->user;
 $id   = is_object($user->identity ?? null) ? $user->identity : null;
 
-/* โปรไฟล์จาก identity */
+/* โปรไฟล์จาก identity (array เสมอ) */
 $profile = is_array($id->profile ?? null) ? $id->profile : [];
 
 /* ชื่อที่จะแสดง */
@@ -26,14 +26,16 @@ $displayRole = $profile['academic_type_name']
 $authenBase = 'https://sci-sskru.com/authen';
 $fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 
-$imgPathRaw = $profile['img'] ?? null;            // "/uploads/5.jpg" หรือ URL
+$imgPathRaw = $profile['img'] ?? null;     // "/uploads/5.jpg" หรือ URL
 $imgPath    = is_string($imgPathRaw) ? trim($imgPathRaw) : null;
 $avatarUrl  = $fallback;
 
 if ($imgPath) {
     if (filter_var($imgPath, FILTER_VALIDATE_URL)) {
         $scheme = strtolower((string)parse_url($imgPath, PHP_URL_SCHEME));
-        if (in_array($scheme, ['http', 'https'], true)) $avatarUrl = $imgPath;
+        if (in_array($scheme, ['http','https'], true)) {
+            $avatarUrl = $imgPath;
+        }
     } else {
         $avatarUrl = rtrim($authenBase, '/') . '/' . ltrim($imgPath, '/');
     }
@@ -51,7 +53,7 @@ if ($avatarUrl !== $fallback) {
             $payload = strtr($parts[1], '-_', '+/');
             $pad = strlen($payload) % 4; if ($pad) $payload .= str_repeat('=', 4 - $pad);
             $json = json_decode(base64_decode($payload), true);
-            if (is_array($json)) $v = (string)($json['iat'] ?? $json['exp'] ?? '');
+            if (is_array($json)) { $v = (string)($json['iat'] ?? $json['exp'] ?? ''); }
         }
     }
     if ($v !== '') {
@@ -59,16 +61,16 @@ if ($avatarUrl !== $fallback) {
     }
 }
 
-/* ไอคอนทักทาย (คงที่ ไม่อิงเวลา) */
+/* ไอคอนคงที่ */
 $greetIconHtml = Html::tag('i', '', [
     'class' => 'ti ti-user-circle me-2 align-text-bottom',
     'title' => 'ผู้ใช้',
     'aria-label' => 'ผู้ใช้',
 ]);
 
-/* URL HRM Login (fixed param: redirect) */
+/* URL HRM Login (มี redirect กลับ /site/login) */
 $ssoLoginUrl  = Yii::$app->params['ssoLoginUrl'] ?? 'https://sci-sskru.com/hrm/login';
-$callbackPath = Url::to(['/site/login']); // JS จะเติม origin เอง
+$callbackPath = Url::to(['/site/login']); // กลับมาหน้า login (ที่แสดงโปรไฟล์)
 ?>
 <!-- Header -->
 <header class="pc-header">
@@ -93,27 +95,28 @@ $callbackPath = Url::to(['/site/login']); // JS จะเติม origin เอ
         <li class="dropdown pc-h-item header-user-profile">
           <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0"
              data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-              <?= Html::img($avatarUrlFinal, [
-                  'alt'   => Html::encode($displayName),
-                  'class' => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
-                  'style' => 'width:44px;height:44px;object-fit:cover;object-position:top;',
-                  'onerror' => "this.onerror=null;this.src='".Html::encode($fallback)."';",
-                  'title' => $displayName,
-                  'id'    => 'nav-avatar',
-              ]) ?>
+            <?= Html::img($avatarUrlFinal, [
+                'alt'   => Html::encode($displayName),
+                'class' => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
+                'style' => 'width:44px;height:44px;object-fit:cover;object-position:top;',
+                'onerror' => "this.onerror=null;this.src='".Html::encode($fallback)."';",
+                'title' => $displayName,
+                'id'    => 'nav-avatar',
+            ]) ?>
             <span><i class="ti ti-settings"></i></span>
           </a>
 
           <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown">
             <?php if ($user->isGuest): ?>
               <div class="dropdown-header">
-                <h4>
+                <h4 class="mb-1">
                   <?= $greetIconHtml ?>
                   <span class="small text-muted">Guest</span>
                 </h4>
                 <p class="text-muted mb-2">Please sign in</p>
-                <hr />
+                <hr class="my-2"/>
               </div>
+
               <?= Html::a(
                     '<i class="ti ti-lock"></i><span> Login</span>',
                     '#',
@@ -126,9 +129,10 @@ $callbackPath = Url::to(['/site/login']); // JS จะเติม origin เอ
                       'data-callback'  => $callbackPath,
                     ]
               ) ?>
+
             <?php else: ?>
               <div class="dropdown-header">
-                <h4>
+                <h4 class="mb-1">
                   <?= $greetIconHtml ?>
                   <span class="small text-muted" id="nav-display-name"><?= Html::encode($displayName) ?></span>
                 </h4>
@@ -137,13 +141,13 @@ $callbackPath = Url::to(['/site/login']); // JS จะเติม origin เอ
                 <?php else: ?>
                   <div class="text-muted small" id="nav-role" style="display:none"></div>
                 <?php endif; ?>
-                <hr />
+                <hr class="my-2"/>
               </div>
 
               <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 280px)">
                 <?= Html::a(
                       '<i class="ti ti-user"></i><span> My Profile</span>',
-                      ['site/my-profile'],
+                      ['site/login'], /* ไปหน้า /site/login ที่แสดงการ์ดโปรไฟล์ */
                       ['class' => 'dropdown-item', 'encode' => false, 'data-pjax' => '0']
                 ) ?>
                 <?= Html::a(
@@ -172,7 +176,7 @@ $callbackPath = Url::to(['/site/login']); // JS จะเติม origin เอ
 <?php
 $js = <<<JS
 (function(){
-  // Guest: ปุ่ม Login -> ไป HRM login พร้อม redirect=/site/login
+  // Guest -> Login: ส่งไป HRM พร้อม redirect กลับ /site/login
   var loginEl = document.getElementById('nav-login');
   if (loginEl) {
     loginEl.addEventListener('click', function(e){
@@ -185,7 +189,7 @@ $js = <<<JS
     });
   }
 
-  // Logout: เคลียร์ token ใน localStorage ก่อน submit
+  // Logout: เคลียร์ token ฝั่ง client ก่อน submit ฟอร์ม
   var logoutBtn  = document.getElementById('nav-logout-btn');
   var logoutForm = document.getElementById('nav-logout-form');
   if (logoutBtn && logoutForm) {
@@ -195,7 +199,7 @@ $js = <<<JS
         localStorage.removeItem('userInfo');
         localStorage.removeItem('accessToken');
       } catch (e) {}
-      // ปล่อยให้ form submit ต่อไป (POST /site/logout)
+      // ปล่อยให้ form POST /site/logout ทำงานต่อ
     });
   }
 })();
