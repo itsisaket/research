@@ -3,23 +3,18 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 
 $user = Yii::$app->user;
-$id   = $user->identity ?? null;
+$id   = is_object($user->identity ?? null) ? $user->identity : null;
 
-/* Greeting */
-$tz = new \DateTimeZone('Asia/Bangkok');
-$h  = (int) (new \DateTime('now', $tz))->format('G');
-$greet = $h < 12 ? 'Good Morning' : ($h < 18 ? 'Good Afternoon' : 'Good Evening');
-
-/* โปรไฟล์จาก identity (เป็น array เสมอในโมเดล User ใหม่) */
+/* โปรไฟล์จาก identity */
 $profile = is_array($id->profile ?? null) ? $id->profile : [];
 
 /* ชื่อที่จะแสดง */
 $first = trim((string)($profile['first_name'] ?? ''));
 $last  = trim((string)($profile['last_name'] ?? ''));
-$baseName = trim($first.' '.$last);
+$baseName = trim($first . ' ' . $last);
 $displayName = $user->isGuest
   ? 'Guest'
-  : ($baseName !== '' ? 'คุณ '.$baseName : ((string)($id->name ?? $id->username ?? '')));
+  : ($baseName !== '' ? 'คุณ ' . $baseName : ((string)($id->name ?? $id->username ?? '')));
 
 /* บทบาท/ตำแหน่งย่อ */
 $displayRole = $profile['academic_type_name']
@@ -28,36 +23,52 @@ $displayRole = $profile['academic_type_name']
     ?? null;
 
 /* รูปโปรไฟล์ */
-$imgPathRaw = $profile['img'] ?? null;          // "/uploads/5.jpg" หรือ URL
-$imgPath    = is_string($imgPathRaw) ? trim($imgPathRaw) : null;
 $authenBase = 'https://sci-sskru.com/authen';
 $fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
+
+$imgPathRaw = $profile['img'] ?? null;            // "/uploads/5.jpg" หรือ URL
+$imgPath    = is_string($imgPathRaw) ? trim($imgPathRaw) : null;
 $avatarUrl  = $fallback;
 
 if ($imgPath) {
     if (filter_var($imgPath, FILTER_VALIDATE_URL)) {
-        $scheme = parse_url($imgPath, PHP_URL_SCHEME);
-        if (in_array(strtolower((string)$scheme), ['http', 'https'], true)) {
-            $avatarUrl = $imgPath;
-        }
+        $scheme = strtolower((string)parse_url($imgPath, PHP_URL_SCHEME));
+        if (in_array($scheme, ['http', 'https'], true)) $avatarUrl = $imgPath;
     } else {
         $avatarUrl = rtrim($authenBase, '/') . '/' . ltrim($imgPath, '/');
     }
 }
 
-/* cache buster (อย่าใส่กับ fallback) */
+/* cache buster: updated_at -> JWT iat/exp */
 $avatarUrlFinal = $avatarUrl;
 if ($avatarUrl !== $fallback) {
     $v = '';
     if (!empty($profile['updated_at'])) {
         $v = (string)$profile['updated_at'];
-    } elseif (is_object($id) && property_exists($id, 'iat') && isset($id->iat)) {
-        $v = (string)(int)$id->iat;
+    } elseif ($id && !empty($id->access_token)) {
+        $parts = explode('.', $id->access_token);
+        if (count($parts) >= 2) {
+            $payload = strtr($parts[1], '-_', '+/');
+            $pad = strlen($payload) % 4; if ($pad) $payload .= str_repeat('=', 4 - $pad);
+            $json = json_decode(base64_decode($payload), true);
+            if (is_array($json)) $v = (string)($json['iat'] ?? $json['exp'] ?? '');
+        }
     }
     if ($v !== '') {
         $avatarUrlFinal .= (strpos($avatarUrlFinal, '?') === false ? '?' : '&') . 'v=' . rawurlencode($v);
     }
 }
+
+/* ไอคอนทักทาย (คงที่ ไม่อิงเวลา) */
+$greetIconHtml = Html::tag('i', '', [
+    'class' => 'ti ti-user-circle me-2 align-text-bottom',
+    'title' => 'ผู้ใช้',
+    'aria-label' => 'ผู้ใช้',
+]);
+
+/* URL HRM Login (fixed param: redirect) */
+$ssoLoginUrl  = Yii::$app->params['ssoLoginUrl'] ?? 'https://sci-sskru.com/hrm/login';
+$callbackPath = Url::to(['/site/login']); // JS จะเติม origin เอง
 ?>
 <!-- Header -->
 <header class="pc-header">
@@ -96,19 +107,29 @@ if ($avatarUrl !== $fallback) {
           <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown">
             <?php if ($user->isGuest): ?>
               <div class="dropdown-header">
-                <h4><?= Html::encode($greet) ?>, <span class="small text-muted">Guest</span></h4>
+                <h4>
+                  <?= $greetIconHtml ?>
+                  <span class="small text-muted">Guest</span>
+                </h4>
                 <p class="text-muted mb-2">Please sign in</p>
                 <hr />
               </div>
               <?= Html::a(
                     '<i class="ti ti-lock"></i><span> Login</span>',
-                    ['site/login'],
-                    ['class' => 'dropdown-item', 'encode' => false, 'data-pjax' => '0']
+                    '#',
+                    [
+                      'class' => 'dropdown-item',
+                      'encode' => false,
+                      'data-pjax' => '0',
+                      'id' => 'nav-login',
+                      'data-sso-login' => $ssoLoginUrl,
+                      'data-callback'  => $callbackPath,
+                    ]
               ) ?>
             <?php else: ?>
               <div class="dropdown-header">
                 <h4>
-                  <?= Html::encode($greet) ?>,
+                  <?= $greetIconHtml ?>
                   <span class="small text-muted" id="nav-display-name"><?= Html::encode($displayName) ?></span>
                 </h4>
                 <?php if (!empty($displayRole)): ?>
@@ -132,11 +153,10 @@ if ($avatarUrl !== $fallback) {
                 ) ?>
 
                 <?php
-                  // Logout ใช้ POST (ปลอดภัย) — อย่าลืมให้สคริปต์กลางลบ localStorage token ตอนคลิก (data-action="logout")
-                  echo Html::beginForm(['site/logout'], 'post', ['class' => 'm-0', 'data-pjax' => '0']);
+                  echo Html::beginForm(['site/logout'], 'post', ['class' => 'm-0', 'data-pjax' => '0', 'id' => 'nav-logout-form']);
                   echo Html::submitButton(
                     '<i class="ti ti-logout"></i><span> Logout</span>',
-                    ['class' => 'dropdown-item text-start', 'encode' => false, 'data-action' => 'logout']
+                    ['class' => 'dropdown-item text-start', 'encode' => false, 'data-action' => 'logout', 'id' => 'nav-logout-btn']
                   );
                   echo Html::endForm();
                 ?>
@@ -148,3 +168,36 @@ if ($avatarUrl !== $fallback) {
     </div>
   </div>
 </header>
+
+<?php
+$js = <<<JS
+(function(){
+  // Guest: ปุ่ม Login -> ไป HRM login พร้อม redirect=/site/login
+  var loginEl = document.getElementById('nav-login');
+  if (loginEl) {
+    loginEl.addEventListener('click', function(e){
+      e.preventDefault();
+      var sso = loginEl.getAttribute('data-sso-login') || 'https://sci-sskru.com/hrm/login';
+      var cb  = loginEl.getAttribute('data-callback')  || '/site/login';
+      var back = location.origin + cb;
+      var sep = sso.indexOf('?') >= 0 ? '&' : '?';
+      location.href = sso + sep + 'redirect=' + encodeURIComponent(back);
+    });
+  }
+
+  // Logout: เคลียร์ token ใน localStorage ก่อน submit
+  var logoutBtn  = document.getElementById('nav-logout-btn');
+  var logoutForm = document.getElementById('nav-logout-form');
+  if (logoutBtn && logoutForm) {
+    logoutBtn.addEventListener('click', function(){
+      try {
+        localStorage.removeItem('hrm-sci-token');
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('accessToken');
+      } catch (e) {}
+      // ปล่อยให้ form submit ต่อไป (POST /site/logout)
+    });
+  }
+})();
+JS;
+$this->registerJs($js, \yii\web\View::POS_END);

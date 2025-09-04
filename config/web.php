@@ -19,13 +19,13 @@ $config = [
     'layout' => 'berry',
 
     'components' => [
-        // (ถ้าไม่ได้ใช้ sizeg/jwt จริง ๆ สามารถลบออกได้)
+        /* (ถ้าไม่ได้ใช้ sizeg/jwt จริง ๆ สามารถลบออกได้)
         'jwt' => [
             'class' => \sizeg\jwt\Jwt::class,
             'key'   => '4f1g23a12aa', // TODO: เปลี่ยนเป็นค่า secret จริง (อย่า commit ลง repo)
             'jwtValidationData' => \sizeg\jwt\JwtValidationData::class,
         ],
-
+*/
         'request' => [
             'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC', // TODO: เปลี่ยนเป็นค่า secret จริง
         ],
@@ -120,6 +120,7 @@ $config = [
     },
 
     'params' => array_merge($params, [
+        'hrmApiBase' => 'https://sci-sskru.com/authen',
         'ssoLoginUrl'   => 'https://sci-sskru.com/hrm/login',
         'ssoProfileUrl' => 'https://sci-sskru.com/authen/profile', // POST + Bearer + {personal_id}
     ]),

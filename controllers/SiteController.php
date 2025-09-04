@@ -23,24 +23,36 @@ use app\models\Publication;
 
 class SiteController extends Controller
 {
+    public function beforeAction($action)
+    {
+        if ($action->id === 'login-bind') {   // ← เดิม sso-bind
+            $this->enableCsrfValidation = false;
+        }
+        return parent::beforeAction($action);
+    }
+
     public function behaviors()
     {
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout'],
+                'only' => ['logout','login','login-bind'],
                 'rules' => [
-                    ['allow' => true, 'roles' => ['@']], // ต้องล็อกอินก่อน
+                    ['actions' => ['login','login-bind'], 'allow' => true],
+                    ['actions' => ['index','logout'], 'allow' => true, 'roles' => ['@']],
+                ],
+            ],
+            'verbs' => [
+                'class' => VerbFilter::class,
+                'actions' => [
+                    'logout'     => ['post','get'],
+                    'login-bind' => ['post'],
                 ],
             ],
         ];
     }
-/*
-    public function actionIndex()
-    {
-        return $this->render('index');
-    }
-*/
+
+
 public function actionIndex()
     { 
 
@@ -198,71 +210,75 @@ public function actionIndex()
 
         ]);
     }
+    /** Guard หน้า Login (แทน /site/sso) */
     public function actionLogin()
     {
-        if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
-        }
-
-        $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
-        }
-
-        $model->password = '';
-        return $this->render('login', [
-            'model' => $model,
-        ]);
+        return $this->render('login');
     }
-/*
-    public function actionLogout()
+
+    /** รับ token จาก client -> ตรวจกับ HRM -> login Yii */
+    public function actionLoginBind()
     {
-        // ลบคุกกี้ SSO ทั้งแบบไม่มีโดเมนและแบบโดเมนร่วม (กันพลาด)
-        Yii::$app->response->cookies->remove('hrm-sci-token');
-        Yii::$app->response->cookies->remove(new \yii\web\Cookie([
-            'name' => 'hrm-sci-token',
-            'domain' => '.sci-sskru.com',
-            'path' => '/',
-        ]));
+        Yii::$app->response->format = Response::FORMAT_JSON;
 
-        Yii::$app->session->remove('identity');
-        Yii::$app->user->logout(true);
-        Yii::$app->session->regenerateID(true);
-        return $this->goHome();
+        $jwt = Yii::$app->request->post('token');
+        $pid = Yii::$app->request->post('personal_id');
+        if (!$jwt || !$pid) return ['ok'=>false,'error'=>'missing token or personal_id'];
+
+        try {
+            $profile = $this->callHrm('profile', $jwt, ['personal_id' => $pid]);
+        } catch (\Throwable $e) {
+            return ['ok'=>false,'error'=>'authen/profile failed','detail'=>$e->getMessage()];
+        }
+        if (!$profile || empty(($profile['profile'] ?? $profile)['personal_id'])) {
+            return ['ok'=>false,'error'=>'invalid profile'];
+        }
+
+        $identity = \app\models\User::fromToken($jwt, $profile);
+        Yii::$app->user->login($identity, 3600*8);
+        Yii::$app->session->set('identity', [
+            'id'=>$identity->id,'username'=>$identity->username,'name'=>$identity->name,
+            'email'=>$identity->email,'roles'=>$identity->roles,'profile'=>$identity->profile,
+            'access_token'=>$identity->access_token,
+        ]);
+
+        return ['ok'=>true];
     }
-*/
+
     public function actionLogout()
     {
         Yii::$app->user->logout();
-        Yii::$app->session->remove('__jwt_user__');
-        return $this->goHome();
+        Yii::$app->session->remove('identity');
+        return $this->redirect(['site/login']);   // ← เดิม site/sso
     }
 
-    public function actionPingAuth($u = '3331000521623', $p = '3331000521623')
+    /** ==== HRM API helper ==== */
+    private function callHrm(string $endpoint, string $jwt, array $payload): array
     {
-        $res = Yii::$app->apiClient->createRequest()
-            ->setMethod('POST')
-            ->setUrl('/authen/login')
-            ->setFormat(\yii\httpclient\Client::FORMAT_JSON)
-            ->setData(['uname' => (string)$u, 'pwd' => (string)$p])
-            ->send();
+        $base = Yii::$app->params['hrmApiBase']; // https://sci-sskru.com/authen
+        $url  = rtrim($base,'/').'/'.$endpoint;
 
-        $data = $res->getData();
-        $claims = [];
-        if (is_array($data ?? null) && !empty($data['token'])) {
-            $parts = explode('.', $data['token']);
-            if (count($parts) >= 2) {
-                $payload = $parts[1] . str_repeat('=', (4 - strlen($parts[1]) % 4) % 4);
-                $claims = json_decode(base64_decode(strtr($payload, '-_', '+/')), true);
-            }
+        if (class_exists(\yii\httpclient\Client::class)) {
+            $client = new \yii\httpclient\Client(['transport'=>'yii\httpclient\CurlTransport']);
+            $res = $client->createRequest()
+                ->setMethod('POST')->setUrl($url)
+                ->setHeaders(['Authorization'=>'Bearer '.$jwt,'Content-Type'=>'application/json'])
+                ->setContent(json_encode($payload))->send();
+            if (!$res->isOk) throw new \RuntimeException("HTTP {$res->statusCode}: ".$res->content);
+            return is_array($res->data) ? $res->data : json_decode($res->content, true);
         }
 
-        return $this->asJson([
-            'http_ok' => $res->isOk,
-            'http_status' => $res->statusCode,
-            'has_token' => !empty($data['token']),
-            'claims' => $claims,
+        // fallback cURL
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER=>true, CURLOPT_POST=>true,
+            CURLOPT_HTTPHEADER=>['Authorization: Bearer '.$jwt,'Content-Type: application/json'],
+            CURLOPT_POSTFIELDS=>json_encode($payload), CURLOPT_TIMEOUT=>20
         ]);
+        $out = curl_exec($ch); $err = curl_error($ch); $code = curl_getinfo($ch,CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($out === false || $code < 200 || $code >= 300) throw new \RuntimeException("HTTP {$code}: ".($out ?: $err));
+        $data = json_decode($out, true); return is_array($data) ? $data : [];
     }
     public function actionMyProfile()
     {
