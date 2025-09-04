@@ -2,9 +2,9 @@
 
 return [
     'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=localhost;dbname=webrdi_mis',
-    'username' => 'root',
-    'password' => '',
+    'dsn' => 'mysql:host=localhost;dbname=lascinfo',
+    'username' => 'lascinfo',
+    'password' => 'lascpassword',
     'charset' => 'utf8',
 
     // Schema cache options (for production environment)

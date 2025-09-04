@@ -3,7 +3,7 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 
 /** @var yii\web\View $this */
-$this->title = 'Login (LocalStorage)';
+$this->title = 'Login: ';
 $this->params['breadcrumbs'][] = $this->title;
 
 $csrf   = Yii::$app->request->getCsrfToken();
@@ -45,13 +45,12 @@ $logout = Url::to(['/site/logout']);     // POST: Yii logout
 <div class="container py-4">
   <h1><?= Html::encode($this->title) ?></h1>
   <p class="text-muted">
-    หน้านี้จะตรวจสอบโทเคนใน localStorage (คีย์: <code>hrm-sci-token</code>) ถ้ามีจะดึงโปรไฟล์จาก HRM แล้วแสดงผลทันที
+    หน้านี้จะตรวจสอบโทเคน (คีย์: <code>hrm-sci-token</code>) ถ้ามีจะดึงโปรไฟล์จาก HRM แล้วแสดงผลทันที
   </p>
 
   <!-- สถานะ -->
   <div id="status" class="alert alert-info">กำลังตรวจสอบ...</div>
-
-  <!-- สรุป personal_id -->
+<!-- สรุป personal_id -->
   <div class="mt-2">
     <span class="badge-pill badge-gray">personal_id: <span id="pid">ยังไม่มีข้อมูล</span></span>
   </div>
@@ -170,7 +169,7 @@ async function render(){
 
   if (!token) {
     statusEl.className = 'alert alert-warning';
-    statusEl.textContent = 'ยังไม่มีข้อมูล (ไม่พบ hrm-sci-token ใน localStorage)';
+    statusEl.textContent = 'ยังไม่มีข้อมูล (ไม่พบ hrm-sci-token)';
     pidEl.textContent = 'ยังไม่มีข้อมูล';
     card.classList.add('d-none');
     setLoginButton();
@@ -178,7 +177,7 @@ async function render(){
   }
 
   statusEl.className = 'alert alert-success';
-  statusEl.textContent = 'พบ hrm-sci-token ใน localStorage';
+  statusEl.textContent = 'พบ hrm-sci-token';
   setLogoutButton();
 
   const payload = parseJwt(token);

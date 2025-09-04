@@ -16,20 +16,18 @@ class SiteController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                // ระบุให้ชัดว่าควบคุม action เหล่านี้
-                'only' => ['index', 'login', 'my-profile', 'logout'],
+                // ควบคุมเฉพาะ 3 action นี้เท่านั้น
+                'only' => ['login', 'my-profile', 'logout'],
                 'rules' => [
-                    // login + my-profile ให้ guest เข้าถึงได้ (เพราะยังไม่ได้ล็อกอิน)
                     [
                         'actions' => ['login', 'my-profile'],
                         'allow' => true,
-                        'roles' => ['?', '@'],
+                        'roles' => ['?', '@'], // guest + user
                     ],
-                    // หน้าแรกกับ logout ให้เฉพาะคนล็อกอินแล้ว (ปรับเป็น ['?','@'] ถ้าต้องการให้ Guest เข้า index ได้)
                     [
-                        'actions' => ['index', 'logout'],
+                        'actions' => ['logout'],
                         'allow' => true,
-                        'roles' => ['@'],
+                        'roles' => ['@'],      // เฉพาะผู้ล็อกอิน
                     ],
                 ],
             ],
@@ -42,6 +40,7 @@ class SiteController extends Controller
             ],
         ];
     }
+
 
     public function actionIndex()
     {
