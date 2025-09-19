@@ -14,16 +14,23 @@ use yii\filters\VerbFilter;
  */
 class AcademicController extends Controller
 {
-    /**
-     * {@inheritdoc}
-     */
     public function behaviors()
     {
         return [
-            'verbs' => [
-                'class' => VerbFilter::className(),
-                'actions' => [
-                    'delete' => ['POST'],
+            'access' => [
+                'class' => AccessControl::class,
+                // ควบคุมเฉพาะ 3 action นี้เท่านั้น
+                'rules' => [
+                    [
+                        'actions' => ['index'],
+                        'allow' => true,
+                        'roles' => ['?', '@'], // guest + user
+                    ],
+                    [
+                        'actions' => ['logout'],
+                        'allow' => true,
+                        'roles' => ['@'],      // เฉพาะผู้ล็อกอิน
+                    ],
                 ],
             ],
         ];

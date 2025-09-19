@@ -37,7 +37,7 @@ class UtilizationController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'index'],
+                'only' => ['logout', 'index','view','create','update'],
                 'rules' => [
                     ['allow' => true, 'roles' => ['@']], // ต้องล็อกอินก่อน
                 ],

@@ -73,6 +73,7 @@ class Article extends \yii\db\ActiveRecord
         $ty=$session['ty'];
         
         if (!Yii::$app->user->isGuest){
+           //$users = Account::find()->where(['uid'=>Yii::$app->user->identity->uid])->all();
             $users = Account::find()->where(['uid'=>Yii::$app->user->identity->uid])->all();
             if (Yii::$app->user->identity->position !=1) {
                 $users = Account::find()->where(['org_id'=>$ty])->orderBy('uname')->all();
