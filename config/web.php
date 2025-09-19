@@ -35,9 +35,10 @@ $config = [
         ],
 
         'user' => [
-            'identityClass'   => \app\models\User::class,
+            'identityClass'   => \app\models\User::class, // <-- โมเดล lightweight ของคุณ
+            'enableSession'   => true,
             'enableAutoLogin' => false,
-            'loginUrl'        => ['site/login'],
+            'loginUrl'        => ['/site/login'],
         ],
 
         // httpclient ทั่วไป

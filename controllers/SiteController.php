@@ -61,39 +61,30 @@ class SiteController extends Controller
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
 
-        $data    = json_decode(Yii::$app->request->getRawBody(), true);
-        $token   = $data['token']   ?? null;
-        $profile = $data['profile'] ?? null;
+        $body    = json_decode(Yii::$app->request->getRawBody(), true) ?: [];
+        $token   = (string)($body['token'] ?? '');
+        $profile = is_array($body['profile'] ?? null) ? $body['profile'] : [];
 
-        if (!$token) {
-            Yii::$app->response->statusCode = 400;
-            return ['ok' => false, 'message' => 'token is required'];
+        if ($token === '') {
+            return ['ok' => false, 'error' => 'missing token'];
         }
 
-        $identity = User::fromToken($token, is_array($profile) ? $profile : null);
-        if (!$identity->id) {
-            Yii::$app->response->statusCode = 401;
-            return ['ok' => false, 'message' => 'invalid token (no personal_id/uname)'];
-        }
+        // สร้าง identity (รองรับ {profile:{...}} อยู่ใน normalizeProfile แล้ว)
+        $identity = User::fromToken($token, $profile);
 
-        // ล็อกอินเป็นเวลา 8 ชั่วโมง (ปรับได้)
-        if (Yii::$app->user->login($identity, 60 * 60 * 8)) {
-            Yii::$app->session->set('identity', $identity->toArray());
-            return ['ok' => true];
-        }
+        // ล็อกอินเข้า Yii user component จริง ๆ (เช่น 14 วัน)
+        Yii::$app->user->login($identity, 60 * 60 * 24 * 14);
 
-        Yii::$app->response->statusCode = 500;
-        return ['ok' => false, 'message' => 'unable to login'];
+        return ['ok' => true, 'id' => $identity->id];
     }
 
     public function actionLogout()
     {
-        Yii::$app->user->logout(false);
+        Yii::$app->user->logout(true);           // เคลียร์ identity + session
         Yii::$app->session->remove('_identity_data');
-        Yii::$app->session->remove('identity');
         return $this->goHome();
     }
-
+    
     public function actionContact()
     {
         return $this->render('contact');
