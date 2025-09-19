@@ -80,15 +80,9 @@ class SiteController extends Controller
 
     public function actionLogout()
     {
-        // เคลียร์ identity และ destroy session ทั้งหมด
-        Yii::$app->user->logout(true);
-
-        // ป้องกัน session data ค้าง (กัน edge case)
-        Yii::$app->session->destroy();
-
-        // optional: regenerate CSRF token หลัง logout
-        Yii::$app->request->getCsrfToken(true);
-
+        Yii::$app->user->logout(true);  // เคลียร์ identity + ทำลาย session
+        Yii::$app->session->destroy();  // กัน edge case
+        Yii::$app->request->getCsrfToken(true); // (เลือกได้) หมุน CSRF ใหม่
         return $this->goHome();
     }
 
