@@ -80,11 +80,18 @@ class SiteController extends Controller
 
     public function actionLogout()
     {
-        Yii::$app->user->logout(true);           // เคลียร์ identity + session
-        Yii::$app->session->remove('_identity_data');
+        // เคลียร์ identity และ destroy session ทั้งหมด
+        Yii::$app->user->logout(true);
+
+        // ป้องกัน session data ค้าง (กัน edge case)
+        Yii::$app->session->destroy();
+
+        // optional: regenerate CSRF token หลัง logout
+        Yii::$app->request->getCsrfToken(true);
+
         return $this->goHome();
     }
-    
+
     public function actionContact()
     {
         return $this->render('contact');

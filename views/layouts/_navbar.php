@@ -205,3 +205,4 @@ $js = <<<JS
 })();
 JS;
 $this->registerJs($js, \yii\web\View::POS_END);
+

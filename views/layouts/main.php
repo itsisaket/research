@@ -283,6 +283,28 @@ $hasSessionJs = $user->isGuest ? 'false' : 'true';
 })();
 </script>
 
+<?php
+$js = <<<JS
+(function(){
+  var logoutBtn  = document.getElementById('nav-logout-btn');
+  var logoutForm = document.getElementById('nav-logout-form');
+  if (logoutBtn && logoutForm) {
+    logoutBtn.addEventListener('click', function(){
+      try {
+        localStorage.removeItem('hrm-sci-token');
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('accessToken');
+        sessionStorage.clear();
+      } catch (e) {}
+      // ส่งฟอร์ม POST ต่อ
+    });
+  }
+})();
+JS;
+$this->registerJs($js, \yii\web\View::POS_END);
+?>
+
+
 <?php $this->endBody() ?>
 </body>
 </html>
