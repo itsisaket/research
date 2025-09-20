@@ -8,52 +8,53 @@ $id   = is_object($user->identity ?? null) ? $user->identity : null;
 /* โปรไฟล์จาก identity (array เสมอ) */
 $profile = is_array($id->profile ?? null) ? $id->profile : [];
 
-/* ชื่อที่จะแสดง */
+/* ==== ชื่อที่จะแสดง (รวมคำนำหน้า) ==== */
+$title = trim((string)($profile['title_name'] ?? ''));
 $first = trim((string)($profile['first_name'] ?? ''));
 $last  = trim((string)($profile['last_name'] ?? ''));
-$baseName = trim($first . ' ' . $last);
+$full  = trim(($title !== '' ? $title.' ' : '').trim($first.' '.$last));
 $displayName = $user->isGuest
   ? 'Guest'
-  : ($baseName !== '' ? 'คุณ ' . $baseName : ((string)($id->name ?? $id->username ?? '')));
+  : ($full !== '' ? 'คุณ '.$full : ((string)($id->name ?? $id->username ?? 'User')));
 
-/* บทบาท/ตำแหน่งย่อ */
+/* ==== บทบาท/ตำแหน่งย่อ ==== */
 $displayRole = $profile['academic_type_name']
     ?? $profile['employee_type_name']
     ?? $profile['category_type_name']
     ?? null;
 
-/* รูปโปรไฟล์ */
-$authenBase = 'https://sci-sskru.com/authen';
+/* ==== รูปโปรไฟล์ + cache-busting ==== */
+$authenBase = rtrim(Yii::$app->params['authenBase'] ?? 'https://sci-sskru.com/authen', '/');
 $fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 
-$imgPathRaw = $profile['img'] ?? null;     // "/uploads/5.jpg" หรือ URL
-$imgPath    = is_string($imgPathRaw) ? trim($imgPathRaw) : null;
+$imgRaw     = isset($profile['img']) && is_string($profile['img']) ? trim($profile['img']) : '';
 $avatarUrl  = $fallback;
 
-if ($imgPath) {
-    if (filter_var($imgPath, FILTER_VALIDATE_URL)) {
-        $scheme = strtolower((string)parse_url($imgPath, PHP_URL_SCHEME));
-        if (in_array($scheme, ['http','https'], true)) {
-            $avatarUrl = $imgPath;
+if ($imgRaw !== '') {
+    if (filter_var($imgRaw, FILTER_VALIDATE_URL)) {
+        $sch = strtolower((string)parse_url($imgRaw, PHP_URL_SCHEME));
+        if (in_array($sch, ['http','https'], true)) {
+            $avatarUrl = $imgRaw;
         }
     } else {
-        $avatarUrl = rtrim($authenBase, '/') . '/' . ltrim($imgPath, '/');
+        $avatarUrl = $authenBase . '/' . ltrim($imgRaw, '/');
     }
 }
-
-/* cache buster: updated_at -> JWT iat/exp */
 $avatarUrlFinal = $avatarUrl;
 if ($avatarUrl !== $fallback) {
     $v = '';
     if (!empty($profile['updated_at'])) {
         $v = (string)$profile['updated_at'];
-    } elseif ($id && !empty($id->access_token)) {
+    } elseif (!empty($id->access_token)) {
         $parts = explode('.', $id->access_token);
         if (count($parts) >= 2) {
-            $payload = strtr($parts[1], '-_', '+/');
-            $pad = strlen($payload) % 4; if ($pad) $payload .= str_repeat('=', 4 - $pad);
-            $json = json_decode(base64_decode($payload), true);
-            if (is_array($json)) { $v = (string)($json['iat'] ?? $json['exp'] ?? ''); }
+            $b64 = strtr($parts[1], '-_', '+/');
+            $pad = strlen($b64) % 4; if ($pad) $b64 .= str_repeat('=', 4 - $pad);
+            $bin = base64_decode($b64, true);
+            if ($bin !== false) {
+                $j = json_decode($bin, true);
+                if (is_array($j)) $v = (string)($j['updated_at'] ?? $j['iat'] ?? $j['exp'] ?? '');
+            }
         }
     }
     if ($v !== '') {
@@ -68,9 +69,9 @@ $greetIconHtml = Html::tag('i', '', [
     'aria-label' => 'ผู้ใช้',
 ]);
 
-/* URL HRM Login (มี redirect กลับ /site/login) */
+/* URL SSO Login + callback กลับ index */
 $ssoLoginUrl  = Yii::$app->params['ssoLoginUrl'] ?? 'https://sci-sskru.com/hrm/login';
-$callbackPath = Url::to(['/site/login']); // กลับมาหน้า login (ที่แสดงโปรไฟล์)
+$callbackPath = Url::to(['/site/index']); // กลับหน้า index (navbar จะรีเฟรชสถานะ)
 ?>
 <!-- Header -->
 <header class="pc-header">
@@ -147,7 +148,7 @@ $callbackPath = Url::to(['/site/login']); // กลับมาหน้า logi
               <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 280px)">
                 <?= Html::a(
                       '<i class="ti ti-user"></i><span> My Profile</span>',
-                      ['site/login'], /* ไปหน้า /site/login ที่แสดงการ์ดโปรไฟล์ */
+                      ['site/index'], /* เดิมชี้ site/login → เปลี่ยนเป็น index */
                       ['class' => 'dropdown-item', 'encode' => false, 'data-pjax' => '0']
                 ) ?>
                 <?= Html::a(
@@ -176,16 +177,17 @@ $callbackPath = Url::to(['/site/login']); // กลับมาหน้า logi
 <?php
 $js = <<<JS
 (function(){
-  // Guest -> Login: ส่งไป HRM พร้อม redirect กลับ /site/login
+  // Guest -> Login: ส่งไป HRM พร้อม redirect กลับ /site/index
   var loginEl = document.getElementById('nav-login');
   if (loginEl) {
     loginEl.addEventListener('click', function(e){
       e.preventDefault();
       var sso = loginEl.getAttribute('data-sso-login') || 'https://sci-sskru.com/hrm/login';
-      var cb  = loginEl.getAttribute('data-callback')  || '/site/login';
-      var back = location.origin + cb;
-      var sep = sso.indexOf('?') >= 0 ? '&' : '?';
-      location.href = sso + sep + 'redirect=' + encodeURIComponent(back);
+      var cb  = loginEl.getAttribute('data-callback')  || '/site/index';
+      var back = new URL(cb, window.location.origin).href;  // absolute callback
+      var u = new URL(sso, window.location.href);
+      if (!u.searchParams.has('redirect')) u.searchParams.set('redirect', back);
+      location.href = u.toString();
     });
   }
 
@@ -198,11 +200,12 @@ $js = <<<JS
         localStorage.removeItem('hrm-sci-token');
         localStorage.removeItem('userInfo');
         localStorage.removeItem('accessToken');
+        sessionStorage.clear();
+        sessionStorage.setItem('did-logout', '1'); // กันลูป
       } catch (e) {}
-      // ปล่อยให้ form POST /site/logout ทำงานต่อ
+      // แล้วปล่อยให้ form POST /site/logout ทำงาน
     });
   }
 })();
 JS;
 $this->registerJs($js, \yii\web\View::POS_END);
-

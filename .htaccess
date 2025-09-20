@@ -1,3 +1,8 @@
 RewriteEngine On
-RewriteCond %{REQUEST_URI} ^/research/?$
-RewriteRule ^$ /research/web/ [L,R=302]
+RewriteBase /research/
+
+# เข้า /research หรือ /research/ → ส่งเข้าโฟลเดอร์ web
+RewriteRule ^$ web/ [L,R=302]
+
+# (ถ้าอยากเข้าหน้า login ก่อนเสมอ ให้ใช้บรรทัดนี้แทน)
+# RewriteRule ^$ web/site/login [L,R=302]

@@ -4,12 +4,13 @@ use yii\helpers\Url;
 
 /** @var yii\web\View $this */
 $this->title = 'Login';
-$this->params['isLoginPage'] = true; // บอก layout ให้ข้ามตัวดัก/ไม่แทรกการเช็คซ้ำ
+$this->params['isLoginPage'] = true; // บอก layout ให้ข้ามตัวดัก
 
-$csrf   = Yii::$app->request->getCsrfToken();
-$sync   = Url::to(['/site/my-profile']); // POST: sync session จาก token
-$logout = Url::to(['/site/logout']);     // POST: Yii logout
-$index  = Url::to(['/site/index']);      // กลับหน้าหลักเสมอ
+$csrf      = Yii::$app->request->getCsrfToken();
+$csrfParam = Yii::$app->request->csrfParam;       // ✅ ใช้ชื่อพารามิเตอร์ CSRF แบบไดนามิก
+$sync      = Url::to(['/site/my-profile']);       // POST: sync session จาก token
+$logout    = Url::to(['/site/logout']);           // POST: Yii logout
+$index     = Url::to(['/site/index']);            // กลับหน้าหลักเสมอ
 ?>
 <!DOCTYPE html>
 <html lang="<?= Yii::$app->language ?>">
@@ -27,13 +28,13 @@ $index  = Url::to(['/site/index']);      // กลับหน้าหลัก
 <body>
 <script>
 const CSRF_TOKEN = <?= json_encode($csrf) ?>;
+const CSRF_NAME  = <?= json_encode($csrfParam) ?>;   // ✅ ใช้ชื่อพารามิเตอร์จริงของระบบ
 const SYNC_URL   = <?= json_encode($sync) ?>;
 const LOGOUT_URL = <?= json_encode($logout) ?>;
 const INDEX_URL  = <?= json_encode($index) ?>;
 
 function postLogoutThenIndex(){
   try {
-    // กันลูปซ้ำ
     if (sessionStorage.getItem('did-logout') === '1') {
       window.location.replace(INDEX_URL);
       return;
@@ -49,21 +50,20 @@ function postLogoutThenIndex(){
       sessionStorage.setItem('did-logout','1'); // set ซ้ำหลัง clear
     } catch(e){}
 
-    // POST /site/logout (server จะทำลาย session แล้ว redirect ต่อเอง)
+    // POST /site/logout (server จะทำลาย session)
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = LOGOUT_URL;
 
     const csrf = document.createElement('input');
     csrf.type  = 'hidden';
-    csrf.name  = '_csrf';
+    csrf.name  = CSRF_NAME;          // ✅ ใช้ชื่อพารามิเตอร์จริง
     csrf.value = CSRF_TOKEN;
     form.appendChild(csrf);
 
     document.body.appendChild(form);
     form.submit();
 
-    // กันกรณี network ติด → บังคับกลับ index
     setTimeout(()=>window.location.replace(INDEX_URL), 1200);
   } catch(e){
     window.location.replace(INDEX_URL);
@@ -83,10 +83,16 @@ function parseJwt(token){
 
 (async function main(){
   try{
-    const token = localStorage.getItem('hrm-sci-token');
+    let token = '';
+    try {
+      token = localStorage.getItem('hrm-sci-token') || '';  // ✅ กันกรณี storage โดนบล็อค
+    } catch(e) {
+      postLogoutThenIndex();
+      return;
+    }
 
-    // ไม่มี token → ออกจากระบบทั้งหมด แล้วกลับ index ทันที
-    if (!token || token.trim() === '') {
+    // ไม่มี token → ออกจากระบบทั้งหมด แล้วกลับ index
+    if (!token.trim()) {
       postLogoutThenIndex();
       return;
     }
