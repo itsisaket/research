@@ -14,7 +14,7 @@ $first = trim((string)($profile['first_name'] ?? ''));
 $last  = trim((string)($profile['last_name'] ?? ''));
 $full  = trim(($title !== '' ? $title.' ' : '').trim($first.' '.$last));
 $displayName = $user->isGuest
-  ? 'User Guest'
+  ? 'Guest'
   : ($full !== '' ? 'คุณ '.$full : ((string)($id->name ?? $id->username ?? 'User')));
 
 /* ==== บทบาท/ตำแหน่งย่อ ==== */
@@ -112,7 +112,7 @@ $callbackPath = Url::to(['/site/index']); // กลับหน้า index (nav
               <div class="dropdown-header">
                 <h4 class="mb-1">
                   <?= $greetIconHtml ?>
-                  <span class="small text-muted">Guest</span>
+                  <span class="small text-muted">User Guest</span>
                 </h4>
                 <p class="text-muted mb-2">Please sign in</p>
                 <hr class="my-2"/>
@@ -146,11 +146,6 @@ $callbackPath = Url::to(['/site/index']); // กลับหน้า index (nav
               </div>
 
               <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 280px)">
-                <?= Html::a(
-                      '<i class="ti ti-user"></i><span> My Profile</span>',
-                      ['site/index'], /* เดิมชี้ site/login → เปลี่ยนเป็น index */
-                      ['class' => 'dropdown-item', 'encode' => false, 'data-pjax' => '0']
-                ) ?>
                 <?= Html::a(
                       '<i class="ti ti-settings"></i><span> Account Settings</span>',
                       'https://sci-sskru.com/hrm/edit-personal',
