@@ -1,6 +1,7 @@
 <?php
 use yii\helpers\Html;
 use yii\helpers\Url;
+use app\models\User as UserModel; // ✅ ใช้ decodeJwtPayload จากโมเดล
 
 $user = Yii::$app->user;
 $id   = is_object($user->identity ?? null) ? $user->identity : null;
@@ -8,26 +9,40 @@ $id   = is_object($user->identity ?? null) ? $user->identity : null;
 /* โปรไฟล์จาก identity (array เสมอ) */
 $profile = is_array($id->profile ?? null) ? $id->profile : [];
 
+/* ✅ ดึง JWT claims มาเป็น fallback เมื่อ profile ยังไม่มีข้อมูล */
+$claims = [];
+if ($id && !empty($id->access_token) && is_string($id->access_token)) {
+    $claims = UserModel::decodeJwtPayload($id->access_token) ?: [];
+    if (!is_array($claims)) $claims = [];
+}
+
 /* ==== ชื่อที่จะแสดง (รวมคำนำหน้า) ==== */
-$title = trim((string)($profile['title_name'] ?? ''));
-$first = trim((string)($profile['first_name'] ?? ''));
-$last  = trim((string)($profile['last_name'] ?? ''));
-$full  = trim(($title !== '' ? $title.' ' : '').trim($first.' '.$last));
+/* ใช้ profile ก่อน → claims → สุดท้าย name/username */
+$title = trim((string)($profile['title_name'] ?? $claims['title_name'] ?? ''));
+$first = trim((string)($profile['first_name'] ?? $claims['first_name'] ?? ''));
+$last  = trim((string)($profile['last_name']  ?? $claims['last_name']  ?? ''));
+
+$fullCore = trim(($title !== '' ? $title.' ' : '') . trim($first.' '.$last));
 $displayName = $user->isGuest
   ? 'Guest'
-  : ($full !== '' ? 'คุณ '.$full : ((string)($id->name ?? $id->username ?? 'User')));
+  : ($fullCore !== '' ? 'คุณ '.$fullCore : ((string)($id->name ?? $claims['name'] ?? $id->username ?? 'User')));
 
-/* ==== บทบาท/ตำแหน่งย่อ ==== */
+/* ==== บทบาท/ตำแหน่งย่อ (มี fallback จาก claims) ==== */
 $displayRole = $profile['academic_type_name']
+    ?? $claims['academic_type_name']
     ?? $profile['employee_type_name']
+    ?? $claims['employee_type_name']
     ?? $profile['category_type_name']
+    ?? $claims['category_type_name']
     ?? null;
 
 /* ==== รูปโปรไฟล์ + cache-busting ==== */
 $authenBase = rtrim(Yii::$app->params['authenBase'] ?? 'https://sci-sskru.com/authen', '/');
 $fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 
-$imgRaw     = isset($profile['img']) && is_string($profile['img']) ? trim($profile['img']) : '';
+/* ✅ รูปอ่านจาก profile ก่อน → claims['img'] */
+$imgRaw     = isset($profile['img']) && is_string($profile['img']) ? trim($profile['img']) :
+              (isset($claims['img']) && is_string($claims['img']) ? trim($claims['img']) : '');
 $avatarUrl  = $fallback;
 
 if ($imgRaw !== '') {
@@ -45,7 +60,10 @@ if ($avatarUrl !== $fallback) {
     $v = '';
     if (!empty($profile['updated_at'])) {
         $v = (string)$profile['updated_at'];
+    } elseif (!empty($claims['updated_at'])) {
+        $v = (string)$claims['updated_at'];
     } elseif (!empty($id->access_token)) {
+        // fallback สุดท้ายจาก iat/exp
         $parts = explode('.', $id->access_token);
         if (count($parts) >= 2) {
             $b64 = strtr($parts[1], '-_', '+/');
@@ -53,7 +71,7 @@ if ($avatarUrl !== $fallback) {
             $bin = base64_decode($b64, true);
             if ($bin !== false) {
                 $j = json_decode($bin, true);
-                if (is_array($j)) $v = (string)($j['updated_at'] ?? $j['iat'] ?? $j['exp'] ?? '');
+                if (is_array($j)) $v = (string)($j['iat'] ?? $j['exp'] ?? '');
             }
         }
     }
@@ -112,7 +130,7 @@ $callbackPath = Url::to(['/site/index']); // กลับหน้า index (nav
               <div class="dropdown-header">
                 <h4 class="mb-1">
                   <?= $greetIconHtml ?>
-                  <span class="small text-muted">User Guest</span>
+                  <span class="small text-muted">Guest</span>
                 </h4>
                 <p class="text-muted mb-2">Please sign in</p>
                 <hr class="my-2"/>
