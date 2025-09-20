@@ -45,7 +45,7 @@ $this->beginPage();
     preset_change('preset-1');
   } catch (e) {}
 
-  // ล้าง token/flag ตอนกดปุ่ม logout
+  // ล้าง token/flag ตอนกดปุ่ม logout (ปุ่มไหนก็ได้ที่ใส่ data-action="logout")
   document.addEventListener('click', function(e){
     const btn = e.target.closest('[data-action="logout"]');
     if (btn) {
@@ -58,47 +58,40 @@ $this->beginPage();
 </script>
 
 <?php
-// ===== Guard / Auto-sync =====
-// - หน้า index: เข้าได้เสมอ (ไม่ redirect). ถ้ามี token แต่ PHP ยัง guest → POST /site/my-profile แล้ว reload 1 ครั้ง
-// - หน้าอื่น (ยกเว้น login/logout): ไม่มี session & token → redirect SSO; มี token แต่ไม่มี session → sync แล้ว reload
-$user         = Yii::$app->user;
-$hasSessionJs = $user->isGuest ? 'false' : 'true';
-$ssoLoginUrl  = Yii::$app->params['ssoLoginUrl'] ?? 'https://sci-sskru.com/hrm/login';
-$syncUrl      = Url::to(['/site/my-profile'], true);
-$currentUrl   = Url::current([], true);
-$csrfToken    = Yii::$app->request->getCsrfToken();
-$baseUrl      = Yii::$app->request->baseUrl; // รองรับกรณีแอปอยู่ใน subfolder
+// ===== Guard & Token Enforcement =====
+// หมายเหตุ: ถ้าเป็นหน้า login ให้ตั้ง $this->params['isLoginPage'] = true ใน view นั้น
+$user          = Yii::$app->user;
+$hasSessionJs  = $user->isGuest ? 'false' : 'true';
+$loginUrl      = Url::to(['/site/login'], true);
+$logoutUrl     = Url::to(['/site/logout'], true);  // POST
+$currentUrl    = Url::current([], true);
+$baseUrl       = Yii::$app->request->baseUrl;
+$csrfParam     = Yii::$app->request->csrfParam;
+$csrfToken     = Yii::$app->request->getCsrfToken();
+$isLoginPage   = isset($this->params['isLoginPage']) && $this->params['isLoginPage'] === true;
 ?>
 <script>
 (function(){
-  const TOKEN_KEY   = 'hrm-sci-token';
-  const hasSession  = <?= $hasSessionJs ?>;
-  const ssoLogin    = <?= Json::encode($ssoLoginUrl) ?>;
-  const syncUrl     = <?= Json::encode($syncUrl) ?>;
-  const backUrl     = <?= Json::encode($currentUrl) ?>;
-  const csrfToken   = <?= Json::encode($csrfToken) ?>;
-  const baseUrl     = <?= Json::encode($baseUrl) ?>;
-
-  function parseJwt(t){
-    if (!t) return null;
-    const p = t.split('.'); if (p.length < 2) return null;
-    try {
-      let payload = p[1].replace(/-/g,'+').replace(/_/g,'/');
-      const pad = payload.length % 4; if (pad) payload += '='.repeat(4 - pad);
-      return JSON.parse(atob(payload));
-    } catch { return null; }
-  }
+  const KEY        = 'hrm-sci-token';
+  const hasSession = <?= $hasSessionJs ?>;
+  const isLoginPage= <?= $isLoginPage ? 'true' : 'false' ?>;
+  const loginUrl   = <?= Json::encode($loginUrl) ?>;
+  const logoutUrl  = <?= Json::encode($logoutUrl) ?>;
+  const backUrl    = <?= Json::encode($currentUrl) ?>;
+  const baseUrl    = <?= Json::encode($baseUrl) ?>;
+  const csrfName   = <?= Json::encode($csrfParam) ?>;
+  const csrfValue  = <?= Json::encode($csrfToken) ?>;
 
   const norm   = s => (s || '').replace(/\/+$/,'');
   const path   = norm(location.pathname);
   const params = new URLSearchParams(location.search);
   const base   = norm(baseUrl || '/');
 
-  // ครอบคลุมทั้ง pretty URL, ?r=..., และกรณีแอปอยู่ใน subfolder
   const isLoginLike =
     path.endsWith('/site/login') || path.endsWith('/site/logout') ||
     params.get('r') === 'site/login' || params.get('r') === 'site/logout';
 
+  // ✅ นับเป็น index เมื่อเป็น root ของแอป, /index.php, /site/index หรือ ?r=site/index
   const isIndex =
     params.get('r') === 'site/index' ||
     path.endsWith('/site/index')     ||
@@ -106,71 +99,63 @@ $baseUrl      = Yii::$app->request->baseUrl; // รองรับกรณี�
     path === '' || path === '/'      ||
     path === base || path === base + '/';
 
-  // อ่าน token
-  let tok = null;
-  try { tok = localStorage.getItem(TOKEN_KEY); } catch(_){ tok = null; }
+  // ฟังก์ชัน POST logout แบบปลอดภัย แล้วเด้งไป login พร้อม redirect เดิม
+  function forceServerLogoutThenToLogin() {
+    try {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = logoutUrl;
 
-  // --- หน้า index: ไม่ redirect; auto-sync ถ้าจำเป็น ---
-  if (isIndex) {
-    if (!hasSession && tok && sessionStorage.getItem('auto-sync-done') !== '1') {
-      const claims = parseJwt(tok) || {};
-      const now = Math.floor(Date.now()/1000), leeway = 120;
-      if (claims.exp && (claims.exp + leeway) < now) {
-        try { localStorage.removeItem(TOKEN_KEY); } catch(_){}
-        return;
-      }
-      fetch(syncUrl, {
-        method: 'POST',
-        credentials: 'same-origin', // ส่งคุกกี้เพื่อให้สร้าง/อัปเดต PHP session
-        headers: { 'Content-Type':'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({ token: tok })
-      })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(d => {
-        if (d && d.ok) {
-          sessionStorage.setItem('auto-sync-done', '1');
-          location.reload();
-        }
-      })
-      .catch(()=>{ /* เงียบ ๆ */ });
+      const csrf = document.createElement('input');
+      csrf.type  = 'hidden';
+      csrf.name  = csrfName;
+      csrf.value = csrfValue;
+      form.appendChild(csrf);
+
+      document.body.appendChild(form);
+      form.submit();
+    } catch(e) {
+      // fallback: ไปหน้า login พร้อม redirect
+      const url = loginUrl + (loginUrl.includes('?') ? '&' : '?') + 'redirect=' + encodeURIComponent(backUrl);
+      location.replace(url);
     }
-    return; // ไม่ให้โค้ด redirect ด้านล่างทำงานบนหน้า index
   }
 
-  // --- หน้าอื่น (ยกเว้น login/logout): บังคับตามเงื่อนไข ---
-  if (!isLoginLike) {
-    if (!hasSession && !tok) {
-      location.replace(ssoLogin + '?redirect=' + encodeURIComponent(backUrl));
+  // ⛳ หน้าล็อกอิน/ออกจากระบบ: ไม่ต้องเช็ค token ที่นี่
+  if (isLoginLike || isLoginPage) return;
+
+  // ⛳ หน้า index: ให้ผ่าน (คุณมี AccessControl ฝั่งเซิร์ฟเวอร์คุมเส้นทางอยู่แล้ว)
+  //   *แพตเทิร์นของคุณคือ ต้องไป /site/login ก่อน แล้วค่อยมา index*
+  //   ดังนั้น guard ฝั่ง server ต้องบังคับ guest → /site/login
+  if (isIndex) {
+    // ถ้าอยาก “เข้ม” เพิ่มเติม: ถ้าไม่มี token แต่มี session ค้าง → บังคับ logout
+    try {
+      const tok = localStorage.getItem(KEY);
+      if (!tok || tok.trim() === '') {
+        // ไม่มีโทเคนในเครื่อง แต่ user มี session? ตัดเซสชันทิ้งเพื่อความปลอดภัย
+        if (<?= $hasSessionJs ?>) forceServerLogoutThenToLogin();
+      }
+    } catch(_) {}
+    return;
+  }
+
+  // 🔐 หน้าอื่นทั้งหมด: ต้องมีทั้ง "session ฝั่ง server" และ "token ใน localStorage"
+  // ถ้าอย่างใดอย่างหนึ่งขาด → ออกจากระบบทั้งหมด แล้วไปหน้า login
+  try {
+    const token = localStorage.getItem(KEY);
+    const hasToken = !!(token && token.trim() !== '');
+
+    if (!hasSession || !hasToken) {
+      // เคลียร์ token ฝั่ง client เพื่อกันค้าง
+      try { localStorage.removeItem(KEY); } catch(_) {}
+      // ออกจากระบบฝั่งเซิร์ฟเวอร์ แล้วไป login
+      forceServerLogoutThenToLogin();
       return;
     }
-    if (!hasSession && tok && sessionStorage.getItem('auto-sync-done') !== '1') {
-      const claims = parseJwt(tok) || {};
-      const now = Math.floor(Date.now()/1000), leeway = 120;
-      if (claims.exp && (claims.exp + leeway) < now) {
-        try { localStorage.removeItem(TOKEN_KEY); } catch(_){}
-        location.replace(ssoLogin + '?redirect=' + encodeURIComponent(backUrl));
-        return;
-      }
-      fetch(syncUrl, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type':'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({ token: tok })
-      })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(d => {
-        if (d && d.ok) {
-          sessionStorage.setItem('auto-sync-done', '1');
-          location.reload();
-        } else {
-          throw new Error('SYNC_FAIL');
-        }
-      })
-      .catch(() => {
-        try { localStorage.removeItem(TOKEN_KEY); } catch(_){}
-        location.replace(ssoLogin + '?redirect=' + encodeURIComponent(backUrl));
-      });
-    }
+  } catch(e) {
+    // กรณีเข้าถึง storage ไม่ได้ → บังคับออกจากระบบ
+    forceServerLogoutThenToLogin();
+    return;
   }
 })();
 </script>
