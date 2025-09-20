@@ -14,7 +14,7 @@ $first = trim((string)($profile['first_name'] ?? ''));
 $last  = trim((string)($profile['last_name'] ?? ''));
 $full  = trim(($title !== '' ? $title.' ' : '').trim($first.' '.$last));
 $displayName = $user->isGuest
-  ? 'Guest'
+  ? 'User Guest'
   : ($full !== '' ? 'คุณ '.$full : ((string)($id->name ?? $id->username ?? 'User')));
 
 /* ==== บทบาท/ตำแหน่งย่อ ==== */
