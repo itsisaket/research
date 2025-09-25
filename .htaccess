@@ -1,8 +1,8 @@
 RewriteEngine On
 RewriteBase /research/
 
-# เข้าหน้า root project → เด้งเข้า web/
-# RewriteRule ^$ web/ [L]
+# เข้าหน้า root project → เด้งเข้า web/site/login
+RewriteRule ^$ web/site/login [L,R=302]
 
 # ให้ route ทั้งหมดวิ่งเข้า web/ แต่ยังเสิร์ฟไฟล์จริงถ้ามี
 RewriteCond %{REQUEST_FILENAME} !-f
