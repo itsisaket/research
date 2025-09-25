@@ -17,7 +17,7 @@ $config = [
     ],
 
     'layout' => 'berry',
-
+    'defaultRoute' => 'site/login',   // ✅ root ของแอปไป login
     'components' => [
         /* (ถ้าไม่ได้ใช้ sizeg/jwt จริง ๆ สามารถลบออกได้)
         'jwt' => [

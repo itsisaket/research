@@ -1,8 +1,10 @@
 RewriteEngine On
 RewriteBase /research/
 
-# เข้า /research หรือ /research/ → ส่งเข้าโฟลเดอร์ web
-#RewriteRule ^$ web/ [L,R=302]
+# เข้าหน้า root project → เด้งเข้า web/
+RewriteRule ^$ web/ [L]
 
-# (ถ้าอยากเข้าหน้า login ก่อนเสมอ ให้ใช้บรรทัดนี้แทน)
- RewriteRule ^$ web/site/login [L,R=302]
+# ให้ route ทั้งหมดวิ่งเข้า web/ แต่ยังเสิร์ฟไฟล์จริงถ้ามี
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ web/$1 [L]
