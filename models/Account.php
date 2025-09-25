@@ -29,29 +29,63 @@ class Account extends \yii\db\ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public static function tableName()
+        public static function tableName()
     {
         return 'tb_user';
     }
 
-    /**
-     * {@inheritdoc}
-     */
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => TimestampBehavior::class,
+                'createdAtAttribute' => null,
+                'updatedAtAttribute' => 'dayup',
+                'value' => new Expression('NOW()'),
+            ],
+        ];
+    }
+
+    public function scenarios()
+    {
+        $sc = parent::scenarios();
+
+        // แบบฟอร์มปกติ (ไม่บังคับ password แล้ว)
+        $sc['default'] = [
+            'username','password','prefix','uname','luname','org_id','email','tel',
+            'position','password_reset_token','authKey','dayup'
+        ];
+
+        // ซิงก์จาก SSO/JWT
+        $sc['ssoSync'] = [
+            'username','prefix','uname','luname','org_id','email','tel','position',
+            'password_reset_token','authKey','dayup'
+        ];
+
+        return $sc;
+    }
+
     public function rules()
     {
         return [
-            [['username', 'password', 'prefix', 'uname', 'luname', 'org_id', 'email', 'tel'], 'required'],
-            [['prefix', 'org_id','position'], 'integer'],
+            // ต้องกรอกพื้นฐาน (ไม่รวม password)
+            [['username', 'prefix', 'uname', 'luname', 'org_id', 'email', 'tel'], 'required'],
+
+            // อนุญาต password ว่างได้ -> แปลง '' เป็น NULL
+            ['password', 'filter', 'filter' => function($v){ return $v === '' ? null : $v; }],
+
+            [['prefix', 'org_id', 'position'], 'integer'],
             [['dayup'], 'safe'],
             [['username', 'password', 'password_reset_token', 'authKey', 'email'], 'string', 'max' => 50],
             [['uname', 'luname'], 'string', 'max' => 100],
             [['username'], 'match','pattern' => '/^[a-zA-Z0-9]*$/i','message' => 'Invalid characters in username.'],
+
+            // กันข้อมูลซ้ำ
+            [['username'], 'unique'],
+            [['email'], 'unique'],
         ];
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function attributeLabels()
     {
         return [
@@ -67,8 +101,23 @@ class Account extends \yii\db\ActiveRecord
             'email' => 'Email',
             'tel' => 'เบอร์ติดต่อ',
             'position' => 'สถานะ',
-            'dayup' => 'Dayup',
+            'dayup' => 'ปรับปรุงล่าสุด',
         ];
+    }
+
+    /**
+     * helper: ตั้งค่าพื้นฐานตอนสร้างจาก SSO (ถ้าจำเป็น)
+     */
+    public function initDefaultsForSso(): void
+    {
+        if ($this->isNewRecord) {
+            if ($this->position === null) {
+                $this->position = 10; // active
+            }
+            if (empty($this->authKey)) {
+                $this->authKey = Yii::$app->security->generateRandomString(32);
+            }
+        }
     }
 
 
@@ -121,3 +170,6 @@ class Account extends \yii\db\ActiveRecord
 
 
 }
+
+
+

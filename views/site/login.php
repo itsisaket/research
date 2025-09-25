@@ -8,9 +8,9 @@ $this->params['isLoginPage'] = true; // บอก layout ให้ข้าม�
 
 $csrf      = Yii::$app->request->getCsrfToken();
 $csrfParam = Yii::$app->request->csrfParam;       // ✅ ใช้ชื่อพารามิเตอร์ CSRF แบบไดนามิก
-$sync      = Url::to(['/site/my-profile']);       // POST: sync session จาก token
-$logout    = Url::to(['/site/logout']);           // POST: Yii logout
-$index     = Url::to(['/site/index']);            // กลับหน้าหลักเสมอ
+$sync      = Url::to(['/site/my-profile'], true); // ✅ absolute URL
+$logout    = Url::to(['/site/logout'], true);     // ✅ absolute URL
+$index     = Url::to(['/site/index'], true);      // ✅ absolute URL
 ?>
 <!DOCTYPE html>
 <html lang="<?= Yii::$app->language ?>">

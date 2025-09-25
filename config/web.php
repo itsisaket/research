@@ -17,7 +17,7 @@ $config = [
     ],
 
     'layout' => 'berry',
-    'defaultRoute' => 'site/login',   // ✅ root ของแอปไป login
+    
     'components' => [
         /* (ถ้าไม่ได้ใช้ sizeg/jwt จริง ๆ สามารถลบออกได้)
         'jwt' => [
@@ -33,7 +33,7 @@ $config = [
         'cache' => [
             'class' => \yii\caching\FileCache::class,
         ],
-
+        'defaultRoute' => 'site/login',   // ✅ root ของแอปไป login
         'user' => [
             'identityClass'   => \app\models\User::class, // <-- โมเดล lightweight ของคุณ
             'enableSession'   => true,
@@ -126,6 +126,7 @@ $config = [
         'ssoProfileUrl' => 'https://sci-sskru.com/authen/profile', // POST + Bearer + {personal_id}
     ]),
 ];
+
 
 /*
 if (YII_ENV_DEV) {
