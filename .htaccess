@@ -1,5 +1,10 @@
 RewriteEngine On
 RewriteBase /research/
 
-RewriteRule ^web/site/login/?$ - [L]
-RewriteRule ^.*$ web/site/login [L,R=302]
+# ให้ผ่านถ้าเป็นไฟล์/โฟลเดอร์จริง (assets, uploads, css, js)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# ส่งอย่างอื่นเข้า index.php ของ Yii
+RewriteRule ^ index.php [L]

@@ -13,19 +13,11 @@ $config = [
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
-        // '@web' => 'research/web/', // ❌ ลบออก
     ],
 
     'layout' => 'berry',
-    
+    'defaultRoute' => 'site/login',
     'components' => [
-        /* (ถ้าไม่ได้ใช้ sizeg/jwt จริง ๆ สามารถลบออกได้)
-        'jwt' => [
-            'class' => \sizeg\jwt\Jwt::class,
-            'key'   => '4f1g23a12aa', // TODO: เปลี่ยนเป็นค่า secret จริง (อย่า commit ลง repo)
-            'jwtValidationData' => \sizeg\jwt\JwtValidationData::class,
-        ],
-*/
         'request' => [
             'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC', // TODO: เปลี่ยนเป็นค่า secret จริง
         ],
@@ -33,7 +25,6 @@ $config = [
         'cache' => [
             'class' => \yii\caching\FileCache::class,
         ],
-        'defaultRoute' => 'site/login',   // ✅ root ของแอปไป login
         'user' => [
             'identityClass'   => \app\models\User::class, // <-- โมเดล lightweight ของคุณ
             'enableSession'   => true,
