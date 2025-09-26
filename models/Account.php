@@ -6,6 +6,8 @@ use Yii;
 use app\models\Organize;
 use app\models\Position;
 use yii\helpers\ArrayHelper;
+use yii\db\Expression;                 // ✅ เพิ่ม
+use yii\behaviors\TimestampBehavior;    // ✅ เพิ่ม
 /**
  * This is the model class for table "tb_user".
  *
