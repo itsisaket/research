@@ -1,16 +1,12 @@
 RewriteEngine On
 RewriteBase /research/
-
-# กันลูป: ถ้าเริ่มด้วย web/ แล้ว ให้ไปจัดการต่อใน web/.htaccess
-RewriteRule ^web/ - [L]
-
-# เข้า root /research -> เด้งเข้า /research/web/ (แนะนำ 302 ชั่วคราว; ค่อยเปลี่ยนเป็น 301 เมื่อชัวร์)
-RewriteRule ^$ web/ [L,R=302]
-
-# ไฟล์/โฟลเดอร์จริงให้ผ่าน (เช่น /research/uploads/…)
+# ถ้าเป็นไฟล์หรือโฟลเดอร์จริงใน /research ให้ผ่าน (เช่น /research/uploads)
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
-
-# อื่น ๆ วิ่งเข้า web/ ตามเดิม
-RewriteRule ^(.+)$ web/$1 [L]
+# กันลูป: เริ่มด้วย web/ แล้ว อย่าแตะ ให้ไปจัดการต่อใน web/.htaccess
+RewriteRule ^web/ - [L]
+# เข้า root /research -> เด้งไป /research/web/ (ใช้ 301 เมื่อชัวร์)
+RewriteRule ^$ web/ [L,R=301]
+# อะไรที่ไม่ใช่ web/... ให้เด้งไป web/... (เช่น /research/site/index -> /research/web/site/index)
+RewriteRule ^(.+)$ web/$1 [L,R=301]

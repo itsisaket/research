@@ -1,5 +1,10 @@
-RewriteEngine on
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule . index.php [L]
+RewriteEngine On
+RewriteBase /research/web/
+# ไฟล์/โฟลเดอร์จริงใน web ให้ผ่าน (assets, css, js, uploads ที่อยู่ใต้ web)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+# ที่เหลือส่งเข้า index.php ของ Yii
+RewriteRule ^ index.php [L]
+
 
