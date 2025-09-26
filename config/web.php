@@ -7,7 +7,6 @@ $config = [
     'id' => 'Lasc SSKRU',
     'name' => 'ศูนย์วิจัย LASC มหาวิทยาลัยราชภัฏศรีสะเกษ',
     'basePath' => dirname(__DIR__),
-    'baseUrl' => '/research/web', // สำคัญมากในโหมดมี /web/
     'bootstrap' => ['log'],
 
     // อย่ากำหนด @web เอง (@web เป็น runtime alias)
@@ -22,10 +21,11 @@ $config = [
         'request' => [
             'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC', // TODO: เปลี่ยนเป็นค่า secret จริง
         ],
-
+        'baseUrl' => '/research/web', // สำคัญมากในโหมดมี /web/
         'cache' => [
             'class' => \yii\caching\FileCache::class,
         ],
+        
         'user' => [
             'identityClass'   => \app\models\User::class, // <-- โมเดล lightweight ของคุณ
             'enableSession'   => true,
