@@ -1,10 +1,4 @@
-RewriteEngine On
-RewriteBase /research/web/
-
-# ไฟล์/โฟลเดอร์จริงใน web ให้ผ่าน (assets, css, js, uploads)
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
-
-# ที่เหลือส่งเข้า index.php
-RewriteRule ^ index.php [L]
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule . index.php [L]
