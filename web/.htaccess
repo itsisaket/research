@@ -1,0 +1,9 @@
+Options -Indexes
+RewriteEngine On
+
+# ใช้ไฟล์/โฟลเดอร์จริงถ้ามี
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# ที่เหลือให้ index.php จัดการ
+RewriteRule . index.php [L]

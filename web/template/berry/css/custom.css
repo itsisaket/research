@@ -1,0 +1,60 @@
+
+
+/* ===============================
+   PURPLE–GOLD THEME OVERRIDES
+   =============================== */
+
+/* พาเล็ตสีหลัก */
+:root {
+  /* Purple core */
+  --purple-500: #9333ea;
+  --purple-600: #7e22ce;
+  --purple-700: #6b21a8;
+  --purple-100: #ede9fe;
+
+  /* Gold / Amber accent */
+  --gold-500: #f59e0b; /* ทองหลัก */
+  --gold-400: #fbbf24;
+  --gold-100: #fef3c7;
+
+  /* ปรับ Bootstrap vars ให้เข้าชุด */
+  --bs-primary: var(--purple-600);
+  --bs-primary-rgb: 126, 34, 206;
+  --bs-secondary: var(--gold-500);
+  --bs-secondary-rgb: 245, 158, 11;
+
+  --bs-link-color: var(--purple-600);
+  --bs-link-hover-color: var(--purple-700);
+
+  --bs-focus-ring-color: rgba(126, 34, 206, 0.35);
+}
+
+/* ======= Global / Body ======= */
+body {
+  background-color: #ffffff !important; /* ม่วงสด (BG หลัก) */
+}
+
+/* ======= Header (Topbar) ======= */
+
+
+/* ======= Sidebar (ที่คุณตั้งค่าไว้แล้ว เพิ่มรายละเอียด) ======= */
+.pc-sidebar {
+  background-color: var(--purple-500) !important;
+}
+.pc-sidebar .pc-caption label { color:#fff !important; }
+.pc-sidebar .pc-item .pc-link { 
+  color:#fff !important;
+  border-radius: 8px;
+  transition: all .2s ease-in-out;
+}
+.pc-sidebar .pc-item .pc-link .pc-micon i { color:#fff !important; opacity:1 !important; }
+.pc-sidebar .pc-item .pc-link:hover,
+.pc-sidebar .pc-item.active .pc-link {
+  background-color: var(--purple-600) !important;
+  color:#fff !important;
+  padding-left: 18px;
+}
+.pc-sidebar .pc-item .pc-link:hover .pc-micon i,
+.pc-sidebar .pc-item.active .pc-link .pc-micon i {
+  color: var(--gold-400) !important; /* ไอคอนทองตอน hover/active */
+}
