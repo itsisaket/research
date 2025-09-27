@@ -1,10 +1,1 @@
-Options -Indexes
 
-RewriteEngine on
-RewriteRule  (^backend) web/$1 [L]
-
-RewriteCond %{HTTPS} off
-RewriteRule ^(.*) https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
-
-RewriteCond %{REQUEST_URI} !^public
-RewriteRule ^(.*)$ web/$1 [L]
