@@ -9,7 +9,6 @@ $config = [
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
 
-    // อย่ากำหนด @web เอง (@web เป็น runtime alias)
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
@@ -18,6 +17,9 @@ $config = [
     'layout' => 'berry',
     'defaultRoute' => 'site/login',
     'components' => [
+        'assetManager' => [
+            'appendTimestamp' => true,
+        ],
         'request' => [
             'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC', // TODO: เปลี่ยนเป็นค่า secret จริง
             'baseUrl' => '/research/web',  // ✅ เพิ่มบรรทัดนี้

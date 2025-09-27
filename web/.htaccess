@@ -1,4 +1,9 @@
 RewriteEngine on
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
+
+# ถ้าเป็นไฟล์จริง/โฟลเดอร์จริง ให้เสิร์ฟโดยตรง
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# อื่น ๆ ส่งเข้า index.php
 RewriteRule . index.php [L]
