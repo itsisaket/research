@@ -5,30 +5,28 @@ use yii\web\AssetBundle;
 
 class BerryAsset extends AssetBundle
 {
-    public $basePath = '@webroot';
-    public $baseUrl = '@web';
-
-    public $sourcePath = '@app/template/berry'; // โฟลเดอร์จริงของคุณ
+    public $basePath = '@webroot';   // ชี้ไป web/
+    public $baseUrl  = '@web';
 
     public $css = [
-        'fonts/phosphor/duotone/style.css',
-        'fonts/tabler-icons.min.css',
-        'fonts/feather.css',
-        'fonts/fontawesome.css',
-        'fonts/material.css',
-        'css/style-preset.css',
-        'css/style.css',
-        'css/custom.css',
+        'template/berry/fonts/phosphor/duotone/style.css',
+        'template/berry/fonts/tabler-icons.min.css',
+        'template/berry/fonts/feather.css',
+        'template/berry/fonts/fontawesome.css',
+        'template/berry/fonts/material.css',
+        'template/berry/css/style-preset.css',
+        'template/berry/css/style.css',
+        'template/berry/css/custom.css',
     ];
     public $js = [
-        'js/plugins/popper.min.js',
-        'js/plugins/bootstrap.min.js',
-        'js/plugins/simplebar.min.js',
-        'js/plugins/apexcharts.min.js',
-        'js/plugins/feather.min.js',
-        'js/icon/custom-font.js',
-        'js/script.js',
-        'js/theme.js',
+        'template/berry/js/plugins/popper.min.js',
+        'template/berry/js/plugins/bootstrap.min.js',
+        'template/berry/js/plugins/simplebar.min.js',
+        'template/berry/js/plugins/apexcharts.min.js',
+        'template/berry/js/plugins/feather.min.js',
+        'template/berry/js/icon/custom-font.js',
+        'template/berry/js/script.js',
+        'template/berry/js/theme.js',
     ];
 
 

@@ -15,7 +15,6 @@ $config = [
     ],
 
     'layout' => 'berry',
-    'defaultRoute' => 'site/login',
     'components' => [
         'assetManager' => [
             'appendTimestamp' => true,
