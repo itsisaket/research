@@ -1,9 +1,10 @@
-RewriteEngine on
+RewriteEngine On
+RewriteBase /research/web/
 
-# ถ้าเป็นไฟล์จริง/โฟลเดอร์จริง ให้เสิร์ฟโดยตรง
+# ถ้าเป็นไฟล์/โฟลเดอร์จริง ให้เสิร์ฟตรง ๆ
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# อื่น ๆ ส่งเข้า index.php
+# อื่น ๆ ค่อยเข้า index.php
 RewriteRule . index.php [L]
