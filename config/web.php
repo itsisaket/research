@@ -20,7 +20,6 @@ $config = [
     'components' => [
         'request' => [
             'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC', // TODO: เปลี่ยนเป็นค่า secret จริง
-            'baseUrl' => '/research/web', // สำคัญมากในโหมดมี /web/
         ],
         
         'cache' => [
