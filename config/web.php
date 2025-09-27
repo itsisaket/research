@@ -105,7 +105,6 @@ $config = [
                 '<controller:\w+>/<action:\w+>' => '<controller>/<action>', 
             ],
         ],
-        ],
     ],
 
     // ⬇️ ย้าย event มาไว้ "นอก" components (ระดับ root)
