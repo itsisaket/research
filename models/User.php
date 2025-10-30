@@ -131,73 +131,75 @@ class User implements IdentityInterface
      *                       Factory
      * ============================================================ */
 
-    /**
-     * สร้าง User จาก JWT + โปรไฟล์ แล้วเก็บลง session ทันที
-     *
-     * @param string $jwt
-     * @param array|null $profile
-     * @return static
-     */
-    public static function fromToken(string $jwt, array $profile = null): self
-    {
-        $claims  = self::decodeJwtPayload($jwt);
-        $profile = self::normalizeProfile($profile ?? []);
+/**
+ * สร้าง User จาก JWT + โปรไฟล์ แล้วเก็บลง session และ login เข้าระบบ Yii
+ *
+ * @param string $jwt
+ * @param array|null $profile
+ * @return static
+ */
+public static function fromToken(string $jwt, array $profile = null): self
+{
+    $claims  = self::decodeJwtPayload($jwt);
+    $profile = self::normalizeProfile($profile ?? []);
 
-        $u = new self();
+    $u = new self();
 
-        // ------- ดึงค่าหลักตาม mapping ที่กำหนด -------
-        // personal_id เป็นหลัก ถ้าไม่มีค่อยถอยไปหา uname/first_name
-        $personalId = $claims['personal_id'] ?? ($profile['personal_id'] ?? null);
-        $firstName  = $claims['first_name']  ?? ($profile['first_name'] ?? null);
-        $lastName   = $claims['last_name']   ?? ($profile['last_name'] ?? null);
+    // ------- ดึงค่าหลักตาม mapping ที่กำหนด -------
 
-        // id / username
-        $u->id       = $personalId ?: $firstName;
-        $u->username = $personalId ?: ($claims['uname'] ?? $firstName);
+    $personalId = $claims['personal_id'] ?? ($profile['personal_id'] ?? null);
+    $firstName  = $claims['first_name']  ?? ($profile['first_name'] ?? null);
+    $lastName   = $claims['last_name']   ?? ($profile['last_name'] ?? null);
 
-        // name (ชื่อเต็ม)
-        $u->name = $claims['name']
-            ?? trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
+    // id / username
+    $u->id       = $personalId ?: $firstName;
+    $u->username = $personalId ?: ($claims['uname'] ?? $firstName);
 
-        // email
-        $u->email = $claims['email'] ?? self::pickEmail($profile);
+    // name (ชื่อเต็ม)
+    $u->name = $claims['name']
+        ?? trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
 
-        // roles
-        $u->roles = is_array($claims['roles'] ?? null) ? $claims['roles'] : [];
+    // email
+    $u->email = $claims['email'] ?? self::pickEmail($profile);
 
-        // exp / iat
-        $u->exp = $claims['exp'] ?? null;
-        $u->iat = $claims['iat'] ?? null;
+    // roles
+    $u->roles = is_array($claims['roles'] ?? null) ? $claims['roles'] : [];
 
-        // mapping เสริม
-        // prefix = title_id
-        $u->prefix = $claims['title_id']
-            ?? $profile['title_id']
-            ?? $profile['title_name']
-            ?? null;
+    // exp / iat
+    $u->exp = $claims['exp'] ?? null;
+    $u->iat = $claims['iat'] ?? null;
 
-        // uname = first_name
-        $u->uname = $firstName;
+    // mapping เสริม
+    $u->prefix = $claims['title_id']
+        ?? $profile['title_id']
+        ?? $profile['title_name']
+        ?? null;
 
-        // luname = last_name
-        $u->luname = $lastName;
+    $u->uname  = $firstName;
+    $u->luname = $lastName;
+    $u->org_id = $claims['manage_faculty_id']
+        ?? $profile['manage_faculty_id']
+        ?? null;
 
-        // org_id = manage_faculty_id
-        $u->org_id = $claims['manage_faculty_id']
-            ?? $profile['manage_faculty_id']
-            ?? null;
+    // เก็บโปรไฟล์ดิบ
+    $u->profile = $profile;
 
-        // เก็บโปรไฟล์ดิบ
-        $u->profile = $profile;
+    // เก็บ JWT ไว้เผื่อใช้ต่อ
+    $u->access_token = $jwt;
 
-        // เก็บ JWT ไว้เผื่อใช้ต่อ
-        $u->access_token = $jwt;
+    // ✅ เก็บทุกอย่างลง session
+    Yii::$app->session->set(self::SESSION_KEY, $u->toArray());
 
-        // เก็บทุกอย่างลง session
-        Yii::$app->session->set(self::SESSION_KEY, $u->toArray());
-
-        return $u;
+    // ✅ login เข้าระบบ Yii ด้วย object นี้
+    try {
+        Yii::$app->user->login($u, 60 * 60 * 8); // login 8 ชั่วโมง
+        Yii::info('User login success: ' . $u->username, 'auth');
+    } catch (\Throwable $e) {
+        Yii::warning('User login failed: ' . $e->getMessage(), 'auth');
     }
+
+    return $u;
+}
 
     /**
      * สร้าง User จาก array ที่ดึงออกมาจาก session

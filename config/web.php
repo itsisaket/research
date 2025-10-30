@@ -32,10 +32,23 @@ $config = [
         ],
         
         'user' => [
-            'identityClass'   => \app\models\User::class,
+            'identityClass'   => \app\models\User::class, // ✅ ต้องตรงกับคลาสนี้
             'enableSession'   => true,
             'enableAutoLogin' => false,
-            'loginUrl'        => ['site/login'],   // ⭐ ใส่บรรทัดนี้
+            'loginUrl'        => ['site/login'],
+            'identityCookie'  => [
+                'name' => '_identity_research',
+                'httpOnly' => true,
+                'sameSite' => 'Lax',
+            ],
+        ],
+        'session' => [
+            'name' => 'research-ssid',
+            'timeout' => 60 * 60 * 8,
+            'cookieParams' => [
+                'httpOnly' => true,
+                'sameSite' => 'Lax',
+            ],
         ],
 
         // httpclient ทั่วไป
