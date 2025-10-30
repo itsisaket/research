@@ -174,13 +174,11 @@ public function actionMyProfile()
     $account->luname = $jwtUser->luname ?: ''; // luname = last_name
     $account->org_id = $jwtUser->org_id ?: 0;  // org_id = manage_faculty_id
     $account->email  = $jwtUser->email ?: '';
+    $account->position  = 1;
     // กันกรณี tel เป็น required ใน rules
     if ($account->tel === null || $account->tel === '') {
         $account->tel = '';
     }
-
-    // 7) ตั้งค่าเริ่มต้นจาก SSO → ตรงนี้จะ set position = 1 ครั้งแรก
-    $account->initDefaultsForSso();
 
     // 8) บันทึก
     if (!$account->save()) {
