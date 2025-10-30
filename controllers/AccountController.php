@@ -36,20 +36,26 @@ class AccountController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'index', 'view', 'create', 'update'],
+                'only' => ['index', 'view', 'create', 'update', 'delete', 'resetpassword', 'logout', 'regis'],
                 'rules' => [
-                    // ✅ อนุญาตให้ทุกคนเข้า index ได้
+                    // เปิดให้ทุกคนเข้า index + regis
                     [
-                        'actions' => ['index'],
+                        'actions' => ['index', 'regis'],
                         'allow' => true,
-                        'roles' => ['?', '@'], // '?' = guest, '@' = authenticated
+                        'roles' => ['?', '@'],
                     ],
-                    // ✅ ต้องล็อกอินถึงเข้า action อื่นๆ ได้
+                    // อื่นๆ ต้องล็อกอิน
                     [
-                        'actions' => ['logout', 'view', 'create', 'update'],
+                        'actions' => ['view', 'create', 'update', 'delete', 'resetpassword', 'logout'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
+                ],
+            ],
+            'verbs' => [
+                'class' => VerbFilter::class,
+                'actions' => [
+                    'delete' => ['POST'],
                 ],
             ],
         ];

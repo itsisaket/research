@@ -32,7 +32,7 @@ $config = [
         ],
         
         'user' => [
-            'identityClass'   => \app\models\User::class, // ✅ ต้องตรงกับคลาสนี้
+            'identityClass'   => \app\models\Account::class,   // ✅ ใช้ Account เป็นหลัก
             'enableSession'   => true,
             'enableAutoLogin' => false,
             'loginUrl'        => ['site/login'],
