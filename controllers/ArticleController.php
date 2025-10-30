@@ -28,12 +28,23 @@ class ArticleController extends Controller
     public function behaviors()
     {
         return [
+            // ✅ ป้องกันการเข้าถึงเฉพาะผู้ล็อกอิน
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'index','view','create','update'],
-                
+                'only' => ['index', 'view', 'create', 'update', 'delete'], // ระบุเฉพาะ action ที่ต้องการ
                 'rules' => [
-                    ['allow' => true, 'roles' => ['@']], // ต้องล็อกอินก่อน
+                    [
+                        'allow' => true,
+                        'roles' => ['@'], // '@' = ต้องล็อกอิน
+                    ],
+                ],
+            ],
+
+            // ✅ กำหนด HTTP Method ให้ชัด (ป้องกันเรียกผิด)
+            'verbs' => [
+                'class' => VerbFilter::class,
+                'actions' => [
+                    'delete' => ['POST'], // delete ต้องส่งแบบ POST เท่านั้น
                 ],
             ],
         ];

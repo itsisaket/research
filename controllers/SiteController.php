@@ -45,25 +45,44 @@ class SiteController extends Controller
         ];
     }
 
-    /** ============================
-     *  หน้าแรก / แสดงชื่อผู้ใช้
-     * ============================ */
-    public function actionIndex()
-    {
-        $user = Yii::$app->user->identity;
-        $isGuest = Yii::$app->user->isGuest;
+public function actionIndex()
+{
+    $user    = Yii::$app->user->identity;
+    $isGuest = Yii::$app->user->isGuest;
 
-        // แสดงชื่อและอีเมลให้เหมาะสม
-        $displayName  = !$isGuest ? ($user->uname ?? $user->name ?? 'ไม่ระบุชื่อ') : null;
-        $displayEmail = !$isGuest ? (($user->email ?? '') ?: '-') : null;
+    $displayName  = null;
+    $displayEmail = null;
 
-        return $this->render('index', [
-            'isGuest'       => $isGuest,
-            'u'             => $user,
-            'displayName'   => $displayName,
-            'displayEmail'  => $displayEmail,
-        ]);
+    if (!$isGuest && $user) {
+
+        // ลองดึงจาก session เผื่อได้ตัวเต็มจาก HRM
+        $hrmProfile = Yii::$app->session->get('hrmProfile', []);
+
+        // 1) เรียงลำดับความสำคัญของชื่อ
+        $displayName =
+              ($user->uname ?? null)                              // จาก tb_user.uname
+           ?: ($user->name ?? null)                               // ถ้า model มี name
+           ?: (($hrmProfile['title_name'] ?? '')                  // จากโปรไฟล์ HRM
+               .($hrmProfile['first_name'] ?? '')
+               .' '
+               .($hrmProfile['last_name'] ?? ''))
+           ?: ($user->username ?? null)                           // อย่างน้อยก็ให้เห็นรหัสบุคลากร
+           ?: 'ไม่ระบุชื่อ';
+
+        // 2) อีเมล
+        $displayEmail =
+              ($user->email ?? null)
+           ?: ($hrmProfile['email'] ?? null)
+           ?: '-';
     }
+
+    return $this->render('index', [
+        'isGuest'      => $isGuest,
+        'u'            => $user,
+        'displayName'  => $displayName,
+        'displayEmail' => $displayEmail,
+    ]);
+}
 
     /** ============================
      *  หน้า Login / SSO Auto-login
@@ -194,6 +213,7 @@ class SiteController extends Controller
         // 8) เก็บ token + profile ใน session
         Yii::$app->session->set('hrmToken', $token);
         Yii::$app->session->set('hrmProfile', $profile);
+        Yii::$app->session->set('ty', $account->org_id);
 
         // 9) ส่งกลับให้ frontend
         return [
