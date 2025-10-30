@@ -172,9 +172,9 @@ $greetIconHtml = Html::tag('i', '', [
 </header>
 
 <?php
-/* ========== JavaScript ========== */
-$js = <<<JS
-(function(){
+/* ========== 1) Auth JS (login/logout) ========== */
+$jsAuth = <<<JS
+(function authSesNavbar(){
   // Guest → Login
   const loginEl = document.getElementById('nav-login');
   if (loginEl) {
@@ -184,7 +184,9 @@ $js = <<<JS
       const cb  = loginEl.dataset.callback  || '/site/index';
       const back = new URL(cb, window.location.origin).href;
       const u = new URL(sso, window.location.href);
-      if (!u.searchParams.has('redirect')) u.searchParams.set('redirect', back);
+      if (!u.searchParams.has('redirect')) {
+        u.searchParams.set('redirect', back);
+      }
       window.location.href = u.toString();
     });
   }
@@ -200,10 +202,59 @@ $js = <<<JS
         localStorage.removeItem('accessToken');
         sessionStorage.clear();
       } catch (e) {}
-      // ให้ form POST logout ต่อไป
+      // ให้ form POST logout ต่อไปตามปกติ
     });
   }
 })();
 JS;
-$this->registerJs($js, \yii\web\View::POS_END);
+$this->registerJs($jsAuth, \yii\web\View::POS_END);
+
+/* ========== 2) Avatar from SSO ========== */
+$authenBase = rtrim(Yii::$app->params['authenBase'] ?? 'https://sci-sskru.com/authen', '/');
+$fallback   = \yii\helpers\Url::to('@web/template/berry/images/user/avatar-2.jpg');
+
+$jsAvatar = <<<JS
+(function updateSesAvatar(){
+  // 1) พยายามอ่าน profile จากตัวแปร global ก่อน (เผื่อมี window.userProfile จาก AJAX)
+  var profile = window.profile || window.userProfile || null;
+
+  // 2) ถ้าไม่มี ให้ลองจาก localStorage
+  if (!profile) {
+    try {
+      var ls = localStorage.getItem('userInfo');
+      if (ls) {
+        profile = JSON.parse(ls);
+      }
+    } catch (e) {
+      profile = null;
+    }
+  }
+
+  // 3) ถ้ายังไม่มีอีก ก็ไม่ต้องทำอะไร
+  if (!profile || !profile.img) {
+    return;
+  }
+
+  // 4) ประกอบ URL
+  var base = '{$authenBase}';
+  var raw  = (profile.img || '').trim();
+  var full = '';
+  if (/^https?:\\/\\//i.test(raw)) {
+    full = raw;
+  } else {
+    full = base + '/' + raw.replace(/^\\/+/, '');
+  }
+
+  // 5) อัปเดตรูปบน navbar
+  var avatar = document.getElementById('nav-avatar');
+  if (avatar) {
+    avatar.src = full;
+    avatar.onerror = function(){
+      this.onerror = null;
+      this.src = '{$fallback}';
+    };
+  }
+})();
+JS;
+$this->registerJs($jsAvatar, \yii\web\View::POS_END);
 ?>

@@ -56,7 +56,8 @@ class ResearchproController extends Controller
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
-                    'delete' => ['POST'], // delete ต้องส่งแบบ POST เท่านั้น
+                    'delete' => ['POST'], 
+                    'logout'     => ['POST'],
                 ],
             ],
         ];
