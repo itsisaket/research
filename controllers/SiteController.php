@@ -94,38 +94,113 @@ class SiteController extends Controller
         return $this->render('login');
     }
 
-    /**
-     * ✅ แอ็กชันรับ sync จากหน้า login.js
-     * รับ JSON: { "token": "...", "profile": {...} }
-     * แล้ว login เข้า Yii + เก็บ/อัปเดตข้อมูลในตาราง user
-     */
 public function actionMyProfile()
 {
     Yii::$app->response->format = Response::FORMAT_JSON;
 
-    // ... โค้ดเดิมของคุณด้านบน ...
+    // 1) รับ JSON จาก browser
+    $raw  = Yii::$app->request->getRawBody();
+    $data = json_decode($raw, true);
+    if (!is_array($data)) {
+        $data = Yii::$app->request->post();
+    }
 
-    // map เสร็จแล้ว
+    $token   = $data['token']   ?? null;
+    $profile = $data['profile'] ?? [];
+
+    if (!$token) {
+        return ['ok' => false, 'error' => 'no token'];
+    }
+
+    // 2) ถ้า profile ที่ browser ส่งมายังไม่ครบ → ไปขอจาก API เพิ่ม
+    $personalId = $profile['personal_id'] ?? null;
+    try {
+        /** @var \app\components\ApiAuthService|null $apiAuth */
+        $apiAuth = Yii::$app->apiAuth ?? null;
+
+        if ($apiAuth instanceof \app\components\ApiAuthService) {
+            if ($personalId) {
+                $full = $apiAuth->fetchProfileWithPost($token, $personalId);
+            } else {
+                $full = $apiAuth->fetchProfileByToken($token);
+            }
+        } else {
+            // fallback static
+            $full = \app\components\ApiAuthService::fetchProfileByToken($token);
+        }
+
+        if (is_array($full) && !empty($full)) {
+            $profile    = $full;
+            $personalId = $profile['personal_id'] ?? $personalId;
+        }
+    } catch (\Throwable $e) {
+        Yii::warning('Fetch profile failed: ' . $e->getMessage(), 'sso');
+        // ใช้ $profile จาก client ต่อ
+    }
+
+    // 3) ต้องมี personal_id แล้ว ไม่งั้นสร้าง user ไม่ได้
+    if (!$personalId) {
+        return ['ok' => false, 'error' => 'profile has no personal_id'];
+    }
+
+    // 4) แปลง token + profile เป็น object ชั่วคราว (ของคุณเอง)
+    //    สมมติคลาส User มีเมธอดนี้
+    $jwtUser = \app\models\User::fromToken($token, $profile);
+
+    // 5) หาใน tb_user ด้วย username = personal_id
+    /** @var \app\models\Account|null $account */
+    $account = \app\models\Account::findOne(['username' => $personalId]);
+
+    if ($account === null) {
+        $account = new \app\models\Account(['scenario' => 'ssoSync']);
+        $account->username = $personalId;
+    } else {
+        $account->scenario = 'ssoSync';
+    }
+
+    // 6) map ฟิลด์จาก SSO → tb_user
+    $account->prefix   = $jwtUser->prefix ?: 0;
+    $account->uname    = $jwtUser->uname ?: ($jwtUser->name ?? 'ไม่ระบุชื่อ');
+    $account->luname   = $jwtUser->luname ?: '';
+    $account->org_id   = $jwtUser->org_id ?: 0;
+    $account->email    = $jwtUser->email ?: '';
+    $account->position = 1; // ให้ active ไว้ก่อน
+
+    // tel บางที SSO ไม่ส่งมา → กัน null
+    if ($account->tel === null || $account->tel === '') {
+        $account->tel = '';
+    }
+
+    // ถ้าคุณมี helper ตั้งค่า default อื่น ๆ ก็เรียกตรงนี้
+    // $account->initDefaultsForSso();
+
+    // 7) บันทึก
     try {
         if (!$account->save()) {
+            // วาลิเดตไม่ผ่าน → ส่งรายละเอียดกลับไปเลย
             return [
-                'ok' => false,
+                'ok'    => false,
                 'error' => 'validate fail',
-                'detail' => $account->getErrors(),
+                'detail'=> $account->getErrors(),
             ];
         }
     } catch (\Throwable $e) {
+        // เซฟชน DB (unique, length, not null ที่ DB, ฯลฯ)
         Yii::error($e->getMessage(), 'sso');
         return [
-            'ok' => false,
-            'error' => 'db error',
+            'ok'      => false,
+            'error'   => 'db error',
             'message' => $e->getMessage(),
         ];
     }
 
-    Yii::$app->user->login($account, 60 * 60 * 8);
+    // 8) login เข้า Yii
+    Yii::$app->user->login($account, 60 * 60 * 8); // 8 ชั่วโมง
+
+    // 9) เก็บ profile ไว้ใน session
     Yii::$app->session->set('hrmProfile', $profile);
 
+    // 10) ส่งกลับไปให้ frontend
     return [
         'ok'     => true,
         'userId' => $account->uid,
@@ -140,6 +215,7 @@ public function actionMyProfile()
         ],
     ];
 }
+
 
 
     public function actionLogout()
