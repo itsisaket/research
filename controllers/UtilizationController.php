@@ -38,11 +38,17 @@ class UtilizationController extends Controller
             // ✅ ป้องกันการเข้าถึงเฉพาะผู้ล็อกอิน
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['index', 'view', 'create', 'update', 'delete'], // ระบุเฉพาะ action ที่ต้องการ
                 'rules' => [
+                    // ✅ เปิดให้ทุกคนเข้าได้
                     [
+                        'actions' => ['index','error'],
                         'allow' => true,
-                        'roles' => ['@'], // '@' = ต้องล็อกอิน
+                    ],
+                    // ✅ ต้องล็อกอิน
+                    [
+                        'actions' => ['view', 'create', 'update', 'delete'],
+                        'allow' => true,
+                        'roles' => ['@'],
                     ],
                 ],
             ],

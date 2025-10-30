@@ -39,7 +39,7 @@ class AccountController extends Controller
                 'rules' => [
                     // ✅ เปิดให้ทุกคนเข้าได้
                     [
-                        'actions' => ['index', 'regis', 'login', 'error'],
+                        'actions' => ['index', 'regis','error'],
                         'allow' => true,
                     ],
                     // ✅ ต้องล็อกอิน

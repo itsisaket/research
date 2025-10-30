@@ -34,11 +34,29 @@ class ResearchproController extends Controller
     public function behaviors()
     {
         return [
+            // ✅ ป้องกันการเข้าถึงเฉพาะผู้ล็อกอิน
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout', 'index','view','create','update'],
                 'rules' => [
-                    ['allow' => true, 'roles' => ['@']], // ต้องล็อกอินก่อน
+                    // ✅ เปิดให้ทุกคนเข้าได้
+                    [
+                        'actions' => ['index','error'],
+                        'allow' => true,
+                    ],
+                    // ✅ ต้องล็อกอิน
+                    [
+                        'actions' => ['view', 'create', 'update', 'delete'],
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
+
+            // ✅ กำหนด HTTP Method ให้ชัด (ป้องกันเรียกผิด)
+            'verbs' => [
+                'class' => VerbFilter::class,
+                'actions' => [
+                    'delete' => ['POST'], // delete ต้องส่งแบบ POST เท่านั้น
                 ],
             ],
         ];
