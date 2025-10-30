@@ -36,9 +36,9 @@ class AccountController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'ruleConfig' => [
-                    'class' => HanumanRule::class,
-                ],
+              //  'ruleConfig' => [
+              //      'class' => HanumanRule::class,
+              //  ],
                 'rules' => [
                     // ✅ เปิดให้ทุกคนเข้าได้
                     [
