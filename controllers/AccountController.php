@@ -36,9 +36,20 @@ class AccountController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['logout','view','create','update'],
+                'only' => ['logout', 'index', 'view', 'create', 'update'],
                 'rules' => [
-                    ['allow' => true, 'roles' => ['@']], // ต้องล็อกอินก่อน
+                    // ✅ อนุญาตให้ทุกคนเข้า index ได้
+                    [
+                        'actions' => ['index'],
+                        'allow' => true,
+                        'roles' => ['?', '@'], // '?' = guest, '@' = authenticated
+                    ],
+                    // ✅ ต้องล็อกอินถึงเข้า action อื่นๆ ได้
+                    [
+                        'actions' => ['logout', 'view', 'create', 'update'],
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ],
                 ],
             ],
         ];
