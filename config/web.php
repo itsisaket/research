@@ -15,9 +15,19 @@ $config = [
     ],
 
     'layout' => 'berry',
+    'modules' => [
+        'gridview' => [
+            'class' => '\kartik\grid\Module',
+        ],
+    ],
     'components' => [
         'assetManager' => [
             'appendTimestamp' => true,
+            'bundles' => [
+            'yii\bootstrap\BootstrapAsset' => [
+                'sourcePath' => '@app/assets', // หรือปล่อย default ก็ได้
+            ],
+        ],
         ],
         'request' => [
             'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC', // TODO: เปลี่ยนเป็นค่า secret จริง
