@@ -16,18 +16,30 @@ $config = [
 
     'layout' => 'berry',
     'modules' => [
-        'gridview' => [
-            'class' => '\kartik\grid\Module',
-        ],
-    ],
+        'gridview' =>  [
+                'class' => '\kartik\grid\Module',
+                // your other grid module settings
+            ],
+        'gridviewKrajee' =>  [
+                'class' => '\kartik\grid\Module',
+                // your other grid module settings
+            ]
+     ],
     'components' => [
         'assetManager' => [
             'appendTimestamp' => true,
             'bundles' => [
-            'yii\bootstrap\BootstrapAsset' => [
-                'sourcePath' => '@app/assets', // หรือปล่อย default ก็ได้
-            ],
-        ],
+                'dosamigos\google\maps\MapAsset' => [
+                'options' => [
+                    'key' => 'AIzaSyAg2hZNd4BvLA7a3PcXQOv-iXboaeZlUss',
+                    'language' => 'th',
+                    'version' => '3.1.18'
+                    ]
+                ],
+                'kartik\form\ActiveFormAsset' => [
+                    'bsDependencyEnabled' => false // do not load bootstrap assets for a specific asset bundle
+                ],
+            ]
         ],
         'request' => [
             'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC', // TODO: เปลี่ยนเป็นค่า secret จริง
