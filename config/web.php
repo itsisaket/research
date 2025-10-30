@@ -109,17 +109,6 @@ $config = [
         ],
     ],
 
-    // ⬇️ ย้าย event มาไว้ "นอก" components (ระดับ root)
-    'on beforeRequest' => function () {
-        if (Yii::$app->user->isGuest) {
-            try {
-                Yii::$app->sso->tryAutoLoginFromCookie();
-            } catch (\Throwable $e) {
-                Yii::warning('SSO auto-login failed: ' . $e->getMessage(), 'sso');
-            }
-        }
-    },
-
     'params' => array_merge($params, [
         'hrmApiBase' => 'https://sci-sskru.com/authen',
         'ssoLoginUrl'   => 'https://sci-sskru.com/hrm/login',

@@ -3,35 +3,43 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 use app\models\User as UserModel;
 
-/** ==============================
- *  เตรียมข้อมูลผู้ใช้
- * ============================== */
+/**
+ * ==============================
+ * 1) เตรียมข้อมูลผู้ใช้
+ * ==============================
+ */
 $user = Yii::$app->user;
 $id   = $user->identity ?? null;
 
+// โปรไฟล์จาก identity หรือจาก JWT
 $profile = is_array($id->profile ?? null) ? $id->profile : [];
 
-/* ✅ ดึง JWT claims (fallback) */
+// ✅ ดึง JWT claims (fallback)
 $claims = [];
 if ($id && property_exists($id, 'access_token') && is_string($id->access_token)) {
     $claims = UserModel::decodeJwtPayload($id->access_token) ?: [];
 }
 
-/** ==============================
- *  กำหนดชื่อแสดงผล
- * ============================== */
+/**
+ * ==============================
+ * 2) กำหนดชื่อแสดงผล
+ * ==============================
+ */
 $title = trim((string)($profile['title_name'] ?? $claims['title_name'] ?? ''));
 $first = trim((string)($profile['first_name'] ?? $claims['first_name'] ?? ''));
 $last  = trim((string)($profile['last_name']  ?? $claims['last_name']  ?? ''));
 
-$fullCore = trim(($title !== '' ? $title.' ' : '') . trim($first.' '.$last));
+$fullCore = trim(($title !== '' ? $title . ' ' : '') . trim($first . ' ' . $last));
+
 $displayName = $user->isGuest
     ? 'Guest'
-    : ($fullCore !== '' ? 'คุณ '.$fullCore : ($id->name ?? $claims['name'] ?? $id->username ?? 'User'));
+    : ($fullCore !== '' ? 'คุณ ' . $fullCore : ($id->name ?? $claims['name'] ?? $id->username ?? 'User'));
 
-/** ==============================
- *  ตำแหน่ง/บทบาท
- * ============================== */
+/**
+ * ==============================
+ * 3) ตำแหน่ง/บทบาท
+ * ==============================
+ */
 $displayRole = $profile['academic_type_name']
     ?? $claims['academic_type_name']
     ?? $profile['employee_type_name']
@@ -40,36 +48,51 @@ $displayRole = $profile['academic_type_name']
     ?? $claims['category_type_name']
     ?? null;
 
-/** ==============================
- *  รูปโปรไฟล์
- * ============================== */
+/**
+ * ==============================
+ * 4) รูปโปรไฟล์
+ *    - ต้องการให้: "ถ้า login แล้วให้แสดงภาพจาก $authenBase"
+ * ==============================
+ */
 $authenBase = rtrim(Yii::$app->params['authenBase'] ?? 'https://sci-sskru.com/authen', '/');
 $fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 
-$imgRaw = trim(
-    (string)($profile['img'] ?? $claims['img'] ?? '')
-);
+// รูปดิบจากโปรไฟล์/JWT
+$imgRaw = trim((string)($profile['img'] ?? $claims['img'] ?? ''));
 
+// เริ่มจาก fallback
 $avatarUrl = $fallback;
+
+// ถ้ามีรูป
 if ($imgRaw !== '') {
     if (filter_var($imgRaw, FILTER_VALIDATE_URL)) {
+        // เป็น URL เต็มแล้ว
         $avatarUrl = $imgRaw;
     } else {
+        // เป็นชื่อไฟล์ → ต่อกับฐาน authenBase
         $avatarUrl = $authenBase . '/' . ltrim($imgRaw, '/');
     }
 }
 
-/* ✅ เพิ่ม cache-busting (v=timestamp) */
+// ✅ บังคับตามที่คุณขอ: ถ้า "ล็อกอินแล้ว" และ "imgRaw ไม่ใช่ URL" → ให้ใช้ฐาน $authenBase แน่นอน
+if (!$user->isGuest && $imgRaw !== '' && !filter_var($imgRaw, FILTER_VALIDATE_URL)) {
+    $avatarUrl = $authenBase . '/' . ltrim($imgRaw, '/');
+}
+
+// ✅ เพิ่ม cache-busting
 $cacheVer = $profile['updated_at'] ?? $claims['updated_at'] ?? '';
 if ($cacheVer && $avatarUrl !== $fallback) {
     $avatarUrl .= (strpos($avatarUrl, '?') === false ? '?' : '&') . 'v=' . rawurlencode($cacheVer);
 }
 
-/** ==============================
- *  URL SSO และ Callback
- * ============================== */
+/**
+ * ==============================
+ * 5) SSO / Callback
+ * ==============================
+ */
 $ssoLoginUrl  = Yii::$app->params['ssoLoginUrl'] ?? 'https://sci-sskru.com/hrm/login';
 $callbackPath = Url::to(['/site/index']);
+
 $greetIconHtml = Html::tag('i', '', [
     'class' => 'ti ti-user-circle me-2 align-text-bottom',
     'title' => 'ผู้ใช้',
@@ -80,7 +103,7 @@ $greetIconHtml = Html::tag('i', '', [
 <header class="pc-header">
   <div class="header-wrapper">
 
-    <!-- Left Menu -->
+    <!-- Left: menu / mobile -->
     <div class="me-auto pc-mob-drp">
       <ul class="list-unstyled">
         <li class="pc-h-item header-mobile-collapse">
@@ -96,9 +119,9 @@ $greetIconHtml = Html::tag('i', '', [
       </ul>
     </div>
 
-    <!-- Right User Profile -->
+    <!-- Right: user -->
     <div class="ms-auto">
-      <ul class="list-unstyled">
+      <ul class="list-unstyled mb-0">
         <li class="dropdown pc-h-item header-user-profile">
           <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0"
              data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
@@ -116,8 +139,12 @@ $greetIconHtml = Html::tag('i', '', [
           <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown">
 
             <?php if ($user->isGuest): ?>
+              <!-- Guest -->
               <div class="dropdown-header">
-                <h4 class="mb-1"><?= $greetIconHtml ?><span class="small text-muted">Guest</span></h4>
+                <h4 class="mb-1">
+                  <?= $greetIconHtml ?>
+                  <span class="small text-muted">Guest</span>
+                </h4>
                 <p class="text-muted mb-2">กรุณาเข้าสู่ระบบ</p>
                 <hr class="my-2"/>
               </div>
@@ -136,8 +163,12 @@ $greetIconHtml = Html::tag('i', '', [
               ) ?>
 
             <?php else: ?>
+              <!-- Logged-In -->
               <div class="dropdown-header">
-                <h4 class="mb-1"><?= $greetIconHtml ?><span class="small text-muted"><?= Html::encode($displayName) ?></span></h4>
+                <h4 class="mb-1">
+                  <?= $greetIconHtml ?>
+                  <span class="small text-muted"><?= Html::encode($displayName) ?></span>
+                </h4>
                 <?php if (!empty($displayRole)): ?>
                   <div class="text-muted small"><?= Html::encode($displayRole) ?></div>
                 <?php endif; ?>
@@ -148,7 +179,13 @@ $greetIconHtml = Html::tag('i', '', [
                 <?= Html::a(
                       '<i class="ti ti-settings"></i><span> ข้อมูลส่วนตัว</span>',
                       'https://sci-sskru.com/hrm/edit-personal',
-                      ['class'=>'dropdown-item','encode'=>false,'data-pjax'=>'0','target'=>'_blank','rel'=>'noopener noreferrer']
+                      [
+                        'class' => 'dropdown-item',
+                        'encode'=> false,
+                        'data-pjax' => '0',
+                        'target' => '_blank',
+                        'rel' => 'noopener noreferrer',
+                      ]
                 ) ?>
 
                 <?= Html::beginForm(['site/logout'], 'post', [
@@ -172,7 +209,11 @@ $greetIconHtml = Html::tag('i', '', [
 </header>
 
 <?php
-/* ========== 1) Auth JS (login/logout) ========== */
+/**
+ * ==============================
+ * 6) JS: login/logout
+ * ==============================
+ */
 $jsAuth = <<<JS
 (function authSesNavbar(){
   // Guest → Login
@@ -191,7 +232,7 @@ $jsAuth = <<<JS
     });
   }
 
-  // Logout
+  // Logout → ล้างตัวแปรฝั่ง Browser
   const logoutBtn  = document.getElementById('nav-logout-btn');
   const logoutForm = document.getElementById('nav-logout-form');
   if (logoutBtn && logoutForm) {
@@ -202,20 +243,22 @@ $jsAuth = <<<JS
         localStorage.removeItem('accessToken');
         sessionStorage.clear();
       } catch (e) {}
-      // ให้ form POST logout ต่อไปตามปกติ
+      // แล้วปล่อยให้ submit logout ตามปกติ
     });
   }
 })();
 JS;
 $this->registerJs($jsAuth, \yii\web\View::POS_END);
 
-/* ========== 2) Avatar from SSO ========== */
-$authenBase = rtrim(Yii::$app->params['authenBase'] ?? 'https://sci-sskru.com/authen', '/');
-$fallback   = \yii\helpers\Url::to('@web/template/berry/images/user/avatar-2.jpg');
-
+/**
+ * ==============================
+ * 7) JS: อัปเดตรูปจากโปรไฟล์ที่มาทีหลัง (AJAX / localStorage)
+ *    - ใช้ $authenBase และ $fallback จาก PHP
+ * ==============================
+ */
 $jsAvatar = <<<JS
 (function updateSesAvatar(){
-  // 1) พยายามอ่าน profile จากตัวแปร global ก่อน (เผื่อมี window.userProfile จาก AJAX)
+  // 1) ลองอ่านจากตัวแปร global ก่อน
   var profile = window.profile || window.userProfile || null;
 
   // 2) ถ้าไม่มี ให้ลองจาก localStorage
@@ -230,15 +273,16 @@ $jsAvatar = <<<JS
     }
   }
 
-  // 3) ถ้ายังไม่มีอีก ก็ไม่ต้องทำอะไร
+  // 3) ถ้าไม่มีโปรไฟล์หรือไม่มีรูป → ไม่ทำอะไร
   if (!profile || !profile.img) {
     return;
   }
 
-  // 4) ประกอบ URL
+  // 4) ประกอบ URL ให้ใช้ฐานเดียวกับ PHP
   var base = '{$authenBase}';
   var raw  = (profile.img || '').trim();
   var full = '';
+
   if (/^https?:\\/\\//i.test(raw)) {
     full = raw;
   } else {
