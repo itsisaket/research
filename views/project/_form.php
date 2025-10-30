@@ -8,7 +8,7 @@ use yii\helpers\ArrayHelper;
 
 use kartik\widgets\Select2;
 use kartik\widgets\TypeaheadBasic;
-use kartik\widgets\DepDrop;
+use kartik\depdrop\DepDrop;
 use kartik\widgets\FileInput;
 use yii\helpers\Url;
 use yii\bootstrap4\Alert;
