@@ -36,15 +36,13 @@ class AccountController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['index', 'view', 'create', 'update', 'delete', 'resetpassword', 'logout', 'regis'],
                 'rules' => [
-                    // เปิดให้ทุกคนเข้า index + regis
+                    // ✅ เปิดให้ทุกคนเข้าได้
                     [
-                        'actions' => ['index', 'regis'],
+                        'actions' => ['index', 'regis', 'login', 'error'],
                         'allow' => true,
-                        'roles' => ['?', '@'],
                     ],
-                    // อื่นๆ ต้องล็อกอิน
+                    // ✅ ต้องล็อกอิน
                     [
                         'actions' => ['view', 'create', 'update', 'delete', 'resetpassword', 'logout'],
                         'allow' => true,
@@ -60,6 +58,7 @@ class AccountController extends Controller
             ],
         ];
     }
+
 
     /**
      * Lists all Account models.
