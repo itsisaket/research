@@ -9,6 +9,7 @@ use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use app\models\User;
 use app\components\ApiAuthService;
+use app\models\Account;  // ← ตัว AR ผูก tb_user
 
 class SiteController extends Controller
 {
@@ -100,123 +101,112 @@ class SiteController extends Controller
      * รับ JSON: { "token": "...", "profile": {...} }
      * แล้ว login เข้า Yii + เก็บ/อัปเดตข้อมูลในตาราง user
      */
-    public function actionMyProfile()
-    {
-        Yii::$app->response->format = Response::FORMAT_JSON;
+public function actionMyProfile()
+{
+    Yii::$app->response->format = Response::FORMAT_JSON;
 
-        // 1) รับ JSON
-        $raw  = Yii::$app->request->getRawBody();
-        $data = json_decode($raw, true);
-        if (!is_array($data)) {
-            $data = Yii::$app->request->post();
-        }
-
-        $token   = $data['token']   ?? null;
-        $profile = $data['profile'] ?? [];
-
-        if (!$token) {
-            return ['ok' => false, 'error' => 'no token'];
-        }
-
-        // 2) กรณีที่โปรไฟล์ที่ browser ส่งมามีไม่ครบ → ไปขอดึงจาก API อีกที
-        //    (กันกรณีฝั่ง JS ส่งมาไม่ครบ หรือ API ฝั่งหน้าเว็บยังไม่เรียก /authen/profile)
-        $personalId = $profile['personal_id'] ?? null;
-
-        // ถ้ามี component apiAuth ให้ลองดึงตัวเต็มมาก่อน
-        $fullProfile = null;
-        try {
-            /** @var ApiAuthService $apiAuth */
-            $apiAuth = Yii::$app->apiAuth ?? null;
-            if ($apiAuth instanceof ApiAuthService) {
-                if ($personalId) {
-                    // เรียกแบบ POST ที่คุณเขียนไว้
-                    $fullProfile = $apiAuth->fetchProfileWithPost($token, $personalId);
-                }
-                if (!$fullProfile) {
-                    // เรียกแบบ static ยิงตรง
-                    $fullProfile = ApiAuthService::fetchProfileByToken($token);
-                }
-            } else {
-                // ไม่มี component → ใช้แบบ static อย่างเดียว
-                $fullProfile = ApiAuthService::fetchProfileByToken($token);
-            }
-        } catch (\Throwable $e) {
-            // ถ้าดึงไม่สำเร็จให้ใช้โปรไฟล์ที่ client ส่งมา
-            Yii::warning('Fetch profile from API failed: ' . $e->getMessage(), 'sso');
-        }
-
-        if (is_array($fullProfile) && !empty($fullProfile)) {
-            $profile = $fullProfile;
-        }
-
-        // ถึงตรงนี้ $profile ต้องมีอย่างน้อย personal_id
-        $pid = $profile['personal_id'] ?? null;
-        if (!$pid) {
-            return ['ok' => false, 'error' => 'profile has no personal_id'];
-        }
-
-        // 3) หา user ในฐานข้อมูลตาม personal_id
-        /** @var User $user */
-        $user = User::findOne(['personal_id' => $pid]);
-
-        // 4) ถ้าไม่เจอ → สร้างใหม่
-        if ($user === null) {
-            $user = new User();
-            $user->personal_id = $pid;
-            // ตั้งค่าเริ่มต้นที่จำเป็น
-            $user->username = $pid; // หรือจะตั้งเป็น email ก็ได้
-            $user->status   = 10;
-            if ($user->hasAttribute('auth_key')) {
-                $user->auth_key = Yii::$app->security->generateRandomString();
-            }
-            if ($user->hasAttribute('created_at')) {
-                $user->created_at = time();
-            }
-        }
-
-        // 5) อัปเดตฟิลด์จากโปรไฟล์ที่สนใจ
-        $user->first_name        = $profile['first_name']        ?? $user->first_name;
-        $user->last_name         = $profile['last_name']         ?? $user->last_name;
-        $user->email             = $profile['email']             ?? $user->email;
-        $user->img               = $profile['img']               ?? $user->img;
-        $user->manage_faculty_id = $profile['manage_faculty_id'] ?? $user->manage_faculty_id;
-        $user->dept_id           = $profile['dept_id']           ?? $user->dept_id;
-
-        // เก็บ token ไว้ด้วยถ้าตารางคุณมีคอลัมน์นี้
-        if ($user->hasAttribute('hrm_token')) {
-            $user->hrm_token = $token;
-        }
-
-        if ($user->hasAttribute('updated_at')) {
-            $user->updated_at = time();
-        }
-
-        // 6) บันทึกลงฐานข้อมูล
-        // ถ้าตอนนี้ rules() ยังไม่ครบ ให้ใช้ save(false) ไปก่อน
-        if (!$user->save(false)) {
-            return ['ok' => false, 'error' => 'cannot save user'];
-        }
-
-        // 7) login เข้า Yii
-        Yii::$app->user->login($user, 0);
-
-        // 8) เก็บ profile ไว้ใน session เผื่อ view ต้องใช้
-        Yii::$app->session->set('hrmProfile', $profile);
-
-        return [
-            'ok'     => true,
-            'userId' => $user->id ?? null,
-            'user'   => [
-                'personal_id'       => $user->personal_id,
-                'first_name'        => $user->first_name,
-                'last_name'         => $user->last_name,
-                'email'             => $user->email,
-                'img'               => $user->img,
-                'manage_faculty_id' => $user->manage_faculty_id,
-                'dept_id'           => $user->dept_id,
-            ],
-        ];
+    // 1) รับ JSON จาก fetch(...)
+    $raw  = Yii::$app->request->getRawBody();
+    $data = json_decode($raw, true);
+    if (!is_array($data)) {
+        $data = Yii::$app->request->post();
     }
+
+    $token   = $data['token']   ?? null;
+    $profile = $data['profile'] ?? [];
+
+    if (!$token) {
+        return ['ok' => false, 'error' => 'no token'];
+    }
+
+    // 2) ถ้า profile ที่ browser ส่งมายังไม่ครบ → ไปขอจาก API เพิ่ม
+    $personalId = $profile['personal_id'] ?? null;
+    try {
+        /** @var ApiAuthService|null $apiAuth */
+        $apiAuth = Yii::$app->apiAuth ?? null;
+        if ($apiAuth instanceof ApiAuthService) {
+            if ($personalId) {
+                // มี personal_id แล้ว → ยิงแบบ POST
+                $full = $apiAuth->fetchProfileWithPost($token, $personalId);
+            } else {
+                // ไม่มี → ลองดึงจาก token ตรงๆ
+                $full = $apiAuth->fetchProfileByToken($token);
+            }
+        } else {
+            // กรณีไม่มีคอมโพเนนต์ ใช้ static (แล้วแต่โปรเจกต์คุณ)
+            $full = \app\components\ApiAuthService::fetchProfileByToken($token);
+        }
+
+        if (is_array($full) && !empty($full)) {
+            $profile = $full;
+            $personalId = $profile['personal_id'] ?? $personalId;
+        }
+    } catch (\Throwable $e) {
+        Yii::warning('Fetch profile failed: ' . $e->getMessage(), 'sso');
+        // ใช้ profile จาก client ต่อไป
+    }
+
+    // ถึงตรงนี้ควรมี personal_id แล้ว
+    if (!$personalId) {
+        return ['ok' => false, 'error' => 'profile has no personal_id'];
+    }
+
+    // 3) ใช้ตัวช่วย stateless แปลง JWT + profile → object ชั่วคราว
+    //    (ตัวนี้เราปรับไว้แล้วให้ map prefix/uname/luname/org_id)
+    $jwtUser = User::fromToken($token, $profile);
+
+    // 4) หาใน tb_user ด้วย username = personal_id
+    /** @var Account|null $account */
+    $account = Account::findOne(['username' => $personalId]);
+
+    // 5) ถ้าไม่เจอ → สร้างใหม่
+    if ($account === null) {
+        $account = new Account(['scenario' => 'ssoSync']);
+        $account->username = $personalId;
+    } else {
+        $account->scenario = 'ssoSync';
+    }
+
+    // 6) แมปฟิลด์จากโปรไฟล์เข้า tb_user
+    //    ตามที่คุณใช้ใน model Account
+    $account->prefix = $jwtUser->prefix ?: 0;  // prefix = title_id
+    $account->uname  = $jwtUser->uname ?: ($jwtUser->name ?? 'ไม่ระบุชื่อ'); // uname = first_name
+    $account->luname = $jwtUser->luname ?: ''; // luname = last_name
+    $account->org_id = $jwtUser->org_id ?: 0;  // org_id = manage_faculty_id
+    $account->email  = $jwtUser->email ?: '';
+    // กันกรณี tel เป็น required ใน rules
+    if ($account->tel === null || $account->tel === '') {
+        $account->tel = '';
+    }
+
+    // 7) ตั้งค่าเริ่มต้นจาก SSO → ตรงนี้จะ set position = 1 ครั้งแรก
+    $account->initDefaultsForSso();
+
+    // 8) บันทึก
+    if (!$account->save(false)) {
+        return ['ok' => false, 'error' => 'cannot save account'];
+    }
+
+    // 9) login เข้า Yii ด้วยตัวที่มาจาก DB (Account)
+    Yii::$app->user->login($account, 60 * 60 * 8); // 8 ชม. แล้วแต่คุณจะตั้ง
+
+    // 10) เก็บ profile ไว้ใน session เผื่อ view หน้าอื่นใช้
+    Yii::$app->session->set('hrmProfile', $profile);
+
+    return [
+        'ok'     => true,
+        'userId' => $account->uid,
+        'user'   => [
+            'username'  => $account->username,
+            'prefix'    => $account->prefix,
+            'uname'     => $account->uname,
+            'luname'    => $account->luname,
+            'org_id'    => $account->org_id,
+            'email'     => $account->email,
+            'position'  => $account->position, // จะเป็น 1 ถ้าสร้างใหม่
+        ],
+    ];
+}
 
     public function actionLogout()
     {
