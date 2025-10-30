@@ -108,7 +108,7 @@ $config = [
             ],
         ],
     ],
-/*
+
     // ⬇️ ย้าย event มาไว้ "นอก" components (ระดับ root)
     'on beforeRequest' => function () {
         if (Yii::$app->user->isGuest) {
@@ -119,7 +119,7 @@ $config = [
             }
         }
     },
-*/
+
     'params' => array_merge($params, [
         'hrmApiBase' => 'https://sci-sskru.com/authen',
         'ssoLoginUrl'   => 'https://sci-sskru.com/hrm/login',
