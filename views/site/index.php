@@ -28,36 +28,17 @@ $this->title = 'หน้าหลัก';
 
   <!-- แสดงผลตามสถานะ Guest/User -->
   <div class="container py-4 px-0">
-    <?php if ($isGuest): ?>
-      <div class="alert alert-warning">
-        คุณกำลังเข้าระบบในนาม <strong>Guest</strong>
-      </div>
-      <!-- ตามที่ต้องการ: ไม่เด้งไปหน้า login -->
-    <?php else: ?>
-      <div class="alert alert-success">
-        ยินดีต้อนรับ
-        <strong><?= Html::encode($u->name ?: $u->username ?: $u->id) ?></strong>
-      </div>
-
-      <div class="card shadow-sm" style="max-width:720px">
-        <div class="card-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <div class="text-muted small">อีเมล</div>
-              <div class="fw-semibold">
-                <?= Html::encode($u->email ?: ($u->profile['email'] ?? '-')) ?>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="text-muted small">หน่วยงาน</div>
-              <div class="fw-semibold">
-                <?= Html::encode($u->profile['dept_name'] ?? '-') ?>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    <?php endif; ?>
+<?php if ($isGuest): ?>
+  <div class="alert alert-warning">
+    กรุณาเข้าสู่ระบบ
+  </div>
+<?php else: ?>
+  <div class="card p-3">
+    <h5>ยินดีต้อนรับ, <?= Html::encode($displayName) ?></h5>
+    <p>Email: <?= Html::encode($displayEmail) ?></p>
+    <p>Username: <?= Html::encode($u->username ?? '-') ?></p>
+  </div>
+<?php endif; ?>
   </div>
 
 </div>

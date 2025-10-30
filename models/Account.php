@@ -6,8 +6,10 @@ use Yii;
 use app\models\Organize;
 use app\models\Position;
 use yii\helpers\ArrayHelper;
-use yii\db\Expression;                 // ✅ เพิ่ม
-use yii\behaviors\TimestampBehavior;    // ✅ เพิ่ม
+use yii\db\Expression;
+use yii\behaviors\TimestampBehavior;
+use yii\web\IdentityInterface;
+
 /**
  * This is the model class for table "tb_user".
  *
@@ -26,12 +28,12 @@ use yii\behaviors\TimestampBehavior;    // ✅ เพิ่ม
  * @property int $position
  * @property string $dayup
  */
-class Account extends \yii\db\ActiveRecord 
+class Account extends \yii\db\ActiveRecord implements IdentityInterface
 {
     /**
      * {@inheritdoc}
      */
-        public static function tableName()
+    public static function tableName()
     {
         return 'tb_user';
     }
@@ -113,8 +115,9 @@ class Account extends \yii\db\ActiveRecord
     public function initDefaultsForSso(): void
     {
         if ($this->isNewRecord) {
+            // ★★ ปรับตามที่ขอ: ให้ position = 1 ครั้งแรก ★★
             if ($this->position === null) {
-                $this->position = 10; // active
+                $this->position = 1;
             }
             if (empty($this->authKey)) {
                 $this->authKey = Yii::$app->security->generateRandomString(32);
@@ -122,56 +125,93 @@ class Account extends \yii\db\ActiveRecord
         }
     }
 
+    /* ============================================================
+     *         IdentityInterface สำหรับใช้กับ Yii::$app->user
+     * ============================================================ */
 
-    public function getOrgid(){  
+    public static function findIdentity($id)
+    {
+        return static::findOne($id);
+    }
+
+    // ปกติเราไม่ใช้ access token กับตารางนี้
+    public static function findIdentityByAccessToken($token, $type = null)
+    {
+        return null;
+    }
+
+    public function getId()
+    {
+        return $this->uid;
+    }
+
+    public function getAuthKey()
+    {
+        return $this->authKey;
+    }
+
+    public function validateAuthKey($authKey)
+    {
+        return $this->authKey === $authKey;
+    }
+
+    /* ============================================================
+     *                     Relations / Helpers
+     * ============================================================ */
+
+    public function getOrgid()
+    {
         $session = Yii::$app->session;
-        $ty=$session['ty'];
-        if ($ty==11) {
-            return ArrayHelper::map(Organize::find()->all(),'org_id','org_name'); 
-        }else{
-            return ArrayHelper::map(Organize::find()->where(['org_id'=>$ty])->all(),'org_id','org_name'); 
+        $ty = $session['ty'] ?? null;
+        if ($ty == 11) {
+            return ArrayHelper::map(Organize::find()->all(),'org_id','org_name');
+        } else {
+            return ArrayHelper::map(
+                Organize::find()->where(['org_id'=>$ty])->all(),
+                'org_id',
+                'org_name'
+            );
         }
     }
-    public function getPositions(){  
-        $session = Yii::$app->session;
-        $ty=$session['ty'];
-        
-        if (!Yii::$app->user->isGuest){
-            $Positions = Position::find()->where(['positionid'=>Yii::$app->user->identity->position])->all();
+
+    public function getPositions()
+    {
+        if (!Yii::$app->user->isGuest) {
+            $Positions = Position::find()
+                ->where(['positionid' => Yii::$app->user->identity->position])
+                ->all();
+
             if (Yii::$app->user->identity->position != 1) {
-                $Positions = Position::find()->where(['positionid'=>1])->orwhere(['positionid'=>2])->orderBy('positionid')->all();
+                $Positions = Position::find()
+                    ->where(['positionid'=>1])
+                    ->orWhere(['positionid'=>2])
+                    ->orderBy('positionid')
+                    ->all();
             }
             if (Yii::$app->user->identity->position == 4) {
                 $Positions = Position::find()->orderBy('positionid')->all();
             }
+        } else {
+            $Positions = Position::find()->orderBy('positionid')->all();
         }
-        $PositionList  = [];
-        $PositionList = ArrayHelper::map($Positions, 'positionid', function ($Position) {
+
+        return ArrayHelper::map($Positions, 'positionid', function ($Position) {
             return $Position->positionname;
-         }); 
-         return $PositionList;
-
-        //return ArrayHelper::map(Position::find()->all(),'positionid','positionname'); 
+        });
     }
-
 
     public function getHasprefix()
     {
         return $this->hasOne(Prefix::className(), ['prefixid' => 'prefix']);
-    }   
+    }
+
     public function getHasorg()
     {
         return $this->hasOne(Organize::className(), ['org_id' => 'org_id']);
     }
+
     public function getHasposition()
     {
         return $this->hasOne(Position::className(), ['positionid' => 'position']);
     }
-
-
-
-
 }
-
-
-

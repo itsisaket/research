@@ -33,11 +33,6 @@ class ArticleController extends Controller
                 'only' => ['logout', 'index','view','create','update'],
                 
                 'rules' => [
-                    [
-                        // หน้า public เข้าได้หมด
-                        'actions' => ['index'],
-                        'allow'   => true,
-                    ],
                     ['allow' => true, 'roles' => ['@']], // ต้องล็อกอินก่อน
                 ],
             ],

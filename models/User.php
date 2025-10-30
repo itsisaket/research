@@ -12,13 +12,20 @@ use yii\web\IdentityInterface;
  * - ใช้ session เก็บข้อมูล identity ที่ถอดมาจาก JWT
  * - ใช้ได้กับ flow ที่หน้าเว็บส่ง {token, profile} มาที่ /site/my-profile
  * - มี helper สำหรับ decode JWT แบบ base64url
+ *
+ * ปรับเพิ่ม: รองรับ mapping
+ * - username = personal_id
+ * - prefix   = title_id
+ * - uname    = first_name
+ * - luname   = last_name
+ * - org_id   = manage_faculty_id
  */
 class User implements IdentityInterface
 {
     /** @var string|null personal_id หรือ uname ที่ใช้เป็น PK */
     public $id;
 
-    /** @var string|null ชื่อผู้ใช้ที่ frontend เข้าใจ (ส่วนมากคือ uname) */
+    /** @var string|null ชื่อผู้ใช้ที่ frontend เข้าใจ (ส่วนมากคือ uname/personal_id) */
     public $username;
 
     /** @var string|null ชื่อเต็มจาก payload (ถ้ามี) */
@@ -41,6 +48,19 @@ class User implements IdentityInterface
 
     /** @var array โปรไฟล์ดิบจาก /authen/profile (normalized แล้ว) */
     public $profile = [];
+
+    /* ===== ฟิลด์ที่ให้ตรงกับ tb_user ===== */
+    /** @var string|null คำนำหน้า (prefix = title_id) */
+    public $prefix;
+
+    /** @var string|null ชื่อจริง (uname = first_name) */
+    public $uname;
+
+    /** @var string|null นามสกุล (luname = last_name) */
+    public $luname;
+
+    /** @var int|string|null หน่วยงาน (org_id = manage_faculty_id) */
+    public $org_id;
 
     /**
      * key สำหรับเก็บใน session
@@ -120,24 +140,55 @@ class User implements IdentityInterface
      */
     public static function fromToken(string $jwt, array $profile = null): self
     {
-        $claims = self::decodeJwtPayload($jwt);
+        $claims  = self::decodeJwtPayload($jwt);
+        $profile = self::normalizeProfile($profile ?? []);
 
         $u = new self();
-        // ดึง id / username จาก payload
-        $u->id       = $claims['personal_id'] ?? $claims['uname'] ?? null;
-        $u->username = $claims['uname'] ?? $claims['personal_id'] ?? null;
-        $u->name     = $claims['name'] ?? null;
-        $u->email    = $claims['email'] ?? null;
-        $u->roles    = is_array($claims['roles'] ?? null) ? $claims['roles'] : [];
-        $u->exp      = $claims['exp'] ?? null;
-        $u->iat      = $claims['iat'] ?? null;
 
-        // โปรไฟล์ที่มาจาก /authen/profile
-        $u->profile      = self::normalizeProfile($profile);
-        // ถ้า email ใน payload ว่าง ให้ลองหยิบจาก profile
-        if (empty($u->email)) {
-            $u->email = self::pickEmail($u->profile);
-        }
+        // ------- ดึงค่าหลักตาม mapping ที่กำหนด -------
+        // personal_id เป็นหลัก ถ้าไม่มีค่อยถอยไปหา uname/first_name
+        $personalId = $claims['personal_id'] ?? ($profile['personal_id'] ?? null);
+        $firstName  = $claims['first_name']  ?? ($profile['first_name'] ?? null);
+        $lastName   = $claims['last_name']   ?? ($profile['last_name'] ?? null);
+
+        // id / username
+        $u->id       = $personalId ?: $firstName;
+        $u->username = $personalId ?: ($claims['uname'] ?? $firstName);
+
+        // name (ชื่อเต็ม)
+        $u->name = $claims['name']
+            ?? trim(($firstName ?? '') . ' ' . ($lastName ?? ''));
+
+        // email
+        $u->email = $claims['email'] ?? self::pickEmail($profile);
+
+        // roles
+        $u->roles = is_array($claims['roles'] ?? null) ? $claims['roles'] : [];
+
+        // exp / iat
+        $u->exp = $claims['exp'] ?? null;
+        $u->iat = $claims['iat'] ?? null;
+
+        // mapping เสริม
+        // prefix = title_id
+        $u->prefix = $claims['title_id']
+            ?? $profile['title_id']
+            ?? $profile['title_name']
+            ?? null;
+
+        // uname = first_name
+        $u->uname = $firstName;
+
+        // luname = last_name
+        $u->luname = $lastName;
+
+        // org_id = manage_faculty_id
+        $u->org_id = $claims['manage_faculty_id']
+            ?? $profile['manage_faculty_id']
+            ?? null;
+
+        // เก็บโปรไฟล์ดิบ
+        $u->profile = $profile;
 
         // เก็บ JWT ไว้เผื่อใช้ต่อ
         $u->access_token = $jwt;
@@ -195,6 +246,12 @@ class User implements IdentityInterface
             'exp'          => $this->exp,
             'iat'          => $this->iat,
             'profile'      => $this->profile,
+
+            // เก็บฟิลด์แมปไปด้วย
+            'prefix'       => $this->prefix,
+            'uname'        => $this->uname,
+            'luname'       => $this->luname,
+            'org_id'       => $this->org_id,
         ];
     }
 
@@ -261,6 +318,7 @@ class User implements IdentityInterface
         // แปลงค่า null ที่ใช้แสดงผลให้เป็น '' จะได้ไม่ error เวลา echo
         $keys = [
             'title_name',
+            'title_id',
             'first_name',
             'last_name',
             'email',
@@ -271,6 +329,8 @@ class User implements IdentityInterface
             'category_type_name',
             'employee_type_name',
             'academic_type_name',
+            'personal_id',
+            'manage_faculty_id',
         ];
 
         foreach ($keys as $k) {

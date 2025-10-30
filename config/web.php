@@ -65,17 +65,6 @@ $config = [
             'class' => \app\components\ApiAuthService::class,
         ],
 
-        // SSO helper (ถ้ามีคลาสนี้ในโปรเจกต์)
-        'sso' => [
-            'class' => \app\components\HrmSciSso::class,
-            'cookieName' => 'hrm-sci-token',
-            'publicKeyPem' => '',          // TODO: ใส่ Public Key RS256 ตอน production
-            'allowUnsafeDecode' => false,  // DEV เท่านั้นถึงจะ true
-            'leeway' => 60,
-            'expectedIss' => null,
-            'expectedAud' => null,
-        ],
-
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
