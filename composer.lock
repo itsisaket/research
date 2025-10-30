@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d5d0dc6b709d73a1e8930a243c610b4a",
+    "content-hash": "f1da8e18562ebe31fb95b96c6ca0315f",
     "packages": [
         {
             "name": "bower-asset/bootstrap",
@@ -1623,38 +1623,28 @@
         },
         {
             "name": "yiisoft/yii2-bootstrap4",
-            "version": "2.0.12",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/yiisoft/yii2-bootstrap4.git",
-                "reference": "49f9b70de3f5ab55ea1dc1ea57021a6bf91b3102"
+                "reference": "b8798b1e3a7c136723323e15407b1680defc3abf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/yiisoft/yii2-bootstrap4/zipball/49f9b70de3f5ab55ea1dc1ea57021a6bf91b3102",
-                "reference": "49f9b70de3f5ab55ea1dc1ea57021a6bf91b3102",
+                "url": "https://api.github.com/repos/yiisoft/yii2-bootstrap4/zipball/b8798b1e3a7c136723323e15407b1680defc3abf",
+                "reference": "b8798b1e3a7c136723323e15407b1680defc3abf",
                 "shasum": ""
             },
             "require": {
-                "npm-asset/bootstrap": "^4.3",
-                "yiisoft/yii2": "^2.0.43"
+                "npm-asset/bootstrap": "~4.2",
+                "yiisoft/yii2": "~2.0"
             },
             "require-dev": {
-                "cweagans/composer-patches": "^1.7",
-                "phpunit/phpunit": "4.8.34",
+                "phpunit/phpunit": "*",
                 "yiisoft/yii2-coding-standards": "~2.0"
             },
             "type": "yii2-extension",
             "extra": {
-                "patches": {
-                    "phpunit/phpunit": {
-                        "Fix PHP 7 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_php7.patch",
-                        "Fix PHP 8 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_php8.patch"
-                    },
-                    "phpunit/phpunit-mock-objects": {
-                        "Fix PHP 7 and 8 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_mock_objects.patch"
-                    }
-                },
                 "branch-alias": {
                     "dev-master": "1.0.x-dev"
                 }
@@ -1670,26 +1660,26 @@
             ],
             "authors": [
                 {
-                    "name": "Qiang Xue",
-                    "email": "qiang.xue@gmail.com",
-                    "homepage": "https://www.yiiframework.com/"
+                    "name": "Paul Klimov",
+                    "email": "klimov.paul@gmail.com"
                 },
                 {
                     "name": "Alexander Makarov",
                     "email": "sam@rmcreative.ru",
-                    "homepage": "https://rmcreative.ru/"
+                    "homepage": "http://rmcreative.ru/"
                 },
                 {
                     "name": "Antonio Ramirez",
                     "email": "amigo.cobos@gmail.com"
                 },
                 {
-                    "name": "Paul Klimov",
-                    "email": "klimov.paul@gmail.com"
+                    "name": "Simon Karlen",
+                    "email": "simi.albi@gmail.com"
                 },
                 {
-                    "name": "Simon Karlen",
-                    "email": "simi.albi@outlook.com"
+                    "name": "Qiang Xue",
+                    "email": "qiang.xue@gmail.com",
+                    "homepage": "http://www.yiiframework.com/"
                 }
             ],
             "description": "The Twitter Bootstrap extension for the Yii framework",
@@ -1699,27 +1689,13 @@
                 "yii2"
             ],
             "support": {
-                "forum": "https://www.yiiframework.com/forum/",
-                "irc": "ircs://irc.libera.chat:6697/yii",
+                "forum": "http://www.yiiframework.com/forum/",
+                "irc": "irc://irc.freenode.net/yii",
                 "issues": "https://github.com/yiisoft/yii2-bootstrap4/issues",
                 "source": "https://github.com/yiisoft/yii2-bootstrap4",
-                "wiki": "https://www.yiiframework.com/wiki/"
+                "wiki": "http://www.yiiframework.com/wiki/"
             },
-            "funding": [
-                {
-                    "url": "https://github.com/yiisoft",
-                    "type": "github"
-                },
-                {
-                    "url": "https://opencollective.com/yiisoft",
-                    "type": "open_collective"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/yiisoft/yii2-bootstrap4",
-                    "type": "tidelift"
-                }
-            ],
-            "time": "2025-02-13T21:11:27+00:00"
+            "time": "2019-01-28T21:56:32+00:00"
         },
         {
             "name": "yiisoft/yii2-bootstrap5",
