@@ -3,6 +3,8 @@
 return [
     'class' => 'yii\db\Connection',
     'dsn' => 'mysql:host=localhost;dbname=lascinfo',
+    //'username' => 'root',
+    //'password' => '',
     'username' => 'lascinfo',
     'password' => 'lascpassword',
     'charset' => 'utf8',

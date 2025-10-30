@@ -29,9 +29,10 @@ $config = [
         ],
         
         'user' => [
-            'identityClass'   => \app\models\User::class, // <-- โมเดล lightweight ของคุณ
+            'identityClass'   => \app\models\User::class,
             'enableSession'   => true,
             'enableAutoLogin' => false,
+            'loginUrl'        => ['site/login'],   // ⭐ ใส่บรรทัดนี้
         ],
 
         // httpclient ทั่วไป
@@ -99,13 +100,10 @@ $config = [
             'showScriptName' => false,
             'enableStrictParsing' => false,
             'rules' => [
-                '' => 'site/index',                        
-                '<controller:\w+>' => '<controller>/index', 
-                '<controller:\w+>/<action:\w+>' => '<controller>/<action>', 
             ],
         ],
     ],
-
+/*
     // ⬇️ ย้าย event มาไว้ "นอก" components (ระดับ root)
     'on beforeRequest' => function () {
         if (Yii::$app->user->isGuest) {
@@ -116,7 +114,7 @@ $config = [
             }
         }
     },
-
+*/
     'params' => array_merge($params, [
         'hrmApiBase' => 'https://sci-sskru.com/authen',
         'ssoLoginUrl'   => 'https://sci-sskru.com/hrm/login',

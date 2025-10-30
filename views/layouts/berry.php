@@ -8,6 +8,12 @@ BerryAsset::register($this);
 
 $this->beginPage();
 ?>
+
+<?php if (!($this->params['isLoginPage'] ?? false)): ?>
+  <script>
+    // โค้ดที่เช็ก token แล้ว redirect
+  </script>
+<?php endif; ?>
 <!DOCTYPE html>
 <html lang="<?= Yii::$app->language ?>">
 <head>
