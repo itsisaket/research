@@ -51,6 +51,7 @@ class SiteController extends Controller
         return $this->render('index', compact('isGuest','u'));
     }
 
+
     public function actionLogin()
     {
         // ถ้าล็อกอินอยู่แล้วก็กลับหน้าแรก
@@ -58,7 +59,7 @@ class SiteController extends Controller
             return $this->goHome();
         }
 
-        // พยายาม SSO จาก cookie
+        // ✅ อันเดิมของคุณ
         try {
             Yii::$app->sso->tryAutoLoginFromCookie();
             if (!Yii::$app->user->isGuest) {
@@ -71,202 +72,45 @@ class SiteController extends Controller
         return $this->render('login');
     }
 
+
     /**
-     * POST /site/my-profile
-     * Body JSON: { token: string, profile?: object }
-     * - ยืนยันโปรไฟล์แบบ Server-to-Server ได้ (ถ้ามี yii\httpclient)
-     * - ถ้า S2S ไม่สำเร็จ จะ fallback ใช้ profile จาก client หรือ claims
-     * - บังคับให้ username = personal_id เสมอ (ไม่สนใจ uname)
+     * ✅ แอ็กชันรับ sync จากหน้า login.js
+     * รับ JSON: { "token": "...", "profile": {...} }
+     * แล้ว login เข้า Yii + เก็บโปรไฟล์ไว้ใน session
      */
-public function actionMyProfile(): array
-{
-    Yii::$app->response->format = Response::FORMAT_JSON;
+    public function actionMyProfile()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
 
-    // ---- Safeguards ----
-    $raw = Yii::$app->request->getRawBody();
-    if ($raw === '' || $raw === null) {
-        Yii::$app->response->statusCode = 400;
-        return ['ok' => false, 'error' => 'empty body'];
-    }
-    if (strlen($raw) > self::MAX_BODY_BYTES) {
-        Yii::$app->response->statusCode = 413;
-        return ['ok' => false, 'error' => 'payload too large'];
-    }
-    $body = json_decode($raw, true);
-    if (!is_array($body)) {
-        Yii::$app->response->statusCode = 400;
-        return ['ok' => false, 'error' => 'invalid json'];
-    }
-
-    $token   = (string)($body['token'] ?? '');
-    $profile = is_array($body['profile'] ?? null) ? $body['profile'] : [];
-    if ($token === '') {
-        Yii::$app->response->statusCode = 400;
-        return ['ok' => false, 'error' => 'missing token'];
-    }
-
-    // ---- Decode & validate JWT ----
-    $claims = \app\models\User::decodeJwtPayload($token);
-    if (empty($claims)) {
-        Yii::$app->response->statusCode = 401;
-        return ['ok' => false, 'error' => 'invalid token payload'];
-    }
-
-    $now        = time();
-    $exp        = isset($claims['exp']) ? (int)$claims['exp'] : null;
-    $personalId = $claims['personal_id'] ?? null; // ใช้ personal_id เท่านั้น
-
-    if ($exp && ($exp + self::CLOCK_SKEW) < $now) {
-        Yii::$app->response->statusCode = 401;
-        return ['ok' => false, 'error' => 'token expired'];
-    }
-    if (empty($personalId)) {
-        Yii::$app->response->statusCode = 400;
-        return ['ok' => false, 'error' => 'token missing personal_id'];
-    }
-
-    // (optional) issuer check
-    $trustedIssuers = Yii::$app->params['trustedIssuers'] ?? ['https://sci-sskru.com'];
-    if (!empty($claims['iss']) && !in_array($claims['iss'], $trustedIssuers, true)) {
-        Yii::$app->response->statusCode = 401;
-        return ['ok' => false, 'error' => 'untrusted issuer'];
-    }
-
-    // profile consistency (ถ้าส่งจาก client) → เทียบกับ personal_id เท่านั้น
-    $pIdFromProfile = $profile['personal_id'] ?? $profile['username'] ?? null;
-    if ($pIdFromProfile && (string)$pIdFromProfile !== (string)$personalId) {
-        Yii::$app->response->statusCode = 400;
-        return ['ok' => false, 'error' => 'profile/payload personal_id mismatch'];
-    }
-
-    // ---- S2S profile verification (ถ้ามี httpclient) ----
-    $s2sOk = false;
-    if (class_exists(\yii\httpclient\Client::class)) {
-        try {
-            $client = new \yii\httpclient\Client(['transport' => 'yii\httpclient\CurlTransport']);
-            $resp = $client->createRequest()
-                ->setMethod('POST')
-                ->setUrl('https://sci-sskru.com/authen/profile')
-                ->setFormat(\yii\httpclient\Client::FORMAT_JSON)
-                ->addHeaders(['Authorization' => 'Bearer '.$token])
-                ->setOptions([
-                    CURLOPT_TIMEOUT => 8,
-                    CURLOPT_CONNECTTIMEOUT => 5,
-                    CURLOPT_SSL_VERIFYPEER => true,
-                    CURLOPT_SSL_VERIFYHOST => 2,
-                ])
-                ->setData(['personal_id' => $personalId])
-                ->send();
-
-            if ($resp->isOk) {
-                $profile = is_array($resp->data['profile'] ?? null)
-                    ? $resp->data['profile']
-                    : (is_array($resp->data ?? null) ? $resp->data : []);
-                $s2sOk = true;
-            } else {
-                Yii::warning(['my-profile s2s not ok', 'status' => $resp->statusCode, 'body' => $resp->content], __METHOD__);
-            }
-        } catch (\Throwable $e) {
-            Yii::warning(['my-profile s2s error' => $e->getMessage()], __METHOD__);
-        }
-    }
-
-    // บังคับ username = personal_id เสมอ ไม่ว่ามาจาก S2S หรือ client
-    $profile['username'] = (string)$personalId;
-
-    // ---- Fallback profile from claims (ถ้าไม่มี S2S/Client profile) ----
-    if (!$s2sOk && empty($profile)) {
-        $profile = [
-            'username'            => (string)$personalId,
-            'uname'               => (string)($claims['uname'] ?? ''),
-            'title_name'          => (string)($claims['title_name'] ?? ''),
-            'first_name'          => (string)($claims['first_name'] ?? ''),
-            'last_name'           => (string)($claims['last_name'] ?? ''),
-            'name'                => (string)($claims['name'] ?? ''),
-            'email'               => (string)($claims['email'] ?? ''),
-            'email_uni_google'    => (string)($claims['email_uni_google'] ?? ''),
-            'email_uni_microsoft' => (string)($claims['email_uni_microsoft'] ?? ''),
-            'img'                 => (string)($claims['img'] ?? ''),
-            'dept_name'           => (string)($claims['dept_name'] ?? ''),
-            'category_type_name'  => (string)($claims['category_type_name'] ?? ''),
-            'employee_type_name'  => (string)($claims['employee_type_name'] ?? ''),
-            'academic_type_name'  => (string)($claims['academic_type_name'] ?? ''),
-            'updated_at'          => (string)($claims['updated_at'] ?? ''),
-        ];
-    }
-
-    // ---- Build identity & login ----
-    $identity = \app\models\User::fromToken($token, $profile);
-    if (!$identity->id) {
-        Yii::$app->response->statusCode = 401;
-        return ['ok' => false, 'error' => 'unable to build identity'];
-    }
-
-    // ล็อกอินก่อน แล้วค่อยเปลี่ยน session id
-    if (!Yii::$app->user->login($identity, self::SESSION_DURATION)) {
-        Yii::$app->response->statusCode = 500;
-        return ['ok' => false, 'error' => 'login failed'];
-    }
-    if (Yii::$app->session->isActive) {
-        // เปลี่ยน id แต่ไม่ลบ data → ไม่ทำให้ _identity หาย
-        Yii::$app->session->regenerateID(false);
-    }
-
-    // ---- No-cache headers ----
-    $res = Yii::$app->response;
-    $res->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-    $res->headers->set('Pragma', 'no-cache');
-
-    // ---------- Sync/Upsert tb_user (username = personal_id เสมอ) ----------
-    try {
-        $username = (string)$personalId;
-        if ($username === '') {
-            Yii::$app->response->statusCode = 400;
-            return ['ok' => false, 'error' => 'username missing in token'];
+        // รับ JSON ดิบ
+        $raw  = Yii::$app->request->getRawBody();
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            // เผื่อกรณีส่งแบบ form
+            $data = Yii::$app->request->post();
         }
 
-        // '' -> null helper
-        $nz = static function($v) { $v = trim((string)$v); return $v === '' ? null : $v; };
+        $token   = $data['token']   ?? null;
+        $profile = $data['profile'] ?? [];
 
-        $first   = (string)($profile['first_name'] ?? $claims['first_name'] ?? $claims['name'] ?? '');
-        $last    = (string)($profile['last_name']  ?? $claims['last_name']  ?? '');
-        $email   = $nz($profile['email'] ?? $claims['email'] ?? '');
-        $tel     = $nz($profile['tel'] ?? '');
-        $orgId   = (int)($profile['dept_id'] ?? $profile['org_id'] ?? 0);
+        if (!$token) {
+            return ['ok' => false, 'error' => 'no token'];
+        }
 
-        $titleText = (string)($profile['title_name'] ?? '');
-        $prefixMap = ['นาย' => 1, 'นาง' => 2, 'นางสาว' => 3];
-        $prefix    = $prefixMap[$titleText] ?? null;
+        // หาผู้ใช้จาก token
+        $user = User::findByHrmToken($token);
+        if (!$user) {
+            return ['ok' => false, 'error' => 'user not found (token not mapped)'];
+        }
 
-        Yii::$app->db->createCommand()->upsert('tb_user', [
-            'username' => $username,
-            'uname'    => $first !== '' ? $first : $username,
-            'luname'   => $last,
-            'email'    => $email,
-            'tel'      => $tel,
-            'prefix'   => $prefix,
-            'org_id'   => $orgId,
-            'position' => 10,
-            'authKey'  => Yii::$app->security->generateRandomString(32),
-            'dayup'    => new \yii\db\Expression('NOW()'),
-        ], [
-            'uname'  => $first !== '' ? $first : new \yii\db\Expression('uname'),
-            'luname' => $last  !== '' ? $last  : new \yii\db\Expression('luname'),
-            'email'  => $email !== null ? $email : new \yii\db\Expression('email'),
-            'tel'    => $tel   !== null ? $tel   : new \yii\db\Expression('tel'),
-            'prefix' => $prefix !== null ? $prefix : new \yii\db\Expression('prefix'),
-            'org_id' => $orgId > 0 ? $orgId : new \yii\db\Expression('org_id'),
-            'dayup'  => new \yii\db\Expression('NOW()'),
-        ])->execute();
+        // login เข้า Yii
+        Yii::$app->user->login($user, 3600 * 8);
 
-    } catch (\Throwable $e) {
-        Yii::error(['tb_user upsert exception' => $e->getMessage()], __METHOD__);
-        // ไม่ hard-fail
+        // เก็บโปรไฟล์ไว้ใช้ต่อ
+        Yii::$app->session->set('hrmProfile', $profile);
+
+        return ['ok' => true];
     }
-
-    return ['ok' => true, 'id' => $identity->id];
-}
-
 
 
 

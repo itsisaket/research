@@ -22,6 +22,9 @@ $config = [
         'request' => [
             'cookieValidationKey' => '1smD3uuUUKbmNvh_mUhJnUW3qMAI-IUC', // TODO: เปลี่ยนเป็นค่า secret จริง
             'baseUrl' => '/research', // ให้ตรงกับโฟลเดอร์ใน URL
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ],
         ],
         
         'cache' => [

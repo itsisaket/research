@@ -5,50 +5,125 @@ use Yii;
 use yii\web\IdentityInterface;
 
 /**
- * Lightweight Identity จาก JWT + โปรไฟล์ /authen/profile
+ * User (stateless-like) สำหรับระบบที่ใช้ JWT จาก HRM
+ *
+ * จุดเด่น:
+ * - ไม่ผูกกับฐานข้อมูล (ไม่มี ActiveRecord)
+ * - ใช้ session เก็บข้อมูล identity ที่ถอดมาจาก JWT
+ * - ใช้ได้กับ flow ที่หน้าเว็บส่ง {token, profile} มาที่ /site/my-profile
+ * - มี helper สำหรับ decode JWT แบบ base64url
  */
 class User implements IdentityInterface
 {
-    // Core
-    public $id;                 // personal_id (PK)
-    public $username;           // uname หรือ personal_id
+    /** @var string|null personal_id หรือ uname ที่ใช้เป็น PK */
+    public $id;
+
+    /** @var string|null ชื่อผู้ใช้ที่ frontend เข้าใจ (ส่วนมากคือ uname) */
+    public $username;
+
+    /** @var string|null ชื่อเต็มจาก payload (ถ้ามี) */
     public $name;
+
+    /** @var string|null email จาก payload หรือจาก profile */
     public $email;
+
+    /** @var array รายการบทบาทจาก payload (ถ้ามี) */
     public $roles = [];
+
+    /** @var string|null JWT เต็ม ๆ เก็บไว้เผื่อยิงต่อ */
     public $access_token;
 
-    // JWT times
+    /** @var int|null เวลาหมดอายุ (unix time) จาก JWT */
     public $exp;
+
+    /** @var int|null เวลาออก token (unix time) จาก JWT */
     public $iat;
 
-    // โปรไฟล์จาก /authen/profile (บังคับเป็น array เสมอ)
+    /** @var array โปรไฟล์ดิบจาก /authen/profile (normalized แล้ว) */
     public $profile = [];
 
-    /* ===== IdentityInterface ===== */
+    /**
+     * key สำหรับเก็บใน session
+     */
+    const SESSION_KEY = '_identity_data';
+
+    /* ============================================================
+     *           IdentityInterface (จำเป็นต้องมี)
+     * ============================================================ */
+
+    /**
+     * ดึง user จาก session ด้วย id
+     */
     public static function findIdentity($id)
     {
-        $data = Yii::$app->session->get('_identity_data');
-        if (!$data || !isset($data['id']) || (string)$data['id'] !== (string)$id) {
+        $data = Yii::$app->session->get(self::SESSION_KEY);
+        if (!$data || !isset($data['id'])) {
             return null;
         }
-        // กันโทเคนหมดอายุแล้วแต่ยังค้างใน session
+
+        // id ไม่ตรง → ไม่ใช่คนนี้
+        if ((string)$data['id'] !== (string)$id) {
+            return null;
+        }
+
+        // ถ้าหมดอายุแล้วให้ลบทิ้งทันที
         if (!empty($data['exp']) && is_numeric($data['exp']) && (int)$data['exp'] < time()) {
-            Yii::$app->session->remove('_identity_data');
+            Yii::$app->session->remove(self::SESSION_KEY);
             return null;
         }
+
         return self::fromArray($data);
     }
-    public static function findIdentityByAccessToken($token, $type = null){ return null; }
-    public function getId(){ return $this->id; }
-    public function getAuthKey(){ return null; }
-    public function validateAuthKey($authKey){ return true; }
 
-    /* ===== Factory & Helpers ===== */
+    /**
+     * เราไม่ได้ใช้ findIdentityByAccessToken ใน flow นี้
+     */
+    public static function findIdentityByAccessToken($token, $type = null)
+    {
+        return null;
+    }
+
+    /**
+     * คืนค่า PK (เราเก็บ personal_id/uname ไว้ใน $id อยู่แล้ว)
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * เราไม่ได้ใช้ authKey ในระบบนี้ → คืน null ไป
+     */
+    public function getAuthKey()
+    {
+        return null;
+    }
+
+    /**
+     * ไม่ได้ใช้ authKey → ให้ผ่านไปเลย
+     */
+    public function validateAuthKey($authKey)
+    {
+        return true;
+    }
+
+    /* ============================================================
+     *                       Factory
+     * ============================================================ */
+
+    /**
+     * สร้าง User จาก JWT + โปรไฟล์ แล้วเก็บลง session ทันที
+     *
+     * @param string $jwt
+     * @param array|null $profile
+     * @return static
+     */
     public static function fromToken(string $jwt, array $profile = null): self
     {
         $claims = self::decodeJwtPayload($jwt);
 
         $u = new self();
+        // ดึง id / username จาก payload
         $u->id       = $claims['personal_id'] ?? $claims['uname'] ?? null;
         $u->username = $claims['uname'] ?? $claims['personal_id'] ?? null;
         $u->name     = $claims['name'] ?? null;
@@ -57,25 +132,57 @@ class User implements IdentityInterface
         $u->exp      = $claims['exp'] ?? null;
         $u->iat      = $claims['iat'] ?? null;
 
-        // รับได้ทั้ง {profile:{...}} หรือ {...}
+        // โปรไฟล์ที่มาจาก /authen/profile
         $u->profile      = self::normalizeProfile($profile);
+        // ถ้า email ใน payload ว่าง ให้ลองหยิบจาก profile
+        if (empty($u->email)) {
+            $u->email = self::pickEmail($u->profile);
+        }
+
+        // เก็บ JWT ไว้เผื่อใช้ต่อ
         $u->access_token = $jwt;
 
-        Yii::$app->session->set('_identity_data', $u->toArray());
+        // เก็บทุกอย่างลง session
+        Yii::$app->session->set(self::SESSION_KEY, $u->toArray());
+
         return $u;
     }
 
+    /**
+     * สร้าง User จาก array ที่ดึงออกมาจาก session
+     *
+     * @param array $arr
+     * @return static
+     */
     public static function fromArray(array $arr): self
     {
         $u = new self();
+
         foreach ($arr as $k => $v) {
-            if ($k === 'roles' && !is_array($v)) { $v = []; }
-            if ($k === 'profile') { $v = self::normalizeProfile($v); }
-            if (property_exists($u, $k)) { $u->$k = $v; }
+            if ($k === 'roles' && !is_array($v)) {
+                $v = [];
+            }
+            if ($k === 'profile') {
+                $v = self::normalizeProfile($v);
+            }
+            if (property_exists($u, $k)) {
+                $u->$k = $v;
+            }
         }
+
+        // กันกรณี email ไม่มี แต่ profile มี
+        if (empty($u->email) && !empty($u->profile)) {
+            $u->email = self::pickEmail($u->profile);
+        }
+
         return $u;
     }
 
+    /**
+     * แปลงเป็น array สำหรับเก็บลง session
+     *
+     * @return array
+     */
     public function toArray(): array
     {
         return [
@@ -91,48 +198,117 @@ class User implements IdentityInterface
         ];
     }
 
+    /* ============================================================
+     *                   JWT helpers
+     * ============================================================ */
+
+    /**
+     * ถอด payload ของ JWT (base64url → json)
+     *
+     * @param string $jwt
+     * @return array
+     */
     public static function decodeJwtPayload(string $jwt): array
     {
         $parts = explode('.', $jwt);
-        if (count($parts) < 2) return [];
+        if (count($parts) < 2) {
+            return [];
+        }
+
         $payload = self::b64urlDecode($parts[1]);
-        $json = json_decode($payload, true);
+        $json    = json_decode($payload, true);
+
         return is_array($json) ? $json : [];
     }
 
+    /**
+     * base64url decode
+     */
     private static function b64urlDecode(string $str): string
     {
         $str = strtr($str, '-_', '+/');
         $pad = strlen($str) % 4;
-        if ($pad) $str .= str_repeat('=', 4 - $pad);
+        if ($pad) {
+            $str .= str_repeat('=', 4 - $pad);
+        }
         $bin = base64_decode($str);
+
         return $bin === false ? '' : $bin;
     }
 
-    /* ===== Internal utils ===== */
+    /* ============================================================
+     *                    Internal utils
+     * ============================================================ */
 
     /**
-     * รับทั้ง array โปรไฟล์ตรง ๆ หรือ {profile:{...}}
-     * บังคับให้คืนค่าเป็นอาร์เรย์ของฟิลด์ด้านในเสมอ
+     * รับได้ทั้งแบบ {profile:{...}} หรือ {...}
+     * คืน array โปรไฟล์ด้านในเสมอ
+     *
+     * @param mixed $profile
+     * @return array
      */
     private static function normalizeProfile($profile): array
     {
-        if (!is_array($profile)) return [];
-        $p = isset($profile['profile']) && is_array($profile['profile']) ? $profile['profile'] : $profile;
-
-        // กันค่าที่ควรเป็นสตริงแต่เป็น null
-        foreach (['title_name','first_name','last_name','email','email_uni_google','email_uni_microsoft','img',
-                  'dept_name','category_type_name','employee_type_name','academic_type_name'] as $k) {
-            if (array_key_exists($k, $p) && $p[$k] === null) $p[$k] = '';
+        if (!is_array($profile)) {
+            return [];
         }
+
+        // ถ้าเป็น {profile:{...}} ให้ดึงด้านในออกมา
+        $p = isset($profile['profile']) && is_array($profile['profile'])
+            ? $profile['profile']
+            : $profile;
+
+        // แปลงค่า null ที่ใช้แสดงผลให้เป็น '' จะได้ไม่ error เวลา echo
+        $keys = [
+            'title_name',
+            'first_name',
+            'last_name',
+            'email',
+            'email_uni_google',
+            'email_uni_microsoft',
+            'img',
+            'dept_name',
+            'category_type_name',
+            'employee_type_name',
+            'academic_type_name',
+        ];
+
+        foreach ($keys as $k) {
+            if (array_key_exists($k, $p) && $p[$k] === null) {
+                $p[$k] = '';
+            }
+        }
+
         return $p;
     }
 
     /**
-     * เลือกอีเมลที่เหมาะสมจากโปรไฟล์ (email → google → microsoft)
+     * เลือก email ที่เหมาะสมที่สุดจากโปรไฟล์
      */
     private static function pickEmail(array $p): ?string
     {
-        return $p['email'] ?? $p['email_uni_google'] ?? $p['email_uni_microsoft'] ?? null;
+        return $p['email']
+            ?? $p['email_uni_google']
+            ?? $p['email_uni_microsoft']
+            ?? null;
+    }
+
+    /**
+     * เช็กว่า user นี้หมดอายุตาม exp หรือยัง
+     */
+    public function isExpired(): bool
+    {
+        if (empty($this->exp)) {
+            return false;
+        }
+        return (int)$this->exp < time();
+    }
+
+    /**
+     * ลบ identity ออกจาก session (สำหรับใช้ตอน logout)
+     */
+    public static function removeFromSession(): void
+    {
+        Yii::$app->session->remove(self::SESSION_KEY);
     }
 }
