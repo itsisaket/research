@@ -247,7 +247,7 @@ function showCta(msg, type='warning'){
     stopPlaceholders();
   }
 
-  // 6) sync เข้า Yii → ให้ controller สร้าง/อัปเดต tb_user และตั้ง position = 1 ถ้าเป็น user ใหม่
+ 
   try {
     const res = await fetch(SYNC_URL, {
       method:'POST',

@@ -183,8 +183,12 @@ public function actionMyProfile()
     $account->initDefaultsForSso();
 
     // 8) บันทึก
-    if (!$account->save(false)) {
-        return ['ok' => false, 'error' => 'cannot save account'];
+    if (!$account->save()) {
+        return [
+            'ok' => false,
+            'error' => 'validate fail',
+            'detail' => $account->getErrors(),
+        ];
     }
 
     // 9) login เข้า Yii ด้วยตัวที่มาจาก DB (Account)

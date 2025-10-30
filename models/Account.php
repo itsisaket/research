@@ -10,29 +10,8 @@ use yii\db\Expression;
 use yii\behaviors\TimestampBehavior;
 use yii\web\IdentityInterface;
 
-/**
- * This is the model class for table "tb_user".
- *
- * @property int $uid
- * @property string $username
- * @property string $password
- * @property string $password_reset_token
- * @property string $authKey
- * @property int $prefix
- * @property string $uname
- * @property string $luname
- * @property int $org_id
- * @property string $email
- * @property int $tel
- * @property int $academic
- * @property int $position
- * @property string $dayup
- */
 class Account extends \yii\db\ActiveRecord implements IdentityInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public static function tableName()
     {
         return 'tb_user';
@@ -54,13 +33,14 @@ class Account extends \yii\db\ActiveRecord implements IdentityInterface
     {
         $sc = parent::scenarios();
 
-        // แบบฟอร์มปกติ (ไม่บังคับ password แล้ว)
+        // ฟอร์มปกติ ใช้ตอนกรอกเองในระบบ
         $sc['default'] = [
             'username','password','prefix','uname','luname','org_id','email','tel',
             'position','password_reset_token','authKey','dayup'
         ];
 
-        // ซิงก์จาก SSO/JWT
+        // ซิงก์จาก SSO/JWT → เบากว่า ไม่บังคับทุกช่อง
+        // ให้บังคับแค่ตัวที่เรามั่นใจว่ามี (username = personal_id)
         $sc['ssoSync'] = [
             'username','prefix','uname','luname','org_id','email','tel','position',
             'password_reset_token','authKey','dayup'
@@ -72,8 +52,15 @@ class Account extends \yii\db\ActiveRecord implements IdentityInterface
     public function rules()
     {
         return [
-            // ต้องกรอกพื้นฐาน (ไม่รวม password)
-            [['username', 'prefix', 'uname', 'luname', 'org_id', 'email', 'tel'], 'required'],
+            /*
+             * ชุดบังคับหลัก
+             * - กรณีใช้งานปกติให้ใช้ 'default'
+             * - กรณี SSO เราจะไม่บังคับทุกช่อง เพราะบางที HRM ส่งมาไม่ครบ
+             */
+            [['username'], 'required', 'on' => ['default','ssoSync']],
+
+            // ถ้าเป็นฟอร์มปกติ → บังคับเพิ่ม
+            [['prefix', 'uname', 'luname', 'org_id', 'email', 'tel'], 'required', 'on' => ['default']],
 
             // อนุญาต password ว่างได้ -> แปลง '' เป็น NULL
             ['password', 'filter', 'filter' => function($v){ return $v === '' ? null : $v; }],
@@ -84,9 +71,19 @@ class Account extends \yii\db\ActiveRecord implements IdentityInterface
             [['uname', 'luname'], 'string', 'max' => 100],
             [['username'], 'match','pattern' => '/^[a-zA-Z0-9]*$/i','message' => 'Invalid characters in username.'],
 
-            // กันข้อมูลซ้ำ
+            // กัน username ซ้ำทุกกรณี
             [['username'], 'unique'],
-            [['email'], 'unique'],
+
+            /*
+             * เรื่อง email:
+             * - ใน SSO บางทีได้เมลว่าง หรือเมลซ้ำ → ถ้าใส่ unique ตรง ๆ จะชน
+             * - เราเลยให้ unique เฉพาะกรณีที่ email ไม่ว่าง
+             */
+            ['email', 'unique', 'filter' => ['not', ['email' => null]]],
+            ['email', 'unique', 'filter' => ['not', ['email' => '']]],
+
+            // tel เอาเป็น string แทน int เพราะจาก SSO บางทีเป็น '' หรือมีขีด
+            ['tel', 'string', 'max' => 20],
         ];
     }
 
@@ -115,13 +112,28 @@ class Account extends \yii\db\ActiveRecord implements IdentityInterface
     public function initDefaultsForSso(): void
     {
         if ($this->isNewRecord) {
-            // ★★ ปรับตามที่ขอ: ให้ position = 1 ครั้งแรก ★★
+            // ตั้ง active/position ครั้งแรก
             if ($this->position === null) {
                 $this->position = 1;
             }
+            // authKey
             if (empty($this->authKey)) {
                 $this->authKey = Yii::$app->security->generateRandomString(32);
             }
+        }
+
+        // กันค่า SSO ว่าง ๆ
+        if ($this->email === null) {
+            $this->email = '';
+        }
+        if ($this->tel === null) {
+            $this->tel = '';
+        }
+        if ($this->prefix === null) {
+            $this->prefix = 0;
+        }
+        if ($this->org_id === null) {
+            $this->org_id = 0;
         }
     }
 
@@ -134,7 +146,6 @@ class Account extends \yii\db\ActiveRecord implements IdentityInterface
         return static::findOne($id);
     }
 
-    // ปกติเราไม่ใช้ access token กับตารางนี้
     public static function findIdentityByAccessToken($token, $type = null)
     {
         return null;
