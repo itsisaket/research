@@ -57,7 +57,6 @@ class ResearchproController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'], 
-                    'logout'     => ['POST'],
                 ],
             ],
         ];

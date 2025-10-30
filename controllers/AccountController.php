@@ -54,7 +54,6 @@ class AccountController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
-                    'logout'     => ['POST'],
                 ],
             ],
         ];

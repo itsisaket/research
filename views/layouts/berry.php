@@ -8,12 +8,6 @@ BerryAsset::register($this);
 
 $this->beginPage();
 ?>
-
-<?php if (!($this->params['isLoginPage'] ?? false)): ?>
-  <script>
-    // โค้ดที่เช็ก token แล้ว redirect
-  </script>
-<?php endif; ?>
 <!DOCTYPE html>
 <html lang="<?= Yii::$app->language ?>">
 <head>
@@ -26,7 +20,7 @@ $this->beginPage();
 <body data-pc-preset="preset-1">
 <?php $this->beginBody() ?>
 
-<!-- ✅ Sidebar & Navbar (partials self-contained) -->
+<!-- ✅ Sidebar & Navbar -->
 <?= $this->render('_sidebar') ?>
 <?= $this->render('_navbar') ?>
 
@@ -51,7 +45,7 @@ $this->beginPage();
     preset_change('preset-1');
   } catch (e) {}
 
-  // ล้าง token/flag ตอนกดปุ่ม logout (ปุ่มไหนก็ได้ที่ใส่ data-action="logout")
+  // ล้าง token/flag ตอนกด logout
   document.addEventListener('click', function(e){
     const btn = e.target.closest('[data-action="logout"]');
     if (btn) {
@@ -62,10 +56,8 @@ $this->beginPage();
     }
   });
 </script>
-
 <?php
 // ===== Guard & Token Enforcement =====
-// หมายเหตุ: ถ้าเป็นหน้า login ให้ตั้ง $this->params['isLoginPage'] = true ใน view นั้น
 $user          = Yii::$app->user;
 $hasSessionJs  = $user->isGuest ? 'false' : 'true';
 $loginUrl      = Url::to(['/site/login'], true);
@@ -91,21 +83,12 @@ $isLoginPage   = isset($this->params['isLoginPage']) && $this->params['isLoginPa
   const norm   = s => (s || '').replace(/\/+$/,'');
   const path   = norm(location.pathname);
   const params = new URLSearchParams(location.search);
-  const base   = norm(baseUrl || '/');
 
   const isLoginLike =
     path.endsWith('/site/login') || path.endsWith('/site/logout') ||
     params.get('r') === 'site/login' || params.get('r') === 'site/logout';
 
-  // ✅ นับเป็น index เมื่อเป็น root ของแอป, /index.php, /site/index หรือ ?r=site/index
-  const isIndex =
-    params.get('r') === 'site/index' ||
-    path.endsWith('/site/index')     ||
-    path.endsWith('/index.php')      ||
-    path === '' || path === '/'      ||
-    path === base || path === base + '/';
-
-  // ฟังก์ชัน POST logout แบบปลอดภัย แล้วเด้งไป login พร้อม redirect เดิม
+  // ฟังก์ชัน POST logout แล้วเด้งไป login
   function forceServerLogoutThenToLogin() {
     try {
       const form = document.createElement('form');
@@ -121,45 +104,30 @@ $isLoginPage   = isset($this->params['isLoginPage']) && $this->params['isLoginPa
       document.body.appendChild(form);
       form.submit();
     } catch(e) {
-      // fallback: ไปหน้า login พร้อม redirect
       const url = loginUrl + (loginUrl.includes('?') ? '&' : '?') + 'redirect=' + encodeURIComponent(backUrl);
       location.replace(url);
     }
   }
 
-  // ⛳ หน้าล็อกอิน/ออกจากระบบ: ไม่ต้องเช็ค token ที่นี่
+  // 1) ถ้าเป็นหน้า login/logout หรือ view ตั้งค่าว่าเป็น login page → ไม่ต้องเช็ก
   if (isLoginLike || isLoginPage) return;
 
-  // ⛳ หน้า index: ให้ผ่าน (คุณมี AccessControl ฝั่งเซิร์ฟเวอร์คุมเส้นทางอยู่แล้ว)
-  //   *แพตเทิร์นของคุณคือ ต้องไป /site/login ก่อน แล้วค่อยมา index*
-  //   ดังนั้น guard ฝั่ง server ต้องบังคับ guest → /site/login
-  if (isIndex) {
-    // ถ้าอยาก “เข้ม” เพิ่มเติม: ถ้าไม่มี token แต่มี session ค้าง → บังคับ logout
-    try {
-      const tok = localStorage.getItem(KEY);
-      if (!tok || tok.trim() === '') {
-        // ไม่มีโทเคนในเครื่อง แต่ user มี session? ตัดเซสชันทิ้งเพื่อความปลอดภัย
-        if (<?= $hasSessionJs ?>) forceServerLogoutThenToLogin();
-      }
-    } catch(_) {}
-    return;
-  }
+  // 2) ถ้ายังไม่ได้ล็อกอิน (guest) → ปล่อยผ่านเลย
+  //    ตรงนี้คือหัวใจของ "วิธีที่ 3" ที่คุณขอ
+  if (!hasSession) return;
 
-  // 🔐 หน้าอื่นทั้งหมด: ต้องมีทั้ง "session ฝั่ง server" และ "token ใน localStorage"
-  // ถ้าอย่างใดอย่างหนึ่งขาด → ออกจากระบบทั้งหมด แล้วไปหน้า login
+  // 3) ถึงตรงนี้แปลว่า "ล็อกอินแล้ว" → ต้องมี token
   try {
     const token = localStorage.getItem(KEY);
     const hasToken = !!(token && token.trim() !== '');
 
-    if (!hasSession || !hasToken) {
-      // เคลียร์ token ฝั่ง client เพื่อกันค้าง
+    if (!hasToken) {
       try { localStorage.removeItem(KEY); } catch(_) {}
-      // ออกจากระบบฝั่งเซิร์ฟเวอร์ แล้วไป login
       forceServerLogoutThenToLogin();
       return;
     }
   } catch(e) {
-    // กรณีเข้าถึง storage ไม่ได้ → บังคับออกจากระบบ
+    // เข้าถึง storage ไม่ได้ แต่ล็อกอินอยู่ → ออกจากระบบ
     forceServerLogoutThenToLogin();
     return;
   }
