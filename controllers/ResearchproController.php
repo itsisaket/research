@@ -69,8 +69,15 @@ class ResearchproController extends Controller
      */
     public function actionIndex()
     {
+        $session = Yii::$app->session;
+        $ty=$session['ty'];
+
         $searchModel = new ResearchproSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
+
+        if (!Yii::$app->user->isGuest) {
+             $dataProvider->query->andWhere(['org_id'=>$ty]);
+        }
 
         return $this->render('index', [
             'searchModel' => $searchModel,

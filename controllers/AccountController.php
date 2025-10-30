@@ -71,11 +71,11 @@ class AccountController extends Controller
 
         $searchModel = new AccountSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-     
-            $dataProvider->query->andWhere(['org_id'=>$ty]);
-
         
-
+        if (!Yii::$app->user->isGuest) {
+             $dataProvider->query->andWhere(['org_id'=>$ty]);
+        }
+       
         return $this->render('index', [
             'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,

@@ -33,10 +33,9 @@ class ProjectController extends Controller
     {
         return [
             'access' => [
-                //'class' => \yii\filters\AccessControl::class,
                 'class' => AccessControl::className(),
                 'ruleConfig' => [
-                    'class' => HanumanRule::className(),
+                    'class' => ApiAuthService::className(),
                 ],
                 'only' => ['index','update','view','create'],
                 'rules' => [

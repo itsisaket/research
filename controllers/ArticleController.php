@@ -67,7 +67,10 @@ class ArticleController extends Controller
 
         $searchModel = new ArticleSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
-            $dataProvider->query->andWhere(['org_id'=>$ty]);
+        
+        if (!Yii::$app->user->isGuest) {
+             $dataProvider->query->andWhere(['org_id'=>$ty]);
+        }
 
 
         return $this->render('index', [
