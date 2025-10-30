@@ -36,6 +36,9 @@ class AccountController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
+                'ruleConfig' => [
+                    'class' => HanumanRule::class,
+                ],
                 'rules' => [
                     // ✅ เปิดให้ทุกคนเข้าได้
                     [
@@ -71,8 +74,8 @@ class AccountController extends Controller
 
         $searchModel = new AccountSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-        
-        if (!Yii::$app->user->isGuest) {
+
+        if (!empty($ty)) {
              $dataProvider->query->andWhere(['org_id'=>$ty]);
         }
        
