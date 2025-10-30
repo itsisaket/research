@@ -79,8 +79,7 @@ class Account extends \yii\db\ActiveRecord implements IdentityInterface
              * - ใน SSO บางทีได้เมลว่าง หรือเมลซ้ำ → ถ้าใส่ unique ตรง ๆ จะชน
              * - เราเลยให้ unique เฉพาะกรณีที่ email ไม่ว่าง
              */
-            ['email', 'unique', 'filter' => ['not', ['email' => null]]],
-            ['email', 'unique', 'filter' => ['not', ['email' => '']]],
+            ['email', 'unique', 'filter' => ['not in', 'email', [null, '']]],
 
             // tel เอาเป็น string แทน int เพราะจาก SSO บางทีเป็น '' หรือมีขีด
             ['tel', 'string', 'max' => 20],
