@@ -20,11 +20,13 @@ $index  = Url::to(['/site/index']);
 
     <div id="status" class="alert alert-info mb-4">กำลังตรวจสอบ...</div>
 
+    <!-- เมื่อยังไม่มี token ให้กดไป login HRM -->
     <div id="login-cta" class="d-none">
       <a id="btn-login" href="https://sci-sskru.com/hrm/login" class="btn btn-success">คลิ๊กเข้าสู่ระบบ</a>
       <a href="<?= $index ?>" class="btn btn-outline-secondary ms-2" data-pjax="0">กลับหน้าแรก</a>
     </div>
 
+    <!-- การ์ดโปรไฟล์ -->
     <div id="profile-card" class="card shadow-sm mx-auto d-none">
       <div class="card-body">
         <div class="d-flex align-items-start gap-3 mb-3 justify-content-center">
@@ -77,6 +79,7 @@ $index  = Url::to(['/site/index']);
       </div>
     </div>
 
+    <!-- ปุ่มออกจากระบบ -->
     <div id="actions-logout" class="d-none mt-4">
       <?php
         echo Html::beginForm(['site/logout'], 'post', [
@@ -100,12 +103,12 @@ $index  = Url::to(['/site/index']);
 <script>
 const CSRF_TOKEN = <?= json_encode($csrf) ?>;
 const SYNC_URL   = <?= json_encode($sync) ?>;
-const LOGOUT_URL = <?= json_encode($logout) ?>;
 const INDEX_URL  = <?= json_encode($index) ?>;
 const API_PROFILE_URL = 'https://sci-sskru.com/authen/profile';
 
 const $ = (id)=>document.getElementById(id);
 
+/* --------- JWT utils --------- */
 function parseJwt(token){
   if (!token) return null;
   const p = token.split('.');
@@ -117,12 +120,14 @@ function parseJwt(token){
   } catch { return null; }
 }
 
+/* --------- fetch JSON helper --------- */
 async function fetchJson(url, opts = {}){
   const res = await fetch(url, opts);
   const txt = await res.text();
   try { return JSON.parse(txt); } catch { return {}; }
 }
 
+/* --------- skeleton UI --------- */
 function startPlaceholders(){
   ['fullName','email','dept_name','category_type_name','employee_type_name','academic_type_name']
     .forEach(id => $(id).classList.add('placeholder-glow'));
@@ -135,14 +140,14 @@ function stopPlaceholders(){
   $('avatar').classList.remove('bg-light');
 }
 
-// ✅ เวอร์ชันเบา: แค่โชว์ปุ่ม ไม่ต้องบังคับ logout เซิร์ฟเวอร์
+/* --------- แสดงปุ่ม login แต่ "ไม่ลบ" token --------- */
 function showCta(msg, type='warning'){
   const statusEl = $('status');
   const loginCta = $('login-cta');
   const card     = $('profile-card');
   const actions  = $('actions-logout');
 
-  try { localStorage.removeItem('hrm-sci-token'); } catch(e){}
+  // ❌ ไม่ลบโทเคนออกจาก localStorage แล้ว
   statusEl.className = 'alert alert-' + type + ' mb-4';
   statusEl.textContent = msg;
   loginCta.classList.remove('d-none');
@@ -150,6 +155,7 @@ function showCta(msg, type='warning'){
   actions.classList.add('d-none');
 }
 
+/* --------- main flow --------- */
 (async function render(){
   const statusEl  = $('status');
   const loginCta  = $('login-cta');
@@ -157,15 +163,16 @@ function showCta(msg, type='warning'){
   const actions   = $('actions-logout');
 
   const token = localStorage.getItem('hrm-sci-token');
-
   const urlParams = new URLSearchParams(location.search);
   const redirectTo = urlParams.get('redirect') || INDEX_URL;
 
+  // 1) ไม่มีโทเคนเลย → ให้ไป login ที่ HRM
   if (!token) {
     showCta('ยังไม่มีข้อมูลโทเคน (ไม่พบ hrm-sci-token)');
     return;
   }
 
+  // 2) เช็ก payload / exp
   const payload = parseJwt(token) || {};
   const personalId = payload.personal_id || payload.uname || null;
   const leeway = 120;
@@ -180,6 +187,7 @@ function showCta(msg, type='warning'){
     return;
   }
 
+  // 3) แสดง UI ว่า token ใช้ได้
   statusEl.className = 'alert alert-success mb-4';
   statusEl.textContent = 'ยืนยันโทเคนแล้ว (ID: ' + personalId + ')';
   loginCta.classList.add('d-none');
@@ -187,7 +195,7 @@ function showCta(msg, type='warning'){
   actions.classList.remove('d-none');
   startPlaceholders();
 
-  // ดึงโปรไฟล์จาก HRM
+  // 4) ดึงโปรไฟล์จาก HRM
   let profile = {};
   try {
     const raw = await fetchJson(API_PROFILE_URL, {
@@ -200,7 +208,7 @@ function showCta(msg, type='warning'){
     profile = {};
   }
 
-  // อัปเดต DOM
+  // 5) อัปเดต DOM
   try {
     const p = profile || {};
     const titleName = p.title_name ?? '';
@@ -233,7 +241,7 @@ function showCta(msg, type='warning'){
     stopPlaceholders();
   }
 
-  // ✅ sync เข้า Yii
+  // 6) sync เข้า Yii
   try {
     const res = await fetch(SYNC_URL, {
       method:'POST',
@@ -246,20 +254,28 @@ function showCta(msg, type='warning'){
     const data = await res.json().catch(()=>({}));
 
     if (res.ok && data && data.ok) {
+      // ถ้า backend รับแล้ว → ไปหน้าที่ตั้งใจ
       statusEl.className = 'alert alert-success mb-4';
       statusEl.textContent = 'เข้าสู่ระบบสำเร็จ กำลังเปลี่ยนหน้า...';
       window.location.href = redirectTo;
       return;
     }
 
-    // ถ้า backend ตอบไม่ใช่ ok → แค่แสดงปุ่ม login
-    showCta(data?.error || 'ไม่สามารถ sync session ได้');
+    // ถ้า backend ไม่ ok → แค่บอกว่า sync ไม่สำเร็จ แต่ยังไม่ต้องลบ token
+    statusEl.className = 'alert alert-warning mb-4';
+    statusEl.textContent = data?.error || 'ไม่สามารถ sync session ได้ (แต่ยังอยู่ในระบบฝั่ง browser)';
+    // อาจจะแสดงปุ่ม login ซ้ำให้กดอีกรอบก็ได้
+    loginCta.classList.remove('d-none');
+
   } catch(e){
-    showCta('เกิดข้อผิดพลาดระหว่างเชื่อมต่อเซิร์ฟเวอร์');
+    // กรณี server ล่ม / ตอบ HTML → ยังไม่ต้องลบ token
+    statusEl.className = 'alert alert-warning mb-4';
+    statusEl.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ขอลองใหม่หรือติดต่อผู้ดูแลระบบ';
+    loginCta.classList.remove('d-none');
   }
 })();
 
-// เคลียร์ storage ตอนกด logout
+/* --------- เคลียร์ storage ตอน "ผู้ใช้" กดออกเองเท่านั้น --------- */
 (function(){
   var form = document.getElementById('page-logout-form');
   if (!form) return;

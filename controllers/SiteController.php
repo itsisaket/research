@@ -78,39 +78,37 @@ class SiteController extends Controller
      * รับ JSON: { "token": "...", "profile": {...} }
      * แล้ว login เข้า Yii + เก็บโปรไฟล์ไว้ใน session
      */
-    public function actionMyProfile()
-    {
-        Yii::$app->response->format = Response::FORMAT_JSON;
+public function actionMyProfile()
+{
+    Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
-        // รับ JSON ดิบ
-        $raw  = Yii::$app->request->getRawBody();
-        $data = json_decode($raw, true);
-        if (!is_array($data)) {
-            // เผื่อกรณีส่งแบบ form
-            $data = Yii::$app->request->post();
-        }
-
-        $token   = $data['token']   ?? null;
-        $profile = $data['profile'] ?? [];
-
-        if (!$token) {
-            return ['ok' => false, 'error' => 'no token'];
-        }
-
-        // หาผู้ใช้จาก token
-        $user = User::findByHrmToken($token);
-        if (!$user) {
-            return ['ok' => false, 'error' => 'user not found (token not mapped)'];
-        }
-
-        // login เข้า Yii
-        Yii::$app->user->login($user, 3600 * 8);
-
-        // เก็บโปรไฟล์ไว้ใช้ต่อ
-        Yii::$app->session->set('hrmProfile', $profile);
-
-        return ['ok' => true];
+    // 1) รับ JSON
+    $raw  = Yii::$app->request->getRawBody();
+    $data = json_decode($raw, true);
+    if (!is_array($data)) {
+        $data = Yii::$app->request->post();
     }
+
+    $token   = $data['token']   ?? null;
+    $profile = $data['profile'] ?? [];
+
+    if (!$token) {
+        return ['ok' => false, 'error' => 'no token'];
+    }
+
+    // 2) สร้าง identity จาก token + profile แล้วเก็บ session
+    //    (เมธอดนี้มาจาก models/User.php เวอร์ชันล่าสุดที่เราเขียน)
+    $user = \app\models\User::fromToken($token, $profile);
+
+    // 3) login เข้า Yii (ใช้ session เดียวกับ identity)
+    //    0 = อยู่ได้ตามอายุ session PHP
+    Yii::$app->user->login($user, 0);
+
+    // 4) เผื่ออยากเก็บโปรไฟล์ซ้ำไว้อีกก้อน
+    Yii::$app->session->set('hrmProfile', $user->profile);
+
+    return ['ok' => true];
+}
 
 
 
