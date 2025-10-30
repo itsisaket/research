@@ -10,7 +10,7 @@ $this->params['breadcrumbs'][] = $this->title;
 $this->params['isLoginPage'] = true;
 
 $csrf   = Yii::$app->request->getCsrfToken();
-$sync   = Url::to(['/site/my-profile']); // ✅ ตัวรับ sync
+$sync   = Url::to(['/site/my-profile']); // ✅ ตัวรับ sync จาก JWT → DB
 $logout = Url::to(['/site/logout']);
 $index  = Url::to(['/site/index']);
 ?>
@@ -39,6 +39,7 @@ $index  = Url::to(['/site/index']);
             <div id="email" class="text-muted small placeholder-glow">
               <span class="placeholder col-4"></span>
             </div>
+            <div id="pid" class="text-muted small"></div>
           </div>
         </div>
 
@@ -102,7 +103,7 @@ $index  = Url::to(['/site/index']);
 
 <script>
 const CSRF_TOKEN = <?= json_encode($csrf) ?>;
-const SYNC_URL   = <?= json_encode($sync) ?>;
+const SYNC_URL   = <?= json_encode($sync) ?>;   // ← controller ที่จะสร้าง/อัปเดต tb_user และตั้ง position=1 ถ้าเป็น user ใหม่
 const INDEX_URL  = <?= json_encode($index) ?>;
 const API_PROFILE_URL = 'https://sci-sskru.com/authen/profile';
 
@@ -147,7 +148,6 @@ function showCta(msg, type='warning'){
   const card     = $('profile-card');
   const actions  = $('actions-logout');
 
-  // ❌ ไม่ลบโทเคนออกจาก localStorage แล้ว
   statusEl.className = 'alert alert-' + type + ' mb-4';
   statusEl.textContent = msg;
   loginCta.classList.remove('d-none');
@@ -175,7 +175,7 @@ function showCta(msg, type='warning'){
   // 2) เช็ก payload / exp
   const payload = parseJwt(token) || {};
   const personalId = payload.personal_id || payload.uname || null;
-  const leeway = 120;
+  const leeway = 120; // เผื่อเวลาเบี้ยว
   const now = Math.floor(Date.now()/1000);
 
   if (Number.isFinite(payload.exp) && (payload.exp + leeway) < now) {
@@ -203,26 +203,32 @@ function showCta(msg, type='warning'){
       headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
       body: JSON.stringify({ personal_id: personalId })
     });
+    // บางที HRM ตอบ {profile:{...}} บางที {...}
     profile = (raw && typeof raw === 'object') ? (raw.profile || raw || {}) : {};
   } catch(e) {
     profile = {};
   }
 
-  // 5) อัปเดต DOM
+  // 5) อัปเดต DOM ให้ดูสวย
   try {
-    const p = profile || {};
-    const titleName = p.title_name ?? '';
-    const firstName = p.first_name ?? '';
-    const lastName  = p.last_name ?? '';
-    const email     = p.email ?? p.email_uni_google ?? p.email_uni_microsoft ?? '-';
-    const dept      = p.dept_name ?? '-';
-    const category  = p.category_type_name ?? '-';
-    const employee  = p.employee_type_name ?? '-';
-    const academic  = p.academic_type_name ?? '-';
-    const imgUrl    = p.img ? ('https://sci-sskru.com/authen' + (p.img.startsWith('/')?'':'/') + p.img) : '';
+    // fallback จาก payload ถ้า HRM ไม่ให้มา
+    const titleName = profile.title_name ?? '';
+    const firstName = profile.first_name ?? payload.first_name ?? '';
+    const lastName  = profile.last_name  ?? payload.last_name  ?? '';
+    const email     = profile.email
+                      ?? profile.email_uni_google
+                      ?? profile.email_uni_microsoft
+                      ?? payload.email
+                      ?? '-';
+    const dept      = profile.dept_name ?? '-';
+    const category  = profile.category_type_name ?? '-';
+    const employee  = profile.employee_type_name ?? '-';
+    const academic  = profile.academic_type_name ?? '-';
+    const imgUrl    = profile.img ? ('https://sci-sskru.com/authen' + (profile.img.startsWith('/')?'':'/') + profile.img) : '';
 
     $('fullName').textContent = (`${titleName}${firstName} ${lastName}`).trim() || '-';
     $('email').textContent    = email;
+    $('pid').textContent      = personalId ? ('รหัสบุคลากร: ' + personalId) : '';
     $('dept_name').textContent = dept;
     $('category_type_name').textContent = category;
     $('employee_type_name').textContent = employee;
@@ -241,7 +247,7 @@ function showCta(msg, type='warning'){
     stopPlaceholders();
   }
 
-  // 6) sync เข้า Yii
+  // 6) sync เข้า Yii → ให้ controller สร้าง/อัปเดต tb_user และตั้ง position = 1 ถ้าเป็น user ใหม่
   try {
     const res = await fetch(SYNC_URL, {
       method:'POST',
@@ -263,12 +269,11 @@ function showCta(msg, type='warning'){
 
     // ถ้า backend ไม่ ok → แค่บอกว่า sync ไม่สำเร็จ แต่ยังไม่ต้องลบ token
     statusEl.className = 'alert alert-warning mb-4';
-    statusEl.textContent = data?.error || 'ไม่สามารถ sync session ได้ (แต่ยังอยู่ในระบบฝั่ง browser)';
-    // อาจจะแสดงปุ่ม login ซ้ำให้กดอีกรอบก็ได้
+    statusEl.textContent = data?.error || 'ไม่สามารถ sync ข้อมูลเข้าสู่ระบบได้ (token ยังอยู่ใน browser)';
     loginCta.classList.remove('d-none');
 
   } catch(e){
-    // กรณี server ล่ม / ตอบ HTML → ยังไม่ต้องลบ token
+    // เซิร์ฟเวอร์ล่ม → ยังไม่ต้องลบ token
     statusEl.className = 'alert alert-warning mb-4';
     statusEl.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ขอลองใหม่หรือติดต่อผู้ดูแลระบบ';
     loginCta.classList.remove('d-none');
