@@ -7,12 +7,12 @@ use yii\helpers\ArrayHelper;
 use kartik\widgets\Select2;
 use kartik\widgets\TypeaheadBasic;
 use kartik\depdrop\DepDrop;
-use kartik\widgets\FileInput;
 use kartik\date\DatePicker;
+use kartik\widgets\FileInput;
 
 use yii\helpers\Url;
-use yii\bootstrap4\Alert;
-use yii\bootstrap4\Modal;
+use yii\bootstrap5\Alert;
+use yii\bootstrap5\Modal;
 
 use aryelds\sweetalert\SweetAlert;
 
