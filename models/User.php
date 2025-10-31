@@ -187,9 +187,8 @@ public static function fromToken(string $jwt, array $profile = null): self
     // ⭐ เพิ่มตรงนี้
     $u->position = $claims['position']
         ?? $profile['position']
-        ?? $profile['employee_type_name']
-        ?? $profile['category_type_name']
         ?? null;
+    $u->uid = $u->id;
 
     // เก็บโปรไฟล์ดิบ
     $u->profile = $profile;
@@ -265,6 +264,7 @@ public static function fromToken(string $jwt, array $profile = null): self
             'luname'       => $this->luname,
             'org_id'       => $this->org_id,
             'position'     => $this->position, 
+            'uid'          => $this->uid,     
         ];
     }
 

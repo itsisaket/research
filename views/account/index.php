@@ -60,7 +60,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'format'=>'raw',
                 'value'=>function($model){
 
-                    if (Yii::$app->user->identity->position==4 or Yii::$app->user->identity->uid==$model->uid) { 
+                    if (Yii::$app->user->identity->position==4 or Yii::$app->user->identity->id==$model->uid) { 
                     return  
                           Html::a('<i class="glyphicon glyphicon-edit"></i> แก้ไข', ['update', 'id' => $model->uid], ['class' => 'btn btn-warning']).' '. 
                           Html::a('<i class="glyphicon glyphicon-trash"></i> ลบ', ['delete', 'id' => $model->uid], ['class' => 'btn btn-danger',
