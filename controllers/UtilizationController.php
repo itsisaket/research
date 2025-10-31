@@ -110,18 +110,33 @@ class UtilizationController extends Controller
     {
         $model = new Utilization();
 
+        // ค่าเริ่มต้น (เลือกศรีสะเกษไว้ก่อนก็ได้)
+        $amphur = [];
+        $sub_district = [];
+
         if ($this->request->isPost) {
             if ($model->load($this->request->post()) && $model->save()) {
                 return $this->redirect(['view', 'utilization_id' => $model->utilization_id]);
+            }
+
+            // ถ้า validate ไม่ผ่าน ให้โหลด depdrop ตาม province ที่เลือกมาแล้ว
+            if ($model->province) {
+                $amphur = ArrayHelper::map($this->getAmphur($model->province), 'id', 'name');
+            }
+            if ($model->district) {
+                $sub_district = ArrayHelper::map($this->getDistrict($model->district), 'id', 'name');
             }
         } else {
             $model->loadDefaultValues();
         }
 
         return $this->render('create', [
-            'model' => $model,
+            'model'        => $model,
+            'amphur'       => $amphur,
+            'sub_district' => $sub_district,
         ]);
     }
+
 
     /**
      * Updates an existing Utilization model.
