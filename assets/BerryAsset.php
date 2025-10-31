@@ -24,7 +24,7 @@ class BerryAsset extends AssetBundle
         'template/berry/js/plugins/simplebar.min.js',
         'template/berry/js/plugins/apexcharts.min.js',
         'template/berry/js/plugins/feather.min.js',
-        'template/berry/js/icon/custom-font.js',
+        'template/berry/js/fonts/custom-font.js',
         'template/berry/js/script.js',
         'template/berry/js/theme.js',
     ];
@@ -35,7 +35,7 @@ class BerryAsset extends AssetBundle
     public $depends = [
         'yii\web\YiiAsset',
         // Uncomment if you use Yii Bootstrap 5 styles
-         'yii\bootstrap5\BootstrapAsset',
+        // 'yii\bootstrap5\BootstrapAsset',
     ];
 }
 
