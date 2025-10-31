@@ -15,6 +15,7 @@ $this->beginPage();
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <?= Html::csrfMetaTags() ?>
   <title>ระบบจัดการวิจัย LASC SSKRU</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
   <?php $this->head() ?>
 </head>
 <body data-pc-preset="preset-1">
