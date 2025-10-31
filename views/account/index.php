@@ -3,7 +3,6 @@
 use yii\helpers\Html;
 use yii\grid\GridView;
 use yii\widgets\Pjax;
-use yii\bootstrap4\Modal;
 use yii\helpers\Url;
 
 
@@ -56,18 +55,36 @@ $this->params['breadcrumbs'][] = $this->title;
                 return $model->hasposition->positionname;
               }
           ],
-            [
-                'format'=>'raw',
-                'value'=>function($model){
-                    $user = Yii::$app->user->identity;
-                    if ($user && ($user->position == 4 ||strtolower($user->position) == 'admin' ||$user->id == $model->uid)) {
-                    return  
-                          Html::a('<i class="glyphicon glyphicon-edit"></i> แก้ไข', ['update', 'id' => $model->uid], ['class' => 'btn btn-warning']).' '. 
-                          Html::a('<i class="glyphicon glyphicon-trash"></i> ลบ', ['delete', 'id' => $model->uid], ['class' => 'btn btn-danger',
-                          'data' => ['confirm' => 'Are you sure you want to delete this item?','method' => 'post',],]);     
-                    }
-                }
-            ],
+          [
+              'format' => 'raw',
+              'value' => function($model){
+                  $user = Yii::$app->user->identity;
+                  if (
+                      $user &&
+                      ($user->position == 4 || strtolower($user->position) == 'admin' || $user->id == $model->uid)
+                  ) {
+                      return
+                          Html::a(
+                              '<i class="fa fa-edit"></i> แก้ไข',
+                              ['update', 'id' => $model->uid],
+                              ['class' => 'btn btn-warning btn-sm']
+                          )
+                          . ' ' .
+                          Html::a(
+                              '<i class="fa fa-trash"></i> ลบ',
+                              ['delete', 'id' => $model->uid],
+                              [
+                                  'class' => 'btn btn-danger btn-sm',
+                                  'data' => [
+                                      'confirm' => 'Are you sure you want to delete this item?',
+                                      'method' => 'post',
+                                  ],
+                              ]
+                          );
+                  }
+                  return null;
+              }
+          ],
 
           
         ],
