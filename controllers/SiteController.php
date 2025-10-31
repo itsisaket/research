@@ -181,13 +181,26 @@ class SiteController extends Controller
         }
 
         // 5) Map ข้อมูลจาก SSO → ตาราง tb_user
-        $account->prefix   = $jwtUser->prefix ?: 0;
-        $account->uname    = $jwtUser->uname ?: ($jwtUser->name ?? 'ไม่ระบุชื่อ');
-        $account->luname   = $jwtUser->luname ?: '';
-        $account->org_id   = $jwtUser->org_id ?: 0;
-        $account->email    = $jwtUser->email ?: '';
-        $account->position = 1;
-        $account->tel      = $jwtUser->tel ?? '';
+        $account->prefix = $jwtUser->prefix ?: 0;
+        $account->uname  = $jwtUser->uname ?: ($jwtUser->name ?? 'ไม่ระบุชื่อ');
+        $account->luname = $jwtUser->luname ?: '';
+        $account->org_id = $jwtUser->org_id ?: 0;
+        $account->email  = $jwtUser->email ?: '';
+        $account->tel    = $jwtUser->tel ?? '';
+
+        // position logic
+        if ($account->isNewRecord) {
+            // เพิ่มใหม่ → สิทธิ์พื้นฐาน
+            $account->position = 1;
+        } else {
+            // มีใน DB แล้ว → ใช้ค่าที่มีอยู่
+            // ถ้าจะไม่แตะเลยก็ไม่ต้องเซ็ตซ้ำ
+            // ถ้าจะกัน null กรณีฐานข้อมูลเก่าให้ทำแบบนี้
+            if ($account->position === null) {
+                $account->position = 1;
+            }
+        }
+
 
         // 6) พยายามบันทึกข้อมูล
         try {
