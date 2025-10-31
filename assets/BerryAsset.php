@@ -35,7 +35,7 @@ class BerryAsset extends AssetBundle
     public $depends = [
         'yii\web\YiiAsset',
         // Uncomment if you use Yii Bootstrap 5 styles
-         'yii\bootstrap5\BootstrapAsset',
+        // 'yii\bootstrap5\BootstrapAsset',
     ];
 }
 
