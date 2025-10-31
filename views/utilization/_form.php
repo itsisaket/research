@@ -22,7 +22,12 @@ use app\models\District;
 /* @var $this yii\web\View */
 /* @var $model app\models\Utilization */
 /* @var $form yii\widgets\ActiveForm */
+
+
 ?>
+
+<?php $amphur = $amphur ?? []; ?>
+<?php $sub_district = $sub_district ?? []; ?>
 
 <div class="utilization-form">
 
@@ -52,19 +57,16 @@ use app\models\District;
     </div>          
     <div class="row">
         <div class="col-sm-2">
-            <?= $form->field($model, 'utilization_date')->widget(DatePicker::className(), [
-                                    //'language'=>'th',
-                                    'name' => 'utilization_date',
-                                    'options' => ['placeholder' => 'เลือกวันที่...'],
-                                    'type' => DatePicker::TYPE_COMPONENT_APPEND,
-                                    'pickerIcon' => '<i class="fas fa-calendar-alt text-primary"></i>',
-                                    'pluginOptions' => [
-                                        'autoclose' => true,
-                                        'format' => 'dd-mm-yyyy',
-                                        'todayHighlight' => true,
-                                    ]
-                                ])
-                                ?>
+                <?= $form->field($model, 'utilization_date')->widget(DatePicker::class, [
+                    'type' => DatePicker::TYPE_COMPONENT_APPEND,
+                    'options' => ['placeholder' => 'เลือกวันที่...'],
+                    'pickerIcon' => '<i class="fas fa-calendar-alt text-primary"></i>',
+                    'pluginOptions' => [
+                        'autoclose' => true,
+                        'format' => 'dd-mm-yyyy',
+                        'todayHighlight' => true,
+                    ],
+                ]) ?>
         </div>
         <div class="col-sm-4">
             <?= $form->field($model, 'utilization_add')->textInput(['maxlength' => true]) ?>

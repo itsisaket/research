@@ -101,66 +101,59 @@ class UtilizationController extends Controller
         ]);
     }
 
-    /**
-     * Creates a new Utilization model.
-     * If creation is successful, the browser will be redirected to the 'view' page.
-     * @return string|\yii\web\Response
-     */
-    public function actionCreate()
-    {
-        $model = new Utilization();
+public function actionCreate()
+{
+    $model = new Utilization();
 
-        // ค่าเริ่มต้น (เลือกศรีสะเกษไว้ก่อนก็ได้)
-        $amphur = [];
-        $sub_district = [];
+    $amphur = [];
+    $sub_district = [];
 
-        if ($this->request->isPost) {
-            if ($model->load($this->request->post()) && $model->save()) {
+    if ($this->request->isPost) {
+        if ($model->load($this->request->post())) {
+
+            // ถ้าจะล็อก org_id ตาม session
+            // $model->org_id = Yii::$app->session->get('ty');
+
+            if ($model->save()) {
                 return $this->redirect(['view', 'utilization_id' => $model->utilization_id]);
             }
 
-            // ถ้า validate ไม่ผ่าน ให้โหลด depdrop ตาม province ที่เลือกมาแล้ว
             if ($model->province) {
                 $amphur = ArrayHelper::map($this->getAmphur($model->province), 'id', 'name');
             }
             if ($model->district) {
                 $sub_district = ArrayHelper::map($this->getDistrict($model->district), 'id', 'name');
             }
-        } else {
-            $model->loadDefaultValues();
         }
-
-        return $this->render('create', [
-            'model'        => $model,
-            'amphur'       => $amphur,
-            'sub_district' => $sub_district,
-        ]);
+    } else {
+        $model->loadDefaultValues();
     }
 
+    return $this->render('create', [
+        'model'        => $model,
+        'amphur'       => $amphur,
+        'sub_district' => $sub_district,
+    ]);
+}
 
-    /**
-     * Updates an existing Utilization model.
-     * If update is successful, the browser will be redirected to the 'view' page.
-     * @param int $utilization_id รหัส
-     * @return string|\yii\web\Response
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    public function actionUpdate($utilization_id)
-    {
-        $model = $this->findModel($utilization_id);
-        $amphur         = ArrayHelper::map($this->getAmphur($model->province),'id','name');
-        $subdistrict       = ArrayHelper::map($this->getDistrict($model->district),'id','name');
+public function actionUpdate($utilization_id)
+{
+    $model = $this->findModel($utilization_id);
 
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'utilization_id' => $model->utilization_id]);
-        }
+    $amphur       = ArrayHelper::map($this->getAmphur($model->province), 'id', 'name');
+    $sub_district = ArrayHelper::map($this->getDistrict($model->district), 'id', 'name');
 
-        return $this->render('update', [
-            'model' => $model,
-            'amphur'=> $amphur,
-            'sub_district' => $subdistrict
-         ]);
+    if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
+        return $this->redirect(['view', 'utilization_id' => $model->utilization_id]);
     }
+
+    return $this->render('update', [
+        'model'        => $model,
+        'amphur'       => $amphur,
+        'sub_district' => $sub_district,
+    ]);
+}
+
 
     /**
      * Deletes an existing Utilization model.
@@ -205,20 +198,20 @@ class UtilizationController extends Controller
         }
         echo Json::encode(['output'=>'', 'selected'=>'']);
     }
-    public function actionGetDistrict() {
-        $out = [];
-        if (isset($_POST['depdrop_parents'])) {
-            $ids = $_POST['depdrop_parents'];
-            $province_id = empty($ids[0]) ? null : $ids[0];
-            $amphur_id = empty($ids[1]) ? null : $ids[1];
-            if ($province_id != null) {
-               $data = $this->getDistrict($amphur_id);
-               echo Json::encode(['output'=>$data, 'selected'=>'']);
-               return;
-            }
+public function actionGetDistrict() {
+    if (isset($_POST['depdrop_parents'])) {
+        $parents = $_POST['depdrop_parents'];
+        $provinceId = $parents[0] ?? null;
+        $amphurId   = $parents[1] ?? null;
+
+        if ($amphurId !== null) {
+            $data = $this->getDistrict($amphurId);
+            return $this->asJson(['output' => $data, 'selected' => '']);
         }
-        echo Json::encode(['output'=>'', 'selected'=>'']);
     }
+    return $this->asJson(['output' => '', 'selected' => '']);
+}
+
     protected function getAmphur($id){
         $datas = Amphur::find()->where(['PROVINCE_ID'=>$id])->all();
         return $this->MapData($datas,'AMPHUR_CODE','AMPHUR_NAME');
