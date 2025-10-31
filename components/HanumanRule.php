@@ -6,54 +6,42 @@
  */
 
 namespace app\components;
+
 use Yii;
 use yii\web\ForbiddenHttpException;
 use app\models\User;
 
-class HanumanRule extends \yii\filters\AccessRule{
-
+class HanumanRule extends \yii\filters\AccessRule
+{
     /**
      * @inheritdoc
      */
-    /*
     protected function matchRole($user)
     {
-        if(empty($this->roles)){
+        // ✅ ปล่อยให้ทุกคนเข้าถึง action=error ได้
+        $actionId = Yii::$app->controller->action->id ?? null;
+        if ($actionId === 'error') {
             return true;
         }
-        foreach($this->roles as $role){
-            if($role === '?'){
-                if($user->getIsGuest()){
-                    return true;
-                }
-            }else if($role === '@'){
-                if(!$user->getIsGuest()){
-                    return true;
-                }
-            }else if(!$user->getIsGuest() && $role === $user->identity->u_type){
-           // }else if(!$user->getIsGuest() && $role === $user->identity->permission_id){
-                return true;               
-            }
-        }
-        return false;
-    }
-    */
-    protected function matchRole($user)
-    {
+
+        // ถ้า rule นี้ไม่กำหนด roles เลย → ผ่าน (เช่น index, regis แบบ public)
         if (empty($this->roles)) {
             return true;
         }
 
+        // ถ้ายังไม่ได้ login และ rule นี้ต้องการ role → ไม่ผ่าน
         if ($user->getIsGuest()) {
             return false;
         }
 
+        // ดึง identity
         $identity = Yii::$app->user->identity;
         if (!$identity) {
             throw new ForbiddenHttpException('กรุณาเข้าสู่ระบบ');
         }
 
-        $u_type = intval($identity->position);
+        // ตรงนี้คุณผูก role กับตำแหน่งไว้ที่ field "position"
+        $u_type = (int)$identity->position;
 
         // 🔹 กำหนด mapping ชื่อ role ↔ ตัวเลข
         $roleMap = [
@@ -64,13 +52,20 @@ class HanumanRule extends \yii\filters\AccessRule{
         ];
 
         foreach ($this->roles as $role) {
+            // guest
             if ($role === '?' && $user->getIsGuest()) {
                 return true;
-            } elseif ($role === '@' && !$user->getIsGuest()) {
+            }
+            // logged in
+            elseif ($role === '@' && !$user->getIsGuest()) {
                 return true;
-            } elseif (is_numeric($role) && intval($role) === $u_type) {
+            }
+            // ระบุเป็นตัวเลขตรง ๆ เช่น '4'
+            elseif (is_numeric($role) && (int)$role === $u_type) {
                 return true;
-            } elseif (isset($roleMap[$role]) && $roleMap[$role] === $u_type) {
+            }
+            // ระบุเป็นชื่อ เช่น 'admin', 'researcher'
+            elseif (isset($roleMap[$role]) && $roleMap[$role] === $u_type) {
                 return true;
             }
         }

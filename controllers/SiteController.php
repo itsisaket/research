@@ -45,44 +45,53 @@ class SiteController extends Controller
         ];
     }
 
-public function actionIndex()
-{
-    $user    = Yii::$app->user->identity;
-    $isGuest = Yii::$app->user->isGuest;
-
-    $displayName  = null;
-    $displayEmail = null;
-
-    if (!$isGuest && $user) {
-
-        // ลองดึงจาก session เผื่อได้ตัวเต็มจาก HRM
-        $hrmProfile = Yii::$app->session->get('hrmProfile', []);
-
-        // 1) เรียงลำดับความสำคัญของชื่อ
-        $displayName =
-              ($user->uname ?? null)                              // จาก tb_user.uname
-           ?: ($user->name ?? null)                               // ถ้า model มี name
-           ?: (($hrmProfile['title_name'] ?? '')                  // จากโปรไฟล์ HRM
-               .($hrmProfile['first_name'] ?? '')
-               .' '
-               .($hrmProfile['last_name'] ?? ''))
-           ?: ($user->username ?? null)                           // อย่างน้อยก็ให้เห็นรหัสบุคลากร
-           ?: 'ไม่ระบุชื่อ';
-
-        // 2) อีเมล
-        $displayEmail =
-              ($user->email ?? null)
-           ?: ($hrmProfile['email'] ?? null)
-           ?: '-';
+    public function actions()
+    {
+        return [
+            'error' => [
+                'class' => 'yii\web\ErrorAction',
+            ],
+        ];
     }
+    
+    public function actionIndex()
+    {
+        $user    = Yii::$app->user->identity;
+        $isGuest = Yii::$app->user->isGuest;
 
-    return $this->render('index', [
-        'isGuest'      => $isGuest,
-        'u'            => $user,
-        'displayName'  => $displayName,
-        'displayEmail' => $displayEmail,
-    ]);
-}
+        $displayName  = null;
+        $displayEmail = null;
+
+        if (!$isGuest && $user) {
+
+            // ลองดึงจาก session เผื่อได้ตัวเต็มจาก HRM
+            $hrmProfile = Yii::$app->session->get('hrmProfile', []);
+
+            // 1) เรียงลำดับความสำคัญของชื่อ
+            $displayName =
+                ($user->uname ?? null)                              // จาก tb_user.uname
+            ?: ($user->name ?? null)                               // ถ้า model มี name
+            ?: (($hrmProfile['title_name'] ?? '')                  // จากโปรไฟล์ HRM
+                .($hrmProfile['first_name'] ?? '')
+                .' '
+                .($hrmProfile['last_name'] ?? ''))
+            ?: ($user->username ?? null)                           // อย่างน้อยก็ให้เห็นรหัสบุคลากร
+            ?: 'ไม่ระบุชื่อ';
+
+            // 2) อีเมล
+            $displayEmail =
+                ($user->email ?? null)
+            ?: ($hrmProfile['email'] ?? null)
+            ?: '-';
+        }
+
+        return $this->render('index', [
+            'isGuest'      => $isGuest,
+            'u'            => $user,
+            'displayName'  => $displayName,
+            'displayEmail' => $displayEmail,
+        ]);
+    }
 
     /** ============================
      *  หน้า Login / SSO Auto-login

@@ -59,7 +59,6 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'format'=>'raw',
                 'value'=>function($model){
-
                     $user = Yii::$app->user->identity;
                     if ($user && ($user->position == 4 ||strtolower($user->position) == 'admin' ||$user->id == $model->uid)) {
                     return  

@@ -36,14 +36,13 @@ class AccountController extends Controller
     return [
         'access' => [
             'class' => AccessControl::class,
-            // ให้ AccessControl ใช้ rule ของเรา
             'ruleConfig' => [
                 'class' => HanumanRule::class,
             ],
             'rules' => [
                 // 1) ทุกคนเข้าได้
                 [
-                    'actions' => ['index', 'regis', 'error'],
+                    'actions' => ['index', 'regis'],
                     'allow' => true,
                 ],
 
