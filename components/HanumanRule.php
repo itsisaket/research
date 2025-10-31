@@ -39,41 +39,42 @@ class HanumanRule extends \yii\filters\AccessRule{
     }
     */
     protected function matchRole($user)
-{
-    if (empty($this->roles)) {
-        return true;
-    }
-
-    if ($user->getIsGuest()) {
-        return false; // ห้ามผู้ใช้ที่ยังไม่ได้ล็อกอิน
-    }
-
-    // ดึงข้อมูล user จาก session
-    $identity = Yii::$app->user->identity;
-
-    if (!$identity) {
-        throw new ForbiddenHttpException('กรุณาเข้าสู่ระบบ');
-    }
-
-    // แปลงค่า u_status1 และ u_type เป็นตัวเลข
-    $u_type = intval($identity->position);
-
-    foreach ($this->roles as $role) {
-        if ($role === '?') {
-            if ($user->getIsGuest()) {
-                return true;
-            }
-        } elseif ($role === '@') {
-            if (!$user->getIsGuest()) {
-                return true;
-            }
-        } elseif (in_array($u_type, array_map('intval', $this->roles))) {
+    {
+        if (empty($this->roles)) {
             return true;
         }
+
+        if ($user->getIsGuest()) {
+            return false;
+        }
+
+        $identity = Yii::$app->user->identity;
+        if (!$identity) {
+            throw new ForbiddenHttpException('กรุณาเข้าสู่ระบบ');
+        }
+
+        $u_type = intval($identity->position);
+
+        // 🔹 กำหนด mapping ชื่อ role ↔ ตัวเลข
+        $roleMap = [
+            'researcher' => 1,
+            'staff'      => 2,
+            'executive'  => 3,
+            'admin'      => 4,
+        ];
+
+        foreach ($this->roles as $role) {
+            if ($role === '?' && $user->getIsGuest()) {
+                return true;
+            } elseif ($role === '@' && !$user->getIsGuest()) {
+                return true;
+            } elseif (is_numeric($role) && intval($role) === $u_type) {
+                return true;
+            } elseif (isset($roleMap[$role]) && $roleMap[$role] === $u_type) {
+                return true;
+            }
+        }
+
+        return false;
     }
-
-    return false;
-}
-
-
 }

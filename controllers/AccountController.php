@@ -31,36 +31,45 @@ class AccountController extends Controller
     /**
      * {@inheritdoc}
      */
-    public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-              //  'ruleConfig' => [
-              //      'class' => HanumanRule::class,
-              //  ],
-                'rules' => [
-                    // ✅ เปิดให้ทุกคนเข้าได้
-                    [
-                        'actions' => ['index', 'regis','error'],
-                        'allow' => true,
-                    ],
-                    // ✅ ต้องล็อกอิน
-                    [
-                        'actions' => ['view', 'create', 'update', 'delete', 'resetpassword', 'logout'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
+ public function behaviors()
+{
+    return [
+        'access' => [
+            'class' => AccessControl::class,
+            // ให้ AccessControl ใช้ rule ของเรา
+            'ruleConfig' => [
+                'class' => HanumanRule::class,
+            ],
+            'rules' => [
+                // 1) ทุกคนเข้าได้
+                [
+                    'actions' => ['index', 'regis', 'error'],
+                    'allow' => true,
+                ],
+
+                // 2) นักวิจัยเข้าได้เฉพาะ view
+                [
+                    'actions' => ['view'],
+                    'allow' => true,
+                    'roles' => ['researcher'], // position = 1
+                ],
+
+                // 3) admin ทำได้ทุกอย่างที่ระบุ
+                [
+                    'actions' => ['view', 'create', 'update', 'delete', 'resetpassword', 'logout'],
+                    'allow' => true,
+                    'roles' => ['admin'], // position = 4
                 ],
             ],
-            'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'delete' => ['POST'],
-                ],
+        ],
+        'verbs' => [
+            'class' => VerbFilter::class,
+            'actions' => [
+                'delete' => ['POST'],
             ],
-        ];
-    }
+        ],
+    ];
+}
 
 
     /**

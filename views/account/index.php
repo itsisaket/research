@@ -59,10 +59,13 @@ $this->params['breadcrumbs'][] = $this->title;
             [
                 'format'=>'raw',
                 'value'=>function($model){
-                  return  //Html::a('<i class="glyphicon glyphicon-list-alt"></i> ข้อมูล', ['view', 'id' => $model->uid], ['class' => 'btn btn-secondary']).' '.
+
+                    if (Yii::$app->user->identity->position==4 or Yii::$app->user->identity->uid==$model->uid) { 
+                    return  
                           Html::a('<i class="glyphicon glyphicon-edit"></i> แก้ไข', ['update', 'id' => $model->uid], ['class' => 'btn btn-warning']).' '. 
                           Html::a('<i class="glyphicon glyphicon-trash"></i> ลบ', ['delete', 'id' => $model->uid], ['class' => 'btn btn-danger',
                           'data' => ['confirm' => 'Are you sure you want to delete this item?','method' => 'post',],]);     
+                    }
                 }
             ],
 

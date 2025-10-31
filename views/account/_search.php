@@ -2,7 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use yii\bootstrap4\Modal;
+use yii\bootstrap5\Modal;
 use yii\helpers\Url;
 
 /* @var $this yii\web\View */
@@ -21,7 +21,6 @@ use yii\helpers\Url;
       <?= Html::activeTextInput($model, 'q',['class'=>'form-control','placeholder'=>'ค้นหาข้อมูล...']) ?>
       <span class="input-group-btn">
         <button class="btn btn-success" type="submit"><i class="glyphicon glyphicon-search"></i> ค้นหา</button> 
-        <?= Html::button('<i class="glyphicon glyphicon-user"></i> '.Yii::t('app', 'Create User'), ['value' => Url::to(['create']), 'class' => 'showModalButton btn btn-info', 'id' =>'button']);?>
       
       </span>
     </div>
