@@ -1,49 +1,34 @@
 <?php
 
 namespace app\controllers;
-use Yii;
 
+use Yii;
 use app\models\Researchpro;
 use app\models\ResearchproSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
-use app\components\HanumanRule;
-use app\models\User;
-
 use yii\helpers\Json;
 use yii\helpers\ArrayHelper;
-use yii\helpers\BaseFileHelper;
-use yii\helpers\Html;
-use yii\helpers\Url;
 
-use app\models\Province;
 use app\models\Amphur;
 use app\models\District;
 
-use  yii\web\Session;
-/**
- * ResearchproController implements the CRUD actions for Researchpro model.
- */
 class ResearchproController extends Controller
 {
-    /**
-     * @inheritDoc
-     */
     public function behaviors()
     {
         return [
-            // ✅ ป้องกันการเข้าถึงเฉพาะผู้ล็อกอิน
             'access' => [
                 'class' => AccessControl::class,
                 'rules' => [
-                    // ✅ เปิดให้ทุกคนเข้าได้
+                    // ✅ เปิด index, error, และ ajax ของ DepDrop
                     [
-                        'actions' => ['index','error'],
+                        'actions' => ['index', 'error', 'get-amphur', 'get-district'],
                         'allow' => true,
                     ],
-                    // ✅ ต้องล็อกอิน
+                    // ✅ ส่วนที่เหลือต้องล็อกอิน
                     [
                         'actions' => ['view', 'create', 'update', 'delete'],
                         'allow' => true,
@@ -51,46 +36,33 @@ class ResearchproController extends Controller
                     ],
                 ],
             ],
-
-            // ✅ กำหนด HTTP Method ให้ชัด (ป้องกันเรียกผิด)
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
-                    'delete' => ['POST'], 
+                    'delete' => ['POST'],
                 ],
             ],
         ];
     }
 
-    /**
-     * Lists all Researchpro models.
-     *
-     * @return string
-     */
     public function actionIndex()
     {
         $session = Yii::$app->session;
-        $ty=$session['ty'];
+        $ty = $session['ty'] ?? null;
 
         $searchModel = new ResearchproSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
 
-        if (!Yii::$app->user->isGuest) {
-             $dataProvider->query->andWhere(['org_id'=>$ty]);
+        if (!Yii::$app->user->isGuest && $ty) {
+            $dataProvider->query->andWhere(['org_id' => $ty]);
         }
 
         return $this->render('index', [
-            'searchModel' => $searchModel,
+            'searchModel'  => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }
 
-    /**
-     * Displays a single Researchpro model.
-     * @param int $projectID รหัสโครงการ
-     * @return string
-     * @throws NotFoundHttpException if the model cannot be found
-     */
     public function actionView($projectID)
     {
         return $this->render('view', [
@@ -98,11 +70,6 @@ class ResearchproController extends Controller
         ]);
     }
 
-    /**
-     * Creates a new Researchpro model.
-     * If creation is successful, the browser will be redirected to the 'view' page.
-     * @return string|\yii\web\Response
-     */
     public function actionCreate()
     {
         $model = new Researchpro();
@@ -115,107 +82,116 @@ class ResearchproController extends Controller
             $model->loadDefaultValues();
         }
 
+        // ⭐ ส่ง array ว่าง ๆ ไปให้ view เพื่อ DepDrop ตอน create
         return $this->render('create', [
-            'model' => $model,
+            'model'        => $model,
+            'amphur'       => [],
+            'sub_district' => [],
         ]);
     }
 
-    /**
-     * Updates an existing Researchpro model.
-     * If update is successful, the browser will be redirected to the 'view' page.
-     * @param int $projectID รหัสโครงการ
-     * @return string|\yii\web\Response
-     * @throws NotFoundHttpException if the model cannot be found
-     */
     public function actionUpdate($projectID)
     {
         $model = $this->findModel($projectID);
-        $amphur         = ArrayHelper::map($this->getAmphur($model->province),'id','name');
-        $subdistrict       = ArrayHelper::map($this->getDistrict($model->district),'id','name');
+
+        // ดึงอำเภอจากจังหวัดที่บันทึกไว้
+        $amphur = [];
+        if ($model->province) {
+            $amphur = ArrayHelper::map($this->getAmphur($model->province), 'id', 'name');
+        }
+
+        // ดึงตำบลจากอำเภอที่บันทึกไว้
+        $subdistrict = [];
+        if ($model->district) {
+            // ⚠️ ฟังก์ชัน getDistrict() ต้องการ AMPHUR_ID
+            $subdistrict = ArrayHelper::map($this->getDistrict($model->district), 'id', 'name');
+        }
 
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
             return $this->redirect(['view', 'projectID' => $model->projectID]);
         }
 
         return $this->render('update', [
-            'model' => $model,
-            'amphur'=> $amphur,
-            'sub_district' => $subdistrict
+            'model'        => $model,
+            'amphur'       => $amphur,
+            'sub_district' => $subdistrict,
         ]);
     }
 
-    /**
-     * Deletes an existing Researchpro model.
-     * If deletion is successful, the browser will be redirected to the 'index' page.
-     * @param int $projectID รหัสโครงการ
-     * @return \yii\web\Response
-     * @throws NotFoundHttpException if the model cannot be found
-     */
     public function actionDelete($projectID)
     {
         $this->findModel($projectID)->delete();
-
         return $this->redirect(['index']);
     }
 
-    /**
-     * Finds the Researchpro model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param int $projectID รหัสโครงการ
-     * @return Researchpro the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
     protected function findModel($projectID)
     {
         if (($model = Researchpro::findOne(['projectID' => $projectID])) !== null) {
             return $model;
         }
-
         throw new NotFoundHttpException('The requested page does not exist.');
     }
-    
-    public function actionGetAmphur() {
+
+    /* ===================== DepDrop AJAX ===================== */
+
+    public function actionGetAmphur()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
         $out = [];
         if (isset($_POST['depdrop_parents'])) {
             $parents = $_POST['depdrop_parents'];
-            if ($parents != null) {
+            if (!empty($parents)) {
                 $province_id = $parents[0];
                 $out = $this->getAmphur($province_id);
-                echo Json::encode(['output'=>$out, 'selected'=>'']);
-                return;
+                return ['output' => $out, 'selected' => ''];
             }
         }
-        echo Json::encode(['output'=>'', 'selected'=>'']);
+        return ['output' => '', 'selected' => ''];
     }
-    public function actionGetDistrict() {
+
+    public function actionGetDistrict()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
         $out = [];
         if (isset($_POST['depdrop_parents'])) {
-            $ids = $_POST['depdrop_parents'];
-            $province_id = empty($ids[0]) ? null : $ids[0];
-            $amphur_id = empty($ids[1]) ? null : $ids[1];
-            if ($province_id != null) {
-               $data = $this->getDistrict($amphur_id);
-               echo Json::encode(['output'=>$data, 'selected'=>'']);
-               return;
+            $ids         = $_POST['depdrop_parents'];
+            $province_id = $ids[0] ?? null;
+            $amphur_id   = $ids[1] ?? null;
+
+            // ต้องมีอำเภอถึงจะโหลดตำบล
+            if ($amphur_id) {
+                $out = $this->getDistrict($amphur_id);
+                return ['output' => $out, 'selected' => ''];
             }
         }
-        echo Json::encode(['output'=>'', 'selected'=>'']);
+        return ['output' => '', 'selected' => ''];
     }
-    protected function getAmphur($id){
-        $datas = Amphur::find()->where(['PROVINCE_ID'=>$id])->all();
-        return $this->MapData($datas,'AMPHUR_CODE','AMPHUR_NAME');
+
+    /* ===================== Helper สำหรับ DepDrop ===================== */
+
+    protected function getAmphur($provinceId)
+    {
+        $datas = Amphur::find()->where(['PROVINCE_ID' => $provinceId])->all();
+        return $this->mapData($datas, 'AMPHUR_CODE', 'AMPHUR_NAME');
     }
-    
-    protected function getDistrict($id){
-        $datas = District::find()->where(['AMPHUR_ID'=>$id])->all();
-        return $this->MapData($datas,'DISTRICT_CODE','DISTRICT_NAME');
+
+    protected function getDistrict($amphurId)
+    {
+        $datas = District::find()->where(['AMPHUR_ID' => $amphurId])->all();
+        return $this->mapData($datas, 'DISTRICT_CODE', 'DISTRICT_NAME');
     }
-    
-    protected function MapData($datas,$fieldId,$fieldName){
+
+    protected function mapData($datas, $fieldId, $fieldName)
+    {
         $obj = [];
-        foreach ($datas as $key => $value) {
-            array_push($obj, ['id'=>$value->{$fieldId},'name'=>$value->{$fieldName}]);
+        foreach ($datas as $value) {
+            $obj[] = [
+                'id'   => $value->{$fieldId},
+                'name' => $value->{$fieldName},
+            ];
         }
         return $obj;
-    }      
+    }
 }
