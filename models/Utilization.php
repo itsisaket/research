@@ -4,16 +4,13 @@ namespace app\models;
 
 use Yii;
 use yii\helpers\ArrayHelper;
-use app\models\Province;
 use app\models\Account;
 use app\models\Organize;
 use app\models\Utilization_type;
-use app\models\District;
+use app\models\Province;
 use app\models\Amphur;
+use app\models\District;
 
-/**
- * This is the model class for table "tb_utilization".
- */
 class Utilization extends \yii\db\ActiveRecord
 {
     public static function tableName()
@@ -48,30 +45,30 @@ class Utilization extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
-            'utilization_id' => 'รหัส',
-            'project_name' => 'โครงการวิจัย/งานสร้างสรรค์',
-            'uid' => 'นักวิจัย',
-            'org_id' => 'หน่วยงาน',
+            'utilization_id'   => 'รหัส',
+            'project_name'     => 'โครงการวิจัย/งานสร้างสรรค์',
+            'uid'              => 'นักวิจัย',
+            'org_id'           => 'หน่วยงาน',
             'utilization_type' => 'ลักษณะของการใช้ประโยชน์',
-            'utilization_add' => 'หน่วยงานใช้ประโยชน์',
-            'sub_district' => 'ตำบล',
-            'district' => 'อำเภอ',
-            'province' => 'จังหวัด',
+            'utilization_add'  => 'หน่วยงานใช้ประโยชน์',
+            'sub_district'     => 'ตำบล',
+            'district'         => 'อำเภอ',
+            'province'         => 'จังหวัด',
             'utilization_date' => 'วันที่ดำเนินการ',
             'utilization_detail' => 'การใช้ประโยชน์',
-            'utilization_refer' => 'ข้อมูลอ้างอิง',
-            'research_id' => 'งานวิจัย',
-            'documentid' => 'ไฟล์เอกสารแนบ',
+            'utilization_refer'  => 'ข้อมูลอ้างอิง',
+            'research_id'         => 'งานวิจัย',
+            'documentid'          => 'ไฟล์เอกสารแนบ',
         ];
     }
 
     public function beforeSave($insert)
     {
         if (parent::beforeSave($insert)) {
-            if (!empty($this->utilization_date)) {
+            // แปลง dd-mm-yyyy -> yyyy-mm-dd
+            if (!empty($this->utilization_date) && strpos($this->utilization_date, '-') !== false) {
                 $parts = explode('-', $this->utilization_date);
                 if (count($parts) === 3) {
-                    // dd-mm-yyyy -> yyyy-mm-dd
                     $this->utilization_date = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
                 }
             }
@@ -80,7 +77,7 @@ class Utilization extends \yii\db\ActiveRecord
         return false;
     }
 
-    /* ================== dropdown helpers =================== */
+    /* ===== dropdown data ===== */
 
     public function getUserid()
     {
@@ -92,10 +89,10 @@ class Utilization extends \yii\db\ActiveRecord
         if (!Yii::$app->user->isGuest) {
             $identity = Yii::$app->user->identity;
 
-            // เริ่มจากของตัวเอง
+            // เริ่มจาก user ตัวเอง
             $users = Account::find()->where(['uid' => $identity->uid])->all();
 
-            // ถ้าไม่ใช่ role 1 → เห็นเฉพาะหน่วยงาน
+            // ถ้าไม่ใช่สิทธิ์พื้นฐาน → ให้เห็นเฉพาะ org
             if ($identity->position != 1) {
                 $users = Account::find()
                     ->where(['org_id' => $ty])
@@ -121,7 +118,7 @@ class Utilization extends \yii\db\ActiveRecord
         $session = Yii::$app->session;
         $ty = $session->get('ty');
 
-        if ($ty == 11) {
+        if ((int)$ty === 11) {
             return ArrayHelper::map(Organize::find()->all(), 'org_id', 'org_name');
         }
 
@@ -141,7 +138,7 @@ class Utilization extends \yii\db\ActiveRecord
         );
     }
 
-    /* ================== relations =================== */
+    /* ===== relations ===== */
 
     public function getUser()
     {
@@ -170,10 +167,11 @@ class Utilization extends \yii\db\ActiveRecord
 
     public function getProv()
     {
+        // ⚠ ใช้ PROVINCE_ID ให้ตรงกับ view
         return $this->hasOne(Province::class, ['PROVINCE_ID' => 'province']);
     }
 
-    /* ================== display helpers =================== */
+    /* ===== display helper ===== */
 
     public function getProvinceName()
     {
