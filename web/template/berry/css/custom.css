@@ -1,10 +1,8 @@
-
-
 /* ===============================
    PURPLE–GOLD THEME OVERRIDES
    =============================== */
 
-/* พาเล็ตสีหลัก */
+/* พาเล็ตสีหลัก (ประกาศครั้งเดียว) */
 :root {
   /* Purple core */
   --purple-500: #9333ea;
@@ -13,48 +11,256 @@
   --purple-100: #ede9fe;
 
   /* Gold / Amber accent */
-  --gold-500: #f59e0b; /* ทองหลัก */
+  --gold-500: #f59e0b;
   --gold-400: #fbbf24;
   --gold-100: #fef3c7;
 
-  /* ปรับ Bootstrap vars ให้เข้าชุด */
+  /* Blue / Green / Others */
+  --blue-500: #0ea5e9;
+  --blue-600: #0369a1;
+  --red-500: #ef4444;
+  --green-500: #22c55e;
+  --orange-500: #f97316;
+
+  /* Gray */
+  --gray-50: #f8fafc;
+  --gray-100: #edf1f7;
+  --gray-600: #475569;
+
+  /* Bootstrap tune */
   --bs-primary: var(--purple-600);
   --bs-primary-rgb: 126, 34, 206;
   --bs-secondary: var(--gold-500);
   --bs-secondary-rgb: 245, 158, 11;
-
   --bs-link-color: var(--purple-600);
   --bs-link-hover-color: var(--purple-700);
-
   --bs-focus-ring-color: rgba(126, 34, 206, 0.35);
 }
 
 /* ======= Global / Body ======= */
 body {
-  background-color: #ffffff !important; /* ม่วงสด (BG หลัก) */
+  background-color: #ffffff !important;
 }
 
-/* ======= Header (Topbar) ======= */
-
-
-/* ======= Sidebar (ที่คุณตั้งค่าไว้แล้ว เพิ่มรายละเอียด) ======= */
+/* ======= Sidebar (berry tone) ======= */
 .pc-sidebar {
   background-color: var(--purple-500) !important;
 }
-.pc-sidebar .pc-caption label { color:#fff !important; }
-.pc-sidebar .pc-item .pc-link { 
-  color:#fff !important;
+.pc-sidebar .pc-caption label {
+  color: #fff !important;
+}
+.pc-sidebar .pc-item .pc-link {
+  color: #fff !important;
   border-radius: 8px;
   transition: all .2s ease-in-out;
 }
-.pc-sidebar .pc-item .pc-link .pc-micon i { color:#fff !important; opacity:1 !important; }
+.pc-sidebar .pc-item .pc-link .pc-micon i {
+  color: #fff !important;
+  opacity: 1 !important;
+}
 .pc-sidebar .pc-item .pc-link:hover,
 .pc-sidebar .pc-item.active .pc-link {
   background-color: var(--purple-600) !important;
-  color:#fff !important;
+  color: #fff !important;
   padding-left: 18px;
 }
 .pc-sidebar .pc-item .pc-link:hover .pc-micon i,
 .pc-sidebar .pc-item.active .pc-link .pc-micon i {
-  color: var(--gold-400) !important; /* ไอคอนทองตอน hover/active */
+  color: var(--gold-400) !important;
+}
+
+/* ===============================
+   BERRY DASHBOARD – REPORT PAGE
+   =============================== */
+
+/* พื้นหลังส่วน content ให้เป็นเทาอ่อนแบบ berry */
+.pc-content,
+.report-index {
+  background: var(--gray-100) !important;
+}
+
+/* การ์ดหลักในหน้า report */
+.report-index .card.dashboard-card {
+  border: none;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 28px rgba(15, 23, 42, 0.04);
+  background: #fff;
+}
+
+.report-index .card-header.bg-gradient-primary {
+  background: linear-gradient(135deg, #7e22ce 0%, #0ea5e9 100%) !important;
+  border: none;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+}
+
+/* ====== Grid บนสุด (แบบภาพ berry) ====== */
+.mui-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 1.25rem;
+}
+
+.mui-item {
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 16px 14px 16px;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.03);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 88px;
+}
+
+.mui-item .mui-title {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .01em;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.mui-item .mui-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.mui-item .mui-sub {
+  font-size: .65rem;
+  color: #9ca3af;
+}
+
+.mui-item .mui-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+  color: #fff;
+}
+
+/* การ์ดสีเต็ม 3 ใบบนสุด */
+.mui-item.full-purple {
+  background: linear-gradient(135deg, #6b21a8 0%, #9333ea 85%);
+  color: #fff;
+}
+.mui-item.full-blue {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 85%);
+  color: #fff;
+}
+.mui-item.full-red {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 90%);
+  color: #fff;
+}
+.mui-item.full-purple .mui-title,
+.mui-item.full-blue .mui-title,
+.mui-item.full-red .mui-title {
+  color: rgba(255, 255, 255, .8);
+}
+.mui-item.full-purple .mui-sub,
+.mui-item.full-blue .mui-sub,
+.mui-item.full-red .mui-sub {
+  color: rgba(255, 255, 255, .55);
+}
+.mui-item.full-purple .mui-icon,
+.mui-item.full-blue .mui-icon,
+.mui-item.full-red .mui-icon {
+  background: rgba(255, 255, 255, .1);
+}
+
+/* Icon สีชุดรอง */
+.mui-icon.blue { background: rgba(14, 165, 233, .15); color: #0ea5e9; }
+.mui-icon.green { background: rgba(34, 197, 94, .12); color: #22c55e; }
+
+/* ====== small-box แบบ berry ข้างกราฟ ====== */
+.berry-smallbox {
+  position: relative;
+  border-radius: 14px;
+  padding: 0.9rem 0.9rem 0.85rem 0.9rem;
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(15,23,42,.06);
+  overflow: hidden;
+  margin-bottom: .85rem;
+}
+.berry-smallbox .inner .label {
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  opacity: .9;
+}
+.berry-smallbox .inner .value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: .1rem;
+}
+.berry-smallbox .icon {
+  position: absolute;
+  right: .75rem;
+  top: .35rem;
+  font-size: 2.4rem;
+  opacity: .2;
+}
+
+.bg-berry-success {
+  background: linear-gradient(140deg, #22c55e 0%, #16a34a 85%);
+}
+.bg-berry-info {
+  background: linear-gradient(140deg, #0ea5e9 0%, #2563eb 85%);
+}
+.bg-berry-warning {
+  background: linear-gradient(140deg, #f97316 0%, #ea580c 85%);
+}
+.bg-berry-secondary {
+  background: linear-gradient(140deg, #64748b 0%, #475569 85%);
+}
+
+/* ====== Highcharts skin ====== */
+.highcharts-container {
+  border-radius: 14px;
+  background: transparent !important;
+}
+.highcharts-title,
+.highcharts-subtitle {
+  display: none;
+}
+.highcharts-axis-line,
+.highcharts-grid-line {
+  stroke: rgba(15, 23, 42, .03);
+}
+.highcharts-xaxis-labels text,
+.highcharts-yaxis-labels text {
+  fill: #4b5563 !important;
+  font-family: "Prompt", sans-serif !important;
+  font-size: 11px !important;
+}
+.highcharts-tooltip-box {
+  fill: #fff;
+  stroke: rgba(0,0,0,.04);
+  filter: drop-shadow(0 6px 20px rgba(15,23,42,.15));
+}
+.highcharts-color-0 { fill: #9333ea; stroke: #9333ea; }
+.highcharts-color-1 { fill: #0ea5e9; stroke: #0ea5e9; }
+.highcharts-color-2 { fill: #22c55e; stroke: #22c55e; }
+.highcharts-color-3 { fill: #f97316; stroke: #f97316; }
+
+/* ====== Responsive ====== */
+@media (max-width: 991.98px) {
+  .mui-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 575.98px) {
+  .mui-grid {
+    grid-template-columns: 1fr;
+  }
+  .report-index .card.dashboard-card {
+    border-radius: 14px;
+  }
+  .berry-smallbox {
+    border-radius: 12px;
+  }
 }
