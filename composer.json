@@ -22,7 +22,8 @@
         "miloschuman/yii2-highcharts-widget": "^11.0",
         "yiisoft/yii2-bootstrap4": "2.0",
         "kartik-v/yii2-widget-datepicker": "@dev",
-        "kartik-v/yii2-widget-depdrop": "@dev"
+        "kartik-v/yii2-widget-depdrop": "@dev",
+        "rmrevin/yii2-fontawesome": "^3.7"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
