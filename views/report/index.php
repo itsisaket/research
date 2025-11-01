@@ -288,7 +288,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <!-- ✅ CARD: แหล่งทุนรายปี -->
     <div class="card dashboard-card mb-4">
-        <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
+        <div class="card-header bg-gradient-warning d-flex align-items-center justify-content-between">
             <h5 class="mb-0 text-white">
                 <i class="fas fa-sitemap mr-1"></i> แหล่งทุนรายปี
             </h5>
@@ -330,7 +330,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     ]); ?>
                 </div>
                 <div class="col-lg-3 col-12">
-                    <div class="berry-smallbox" style="min-height: 100%;">
+                    <div class="berry-smallbox bg-berry-warning" style="min-height: 100%;">
                         <div class="inner">
                             <p class="label mb-1">แหล่งทุนที่มีโครงการ</p>
                             <?php if (!empty($fundingTotalNonZero)): ?>
