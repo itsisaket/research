@@ -289,6 +289,7 @@ public function actionIndex()
             Yii::$app->session->destroy();
             Yii::$app->session->open();
             Yii::$app->session->regenerateID(true);
+            Yii::$app->session->remove('login'); 
         }
         Yii::$app->request->getCsrfToken(true);
         return $this->goHome();
