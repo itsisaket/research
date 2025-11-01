@@ -10,7 +10,7 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="pc-content report-index">
 
-    <!-- แถวบนแบบ berry (เหมือนภาพตัวอย่าง) -->
+    <!-- แถวบน -->
     <div class="mui-grid">
         <div class="mui-item full-purple">
             <div>
@@ -29,7 +29,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <div>
                 <div class="mui-title">โครงการวิจัย</div>
                 <div class="mui-value">
-                    <?= Html::a($counttype1, ['/project/index', 'ProjectSearch[pro_type]' => 1], ['class' => 'text-white text-decoration-none']) ?>
+                    <?= Html::a($counttype1, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 1], ['class' => 'text-white text-decoration-none']) ?>
                 </div>
                 <div class="mui-sub">ประเภท 1</div>
             </div>
@@ -42,7 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <div>
                 <div class="mui-title">บทความวิจัย</div>
                 <div class="mui-value">
-                    <?= Html::a($counttype4, ['/project/index', 'ProjectSearch[pro_type]' => 4], ['class' => 'text-white text-decoration-none']) ?>
+                    <?= Html::a($counttype4, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 4], ['class' => 'text-white text-decoration-none']) ?>
                 </div>
                 <div class="mui-sub">เผยแพร่แล้ว</div>
             </div>
@@ -55,7 +55,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <div>
                 <div class="mui-title">ชุดแผนงานวิจัย</div>
                 <div class="mui-value">
-                    <?= Html::a($counttype2, ['/project/index', 'ProjectSearch[pro_type]' => 2], ['class' => 'text-decoration-none']) ?>
+                    <?= Html::a($counttype2, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 2], ['class' => 'text-decoration-none']) ?>
                 </div>
                 <div class="mui-sub">รวมทุกหน่วยงาน</div>
             </div>
@@ -68,7 +68,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <div>
                 <div class="mui-title">บริการวิชาการ</div>
                 <div class="mui-value">
-                    <?= Html::a($counttype3, ['/project/index', 'ProjectSearch[pro_type]' => 3], ['class' => 'text-decoration-none']) ?>
+                    <?= Html::a($counttype3, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 3], ['class' => 'text-decoration-none']) ?>
                 </div>
                 <div class="mui-sub">ปีล่าสุด</div>
             </div>
@@ -78,13 +78,13 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 
-    <!-- CARD 1: กราฟปี + กล่องขวา (layout เดิม) -->
+    <!-- CARD 1: กราฟปี -->
     <div class="card dashboard-card mb-4">
         <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
             <h5 class="mb-0 text-white">
                 <i class="far fa-chart-bar mr-1"></i> ข้อมูลวิจัยแยกรายปี
             </h5>
-            <span class="text-white-50 small">จากฐานข้อมูลโครงการวิจัย</span>
+            <span class="text-white-50 small">จากฐานข้อมูลโครงการวิจัย (tb_researchpro)</span>
         </div>
         <div class="card-body">
             <div class="row align-items-stretch">
@@ -101,7 +101,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                     'categories' => $categoriesY
                                 ],
                                 'yAxis' => [
-                                    'title' => ['text' => 'จำนวน(วิจัย)']
+                                    'title' => ['text' => 'จำนวน(โครงการ)']
                                 ],
                                 'plotOptions' => [
                                     'series' => [
@@ -115,7 +115,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                     [
                                         'type' => 'column',
                                         'colorByPoint' => true,
-                                        'name' => '',
+                                        'name' => 'จำนวนโครงการ',
                                         'data' => $seriesY,
                                     ]
                                 ],
@@ -140,7 +140,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <div class="inner">
                             <p class="label mb-1">โครงการวิจัย</p>
                             <h4 class="value mb-0">
-                                <?= Html::a($counttype1, ['/project/index', 'ProjectSearch[pro_type]' => 1], ['class' => 'badge badge-light']) ?>
+                                <?= Html::a($counttype1, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 1], ['class' => 'badge badge-light']) ?>
                             </h4>
                             <small>ประเภท 1</small>
                         </div>
@@ -151,7 +151,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <div class="inner">
                             <p class="label mb-1">ชุดแผนงาน</p>
                             <h4 class="value mb-0">
-                                <?= Html::a($counttype2, ['/project/index', 'ProjectSearch[pro_type]' => 2], ['class' => 'badge badge-light']) ?>
+                                <?= Html::a($counttype2, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 2], ['class' => 'badge badge-light']) ?>
                             </h4>
                             <small>ประเภท 2</small>
                         </div>
@@ -162,7 +162,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <div class="inner">
                             <p class="label mb-1">บริการวิชาการ</p>
                             <h4 class="value mb-0">
-                                <?= Html::a($counttype3, ['/project/index', 'ProjectSearch[pro_type]' => 3], ['class' => 'badge badge-light']) ?>
+                                <?= Html::a($counttype3, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 3], ['class' => 'badge badge-light']) ?>
                             </h4>
                             <small>ประเภท 3</small>
                         </div>
@@ -173,13 +173,13 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 
-    <!-- CARD 2: กราฟหน่วยงาน (layout เดิม) -->
+    <!-- CARD 2: กราฟหน่วยงาน -->
     <div class="card dashboard-card mb-4">
         <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
             <h5 class="mb-0 text-white">
                 <i class="far fa-chart-bar mr-1"></i> ข้อมูลวิจัยแยกตามหน่วยงาน
             </h5>
-            <span class="text-white-50 small">เปรียบเทียบจำนวนโครงการรายหน่วยงาน</span>
+            <span class="text-white-50 small">เปรียบเทียบจำนวนโครงการตาม org_id</span>
         </div>
         <div class="card-body">
             <div class="row">
@@ -196,7 +196,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                     'categories' => $categoriesO
                                 ],
                                 'yAxis' => [
-                                    'title' => ['text' => 'จำนวน(วิจัย)']
+                                    'title' => ['text' => 'จำนวน(โครงการ)']
                                 ],
                                 'plotOptions' => [
                                     'series' => [
@@ -210,7 +210,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                     [
                                         'type' => 'spline',
                                         'colorByPoint' => true,
-                                        'name' => '',
+                                        'name' => 'จำนวนโครงการ',
                                         'data' => $seriesO,
                                     ]
                                 ],

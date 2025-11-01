@@ -4,23 +4,15 @@ namespace app\controllers;
 
 use Yii;
 use yii\web\Controller;
-use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 
-use app\models\Project;
-use app\models\Resyear;
-use app\models\Resposition;
+use app\models\Researchpro;
 use app\models\Account;
+use app\models\Organize;
 
-/**
- * ReportController แสดงรายงานสรุปข้อมูลโครงการวิจัย
- */
 class ReportController extends Controller
 {
-    /**
-     * {@inheritdoc}
-     */
     public function behaviors()
     {
         return [
@@ -28,7 +20,7 @@ class ReportController extends Controller
                 'class' => AccessControl::class,
                 'rules' => [
                     [
-                        // ✅ เปิดให้ my-profile ใช้ได้แม้ยังไม่ login (ใช้ตอน sync SSO)
+                        // ✅ ให้ดูรายงานได้เลย
                         'actions' => ['index'],
                         'allow'   => true,
                     ],
@@ -36,130 +28,135 @@ class ReportController extends Controller
             ],
             'verbs' => [
                 'class'   => VerbFilter::class,
-                'actions' => [
-                    'my-profile' => ['POST'],
-                ],
+                'actions' => [],
             ],
         ];
     }
 
     public function actionIndex()
     {
-        $user   = Yii::$app->user->identity;
-        $isSelfRole = false;
+        $user        = Yii::$app->user->identity;
+        $session     = Yii::$app->session;
+        $sessionOrg  = $session['ty'] ?? null;   // ถ้าคุณเก็บ org ไว้ใน session
+        $isSelfRole  = false;
 
-        /**
-         * กำหนด logic สิทธิ์แบบง่าย ๆ
-         * - ถ้า position == 1 หรือ 2 → ให้เห็นเฉพาะของตัวเอง
-         * - อื่น ๆ → ให้เห็นรวมทั้งระบบ
-         *
-         * ตรงนี้คุณปรับให้ตรงกับระบบจริงได้เลย เช่น
-         * 1 = อาจารย์ / นักวิจัย
-         * 2 = หัวหน้าหน่วย
-         * 3,4,5 = admin
-         */
+        // ปรับตามสิทธิ์เดิมของคุณ
         if ($user && ($user->position == 1 || $user->position == 2)) {
+            // อาจจะเป็น "ระดับภาควิชา/บุคคล" ที่ให้เห็นของตัวเอง
             $isSelfRole = true;
         }
 
         /* =========================================================
-         * 1. ดึงข้อมูลรายปี
+         * 1. กราฟรายปี (5 ปีย้อนหลัง) จาก tb_researchpro.projectYearsubmit
          * ========================================================= */
-        $seriesY     = [];   // ข้อมูล Y (จำนวน)
-        $categoriesY = [];   // แกน X (ปี)
+        $seriesY     = [];
+        $categoriesY = [];
 
-        $modelResyear = Resyear::find()->orderBy(['resyear' => SORT_ASC])->all();
+        // ปีปัจจุบัน (ค.ศ.) -> แปลงเป็น พ.ศ.
+        $currentYearAD = (int) date('Y');
+        $currentYearTH = $currentYearAD + 543;
 
-        foreach ($modelResyear as $resyear) {
+        // เตรียม 5 ปีล่าสุด (รวมปีนี้)
+        $yearsTH = [];
+        for ($i = 0; $i < 5; $i++) {
+            $yearsTH[] = $currentYearTH - $i;
+        }
+        // เรียงจากน้อย -> มาก เพื่อให้กราฟสวย
+        $yearsTH = array_reverse($yearsTH);
+
+        foreach ($yearsTH as $yearTH) {
+            $query = Researchpro::find()
+                ->where(['projectYearsubmit' => $yearTH]);
+
+            // กรองตามสิทธิ์
             if ($isSelfRole) {
                 // เห็นเฉพาะของตัวเอง
-                $countProject = Project::find()
-                    ->where(['uid' => $user->uid])
-                    ->andWhere(['pro_year' => $resyear->resyear])
-                    ->count();
+                $query->andWhere(['uid' => $user->uid]);
             } else {
-                // เห็นทั้งระบบ
-                $countProject = Project::find()
-                    ->where(['pro_year' => $resyear->resyear])
-                    ->count();
+                // ไม่ใช่สิทธิ์สูงสุด แล้วมี org ใน session → กรองตาม org นั้น
+                if ($user && $user->position != 4) {
+                    if (!empty($sessionOrg)) {
+                        $query->andWhere(['org_id' => $sessionOrg]);
+                    } elseif (!empty($user->org_id)) {
+                        $query->andWhere(['org_id' => $user->org_id]);
+                    }
+                }
             }
 
-            // Highcharts column ต้องการ array ตัวเลขเรียบ ๆ เช่น [5,10,8]
-            $seriesY[]     = (int) $countProject;
-            $categoriesY[] = (string) $resyear->resyear;
+            $count = (int) $query->count();
+            $seriesY[]     = $count;
+            $categoriesY[] = (string) $yearTH;
         }
 
         /* =========================================================
-         * 2. ดึงข้อมูล "ตำแหน่ง" (ในโค้ดเดิมใช้ Resposition)
-         *    แต่ชื่อหัวข้อใน view เขียนว่า "ตามหน่วยงาน" อันนี้ผมยังคงโครงให้ก่อน
+         * 2. กราฟแยกตามหน่วยงาน (org_id)
          * ========================================================= */
         $seriesO     = [];
         $categoriesO = [];
 
-        $modelResposition = Resposition::find()->orderBy(['res_positionid' => SORT_ASC])->all();
+        // ดึงรายชื่อหน่วยงานทั้งหมด
+        $orgQuery = Organize::find()->orderBy(['org_id' => SORT_ASC]);
+        if ($user && $user->position != 4 && !empty($sessionOrg)) {
+            // ถ้าไม่ใช่ admin → เห็นแค่ของตัวเอง
+            $orgQuery->andWhere(['org_id' => $sessionOrg]);
+        }
+        $orgs = $orgQuery->all();
 
-        foreach ($modelResposition as $rp) {
+        foreach ($orgs as $org) {
+            $query = Researchpro::find()->where(['org_id' => $org->org_id]);
+
+            // ถ้าดูแบบสิทธิ์ตัวเอง (1,2) → เห็นเฉพาะที่ตัวเองเป็นหัวหน้า
             if ($isSelfRole) {
-                $countResposition = Project::find()
-                    ->where(['uid' => $user->uid])
-                    ->andWhere(['pro_position' => $rp->res_positionid])
-                    ->count();
-            } else {
-                $countResposition = Project::find()
-                    ->where(['pro_position' => $rp->res_positionid])
-                    ->count();
+                $query->andWhere(['uid' => $user->uid]);
             }
 
-            $seriesO[]     = (int) $countResposition;
-            $categoriesO[] = (string) $rp->res_positionname;
+            $countOrg = (int) $query->count();
+
+            $seriesO[]     = $countOrg;
+            $categoriesO[] = $org->org_name;
         }
 
         /* =========================================================
-         * 3. นับประเภทโครงการ
-         *    pro_type:
-         *    1 = โครงการวิจัย
-         *    2 = ชุดแผนงาน
-         *    3 = บริการวิชาการ
-         *    4 = บทความวิจัย
+         * 3. นับประเภทโครงการ (เอาแบบ map กับฟิลด์ใน tb_researchpro)
+         *    - researchTypeID น่าจะเป็นตัวแยกประเภท
+         *    คุณเคยใช้ 1,2,3,4 ใน Project → ผม map ให้คล้าย ๆ กันไว้ก่อน
          * ========================================================= */
         if ($isSelfRole) {
             $uid = $user->uid;
 
-            $counttype1 = Project::find()->where(['uid' => $uid, 'pro_type' => 1])->count();
-            $counttype2 = Project::find()->where(['uid' => $uid, 'pro_type' => 2])->count();
-            $counttype3 = Project::find()->where(['uid' => $uid, 'pro_type' => 3])->count();
-            $counttype4 = Project::find()->where(['uid' => $uid, 'pro_type' => 4])->count();
+            $counttype1 = Researchpro::find()->where(['uid' => $uid, 'researchTypeID' => 1])->count();
+            $counttype2 = Researchpro::find()->where(['uid' => $uid, 'researchTypeID' => 2])->count();
+            $counttype3 = Researchpro::find()->where(['uid' => $uid, 'researchTypeID' => 3])->count();
+            $counttype4 = Researchpro::find()->where(['uid' => $uid, 'researchTypeID' => 4])->count();
 
-            // ชื่อผู้ใช้แสดงด้านข้าง
+            // ชื่อผู้ใช้
             $countuser  = trim($user->uname . ' ' . $user->luname);
         } else {
-            $counttype1 = Project::find()->where(['pro_type' => 1])->count();
-            $counttype2 = Project::find()->where(['pro_type' => 2])->count();
-            $counttype3 = Project::find()->where(['pro_type' => 3])->count();
-            $counttype4 = Project::find()->where(['pro_type' => 4])->count();
+            $counttype1 = Researchpro::find()->where(['researchTypeID' => 1])->count();
+            $counttype2 = Researchpro::find()->where(['researchTypeID' => 2])->count();
+            $counttype3 = Researchpro::find()->where(['researchTypeID' => 3])->count();
+            $counttype4 = Researchpro::find()->where(['researchTypeID' => 4])->count();
 
-            // นับนักวิจัยทั้งหมด
+            // นักวิจัยทั้งหมดจาก tb_user (Account)
             $countuser = Account::find()->count();
         }
 
-        // ส่งไปที่ view
         return $this->render('index', [
             // กราฟปี
             'seriesY'     => $seriesY,
             'categoriesY' => $categoriesY,
 
-            // กราฟตำแหน่ง / หน่วยงาน
+            // กราฟหน่วยงาน
             'seriesO'     => $seriesO,
             'categoriesO' => $categoriesO,
 
-            // box ขวามือ
+            // box
             'counttype1'  => $counttype1,
             'counttype2'  => $counttype2,
             'counttype3'  => $counttype3,
             'counttype4'  => $counttype4,
             'countuser'   => $countuser,
 
-            // เอาไว้เผื่ออยากรู้ใน view
             'isSelfRole'  => $isSelfRole,
         ]);
     }
