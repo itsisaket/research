@@ -26,19 +26,4 @@ $this->title = 'หน้าหลัก';
     </div>
   </div>
 
-  <!-- แสดงผลตามสถานะ Guest/User -->
-  <div class="container py-4 px-0">
-<?php if ($isGuest): ?>
-  <div class="alert alert-warning">
-    กรุณาเข้าสู่ระบบ
-  </div>
-<?php else: ?>
-  <div class="card p-3">
-    <h5>ยินดีต้อนรับ, <?= Html::encode($displayName) ?></h5>
-    <p>Email: <?= Html::encode($displayEmail) ?></p>
-    <p>Username: <?= Html::encode($u->username ?? '-') ?></p>
-  </div>
-<?php endif; ?>
-  </div>
-
 </div>

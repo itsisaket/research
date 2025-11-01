@@ -64,58 +64,19 @@ class SiteController extends Controller
         }
     }
 
-public function actionIndex()
-{
-    $session = Yii::$app->session;
-    $user    = Yii::$app->user->identity;
-    $isGuest = Yii::$app->user->isGuest;
+    public function actionIndex()
+    {
 
-    // ================================
-    // 🔹 1) ตรวจสอบเฉพาะ "ครั้งแรก"
-    // ================================
-    $loginFlag = $session->get('login', 0);
+        $session = Yii::$app->session;
+        if (!$session->get('first_check_done', false)) {
+            $session->set('first_check_done', true);
+            return $this->redirect(['site/login']);
+        }
+        // ถ้า login แล้ว → เข้าหน้ารายงาน
+        return $this->redirect(['report/index']);
 
-    if ($loginFlag != 9) {
-        // ตั้ง flag ว่า "ตรวจสอบแล้ว"
-        $session->set('login', 9);
 
-        // ✅ ส่งไปตรวจ login ที่ site/login (ครั้งแรกเท่านั้น)
-        return $this->redirect(['site/login']);
     }
-
-    // ================================
-    // 🔹 2) ถ้าเคยตรวจแล้ว → แสดงหน้า index ปกติ
-    // ================================
-    $displayName  = null;
-    $displayEmail = null;
-
-    if (!$isGuest && $user) {
-        $hrmProfile = $session->get('hrmProfile', []);
-
-        $displayName =
-            ($user->uname ?? null)
-            ?: ($user->name ?? null)
-            ?: trim(
-                ($hrmProfile['title_name'] ?? '') . ' ' .
-                ($hrmProfile['first_name'] ?? '') . ' ' .
-                ($hrmProfile['last_name'] ?? '')
-            )
-            ?: ($user->username ?? null)
-            ?: 'ไม่ระบุชื่อ';
-
-        $displayEmail =
-            ($user->email ?? null)
-            ?: ($hrmProfile['email'] ?? null)
-            ?: '-';
-    }
-
-    return $this->render('index', [
-        'isGuest'      => $isGuest,
-        'u'            => $user,
-        'displayName'  => $displayName,
-        'displayEmail' => $displayEmail,
-    ]);
-}
 
 
 
@@ -289,7 +250,7 @@ public function actionIndex()
             Yii::$app->session->destroy();
             Yii::$app->session->open();
             Yii::$app->session->regenerateID(true);
-            Yii::$app->session->remove('login'); 
+            
         }
         Yii::$app->request->getCsrfToken(true);
         return $this->goHome();
