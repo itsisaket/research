@@ -18,7 +18,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <div class="mui-value">
                     <?= Html::a($countuser, ['/account/index'], ['class' => 'text-white text-decoration-none']) ?>
                 </div>
-                <div class="mui-sub">บัญชีที่เข้าใช้งานระบบ</div>
+                
             </div>
             <div class="mui-icon">
                 <i class="fas fa-user-friends"></i>
@@ -31,7 +31,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <div class="mui-value">
                     <?= Html::a($counttype1, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 1], ['class' => 'text-white text-decoration-none']) ?>
                 </div>
-                <div class="mui-sub">ประเภท 1</div>
+                
             </div>
             <div class="mui-icon">
                 <i class="fas fa-flask"></i>
@@ -44,7 +44,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <div class="mui-value">
                     <?= Html::a($counttype4, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 4], ['class' => 'text-white text-decoration-none']) ?>
                 </div>
-                <div class="mui-sub">เผยแพร่แล้ว</div>
+                
             </div>
             <div class="mui-icon">
                 <i class="fas fa-file-alt"></i>
@@ -57,7 +57,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <div class="mui-value">
                     <?= Html::a($counttype3, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 3], ['class' => 'text-decoration-none']) ?>
                 </div>
-                <div class="mui-sub">ปีล่าสุด</div>
+                
             </div>
             <div class="mui-icon green">
                 <i class="fas fa-hands-helping"></i>
@@ -127,7 +127,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             <h4 class="value mb-0">
                                 <?= Html::a($counttype1, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 1], ['class' => 'badge badge-light']) ?>
                             </h4>
-                            <small>ประเภท 1</small>
+                            
                         </div>
                         <div class="icon"><i class="fas fa-user-friends"></i></div>
                     </div>
@@ -138,7 +138,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             <h4 class="value mb-0">
                                 <?= Html::a($counttype2, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 2], ['class' => 'badge badge-light']) ?>
                             </h4>
-                            <small>ประเภท 2</small>
+                           
                         </div>
                         <div class="icon"><i class="fas fa-laptop-house"></i></div>
                     </div>
@@ -149,7 +149,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             <h4 class="value mb-0">
                                 <?= Html::a($counttype3, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 3], ['class' => 'badge badge-light']) ?>
                             </h4>
-                            <small>ประเภท 3</small>
+                            
                         </div>
                         <div class="icon"><i class="fas fa-list-alt"></i></div>
                     </div>
@@ -164,13 +164,13 @@ $this->params['breadcrumbs'][] = $this->title;
             <h5 class="mb-0 text-white">
                 <i class="fas fa-table mr-1"></i> สรุปข้อมูลโครงการตามหัวข้อหลัก
             </h5>
-            <span class="text-white-50 small">งบประมาณ / ประเภทโครงการ / ประเภทการวิจัย / สถานะงาน / แหล่งทุน</span>
+            <span class="text-white-50 small">งบประมาณ / ประเภทการวิจัย / สถานะงาน </span>
         </div>
         <div class="card-body">
             <div class="row">
 
                 <!-- 1) งบประมาณรวม -->
-                <div class="col-md-4 col-12 mb-3">
+                <div class="col-md-3 col-12 mb-3">
                     <div class="berry-smallbox bg-berry-success">
                         <div class="inner">
                             <p class="label mb-1">งบประมาณรวม</p>
@@ -184,7 +184,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 </div>
 
                 <!-- 2) ประเภทการวิจัย -->
-                <div class="col-md-4 col-12 mb-3">
+                <div class="col-md-6 col-12 mb-3">
                     <div class="berry-smallbox bg-berry-warning">
                         <div class="inner">
                             <p class="label mb-1">ประเภทการวิจัย</p>
@@ -202,7 +202,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 </div>
 
                 <!-- 2) สถานะงาน -->
-                <div class="col-md-4 col-12 mb-3">
+                <div class="col-md-3 col-12 mb-3">
                     <div class="berry-smallbox bg-berry-secondary">
                         <div class="inner">
                             <p class="label mb-1">สถานะงาน</p>
@@ -330,7 +330,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     ]); ?>
                 </div>
                 <div class="col-lg-3 col-12">
-                    <div class="berry-smallbox bg-berry-info" style="min-height: 100%;">
+                    <div class="berry-smallbox" style="min-height: 100%;">
                         <div class="inner">
                             <p class="label mb-1">แหล่งทุนที่มีโครงการ</p>
                             <?php if (!empty($fundingTotalNonZero)): ?>
