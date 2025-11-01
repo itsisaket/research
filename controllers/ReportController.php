@@ -24,23 +24,20 @@ class ReportController extends Controller
     public function behaviors()
     {
         return [
-            // ✅ กรองสิทธิ์ก่อน (กัน guest)
             'access' => [
                 'class' => AccessControl::class,
-                'only'  => ['index'],
                 'rules' => [
                     [
-                        'allow' => true,
-                        'roles' => ['@'],   // ต้องล็อกอิน
+                        // ✅ เปิดให้ my-profile ใช้ได้แม้ยังไม่ login (ใช้ตอน sync SSO)
+                        'actions' => ['index'],
+                        'allow'   => true,
                     ],
                 ],
             ],
-
-            // ✅ กันลบด้วย POST
             'verbs' => [
-                'class' => VerbFilter::class,
+                'class'   => VerbFilter::class,
                 'actions' => [
-                    'delete' => ['POST'],
+                    'my-profile' => ['POST'],
                 ],
             ],
         ];
