@@ -10,6 +10,18 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="pc-content report-index">
 
+    <!-- Page header (Berry style) -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+        <div class="d-flex align-items-center gap-3">
+            <!-- รูปโลโก้/องค์กร ถ้าต้องการ: Html::img('@web/img/'.$model->org_id.'.png', ['style'=>'height:64px']) -->
+            <div>
+            <h1 class="h3 mb-1 text-primary">ระบบสารสนเทศงานวิจัย เพื่อการบริหารจัดการ</h1>
+            <div class="text-muted">LASC SSKRU Research Management</div>
+            </div>
+        </div>
+        </div>
+    </div>
     <!-- แถวบน -->
     <div class="mui-grid">
         <div class="mui-item full-purple">
