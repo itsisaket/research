@@ -64,63 +64,70 @@ class SiteController extends Controller
         }
     }
 
-    public function actionIndex()
-    {
-        $session = Yii::$app->session;
+public function actionIndex()
+{
+    $session = Yii::$app->session;
 
-        // 👉 ดึงสถานะผู้ใช้
-        $user    = Yii::$app->user->identity;
-        $isGuest = Yii::$app->user->isGuest;
+    // 👉 ดึงสถานะผู้ใช้
+    $user    = Yii::$app->user->identity;
+    $isGuest = Yii::$app->user->isGuest;
 
-        $displayName  = null;
-        $displayEmail = null;
+    $displayName  = null;
+    $displayEmail = null;
 
-        // 👉 ถ้าล็อกอินแล้ว ค่อยเตรียมข้อมูลแสดงชื่อ
-        if (!$isGuest && $user) {
-            // ลองดึงจาก session เผื่อได้ตัวเต็มจาก HRM
-            $hrmProfile = $session->get('hrmProfile', []);
+    // 👉 ถ้าล็อกอินแล้ว ค่อยเตรียมข้อมูลแสดงชื่อ
+    if (!$isGuest && $user) {
+        // ลองดึงจาก session เผื่อได้ตัวเต็มจาก HRM
+        $hrmProfile = $session->get('hrmProfile', []);
 
-            // 1) เรียงลำดับความสำคัญของชื่อ
-            $displayName =
-                ($user->uname ?? null)                              // จาก tb_user.uname
-                ?: ($user->name ?? null)                            // ถ้า model มีฟิลด์ name
-                ?: ( // จากโปรไฟล์ HRM (title + first + last)
-                    trim(
-                        ($hrmProfile['title_name'] ?? '') . ' ' .
-                        ($hrmProfile['first_name'] ?? '') . ' ' .
-                        ($hrmProfile['last_name'] ?? '')
-                    )
-                )
-                ?: ($user->username ?? null)                        // อย่างน้อยให้เห็น username
-                ?: 'ไม่ระบุชื่อ';
+        // 1) เรียงลำดับความสำคัญของชื่อ
+        $displayName =
+            ($user->uname ?? null)                           // จาก tb_user.uname
+            ?: ($user->name ?? null)                         // ถ้า model มีฟิลด์ name
+            ?: trim(                                         // จากโปรไฟล์ HRM
+                ($hrmProfile['title_name'] ?? '') . ' ' .
+                ($hrmProfile['first_name'] ?? '') . ' ' .
+                ($hrmProfile['last_name'] ?? '')
+            )
+            ?: ($user->username ?? null)                     // อย่างน้อยให้เห็น username
+            ?: 'ไม่ระบุชื่อ';
 
-            // 2) อีเมล
-            $displayEmail =
-                ($user->email ?? null)
-                ?: ($hrmProfile['email'] ?? null)
-                ?: '-';
-        }
-
-        // ==========================
-        // ✅ เช็กครั้งแรกเท่านั้น
-        // ==========================
-        $loginFlag = $session->get('login', 0);
-        if ($loginFlag != 9) {
-            // ตั้ง flag ว่า "เช็กแล้ว"
-            $session->set('login', 9);
-                return $this->redirect(['site/login']);
-        }
-
-        // ==========================
-        // ✅ มาถึงตรงนี้แปลว่า "เคยเช็กแล้ว"
-        // ==========================
-        return $this->render('index', [
-            'isGuest'      => $isGuest,
-            'u'            => $user,
-            'displayName'  => $displayName,
-            'displayEmail' => $displayEmail,
-        ]);
+        // 2) อีเมล
+        $displayEmail =
+            ($user->email ?? null)
+            ?: ($hrmProfile['email'] ?? null)
+            ?: '-';
     }
+
+    // ==========================
+    // ✅ เช็กครั้งแรกเท่านั้น
+    // ==========================
+    $loginFlag = $session->get('login', 0);
+
+    if ($loginFlag != 9) {
+        // ตั้ง flag ว่า "เช็กแล้ว"
+        $session->set('login', 9);
+
+        // ถ้ายังไม่ล็อกอิน → ค่อยส่งไปหน้า login
+        if ($isGuest) {
+            return $this->redirect(['site/login']);
+        }
+
+        // ถ้าล็อกอินอยู่แล้ว → แค่ให้โหลด index อีกรอบ (หรือจะ goHome ก็ได้)
+        return $this->redirect(['site/index']);
+    }
+
+    // ==========================
+    // ✅ มาถึงตรงนี้แปลว่า "เคยเช็กแล้ว"
+    // ==========================
+    return $this->render('index', [
+        'isGuest'      => $isGuest,
+        'u'            => $user,
+        'displayName'  => $displayName,
+        'displayEmail' => $displayEmail,
+    ]);
+}
+
 
 
     /** ============================
