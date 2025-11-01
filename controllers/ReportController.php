@@ -33,18 +33,16 @@ class ReportController extends Controller
         ];
     }
 
-    public function actionIndex()
-    {
-        $user        = Yii::$app->user->identity;
-        $session     = Yii::$app->session;
-        $sessionOrg  = $session['ty'] ?? null;   // ถ้าคุณเก็บ org ไว้ใน session
-        $isSelfRole  = false;
+        public function actionIndex()
+        {
+            $user        = Yii::$app->user->identity;
+            $session     = Yii::$app->session;
+            $sessionOrg  = $session['ty'] ?? null;
+            $isSelfRole  = false;
 
-        // ปรับตามสิทธิ์เดิมของคุณ
-        if ($user && ($user->position == 1 || $user->position == 2)) {
-            // อาจจะเป็น "ระดับภาควิชา/บุคคล" ที่ให้เห็นของตัวเอง
-            $isSelfRole = true;
-        }
+            if ($user && ($user->position == 1 || $user->position == 2)) {
+                $isSelfRole = true;
+            }
 
         /* =========================================================
          * 1. กราฟรายปี (5 ปีย้อนหลัง) จาก tb_researchpro.projectYearsubmit
@@ -115,12 +113,9 @@ class ReportController extends Controller
             $seriesO[]     = $countOrg;
             $categoriesO[] = $org->org_name;
         }
-
         /* =========================================================
-         * 3. นับประเภทโครงการ (เอาแบบ map กับฟิลด์ใน tb_researchpro)
-         *    - researchTypeID น่าจะเป็นตัวแยกประเภท
-         *    คุณเคยใช้ 1,2,3,4 ใน Project → ผม map ให้คล้าย ๆ กันไว้ก่อน
-         * ========================================================= */
+        * 3) นับประเภทโครงการ (ของเดิม)
+        * ========================================================= */
         if ($isSelfRole) {
             $uid = $user->uid;
 
@@ -129,7 +124,6 @@ class ReportController extends Controller
             $counttype3 = Researchpro::find()->where(['uid' => $uid, 'researchTypeID' => 3])->count();
             $counttype4 = Researchpro::find()->where(['uid' => $uid, 'researchTypeID' => 4])->count();
 
-            // ชื่อผู้ใช้
             $countuser  = trim($user->uname . ' ' . $user->luname);
         } else {
             $counttype1 = Researchpro::find()->where(['researchTypeID' => 1])->count();
@@ -137,8 +131,69 @@ class ReportController extends Controller
             $counttype3 = Researchpro::find()->where(['researchTypeID' => 3])->count();
             $counttype4 = Researchpro::find()->where(['researchTypeID' => 4])->count();
 
-            // นักวิจัยทั้งหมดจาก tb_user (Account)
             $countuser = Account::find()->count();
+        }
+
+        /* =========================================================
+        * 4) 🔥 ส่วนใหม่: รายงาน 4 ประเด็น
+        *     - budgets (รวมงบ)
+        *     - researchTypeID (แจกแจง)
+        *     - researchFundID (แจกแจง)
+        *     - jobStatusID (แจกแจง)
+        *     ทั้งหมดต้อง “กรองสิทธิ์” แบบเดียวกับด้านบน
+        * ========================================================= */
+
+        // 4.1 รวมงบประมาณ
+        $budgetQuery = Researchpro::find();
+        if ($isSelfRole) {
+            $budgetQuery->andWhere(['uid' => $user->uid]);
+        } else {
+            if ($user && $user->position != 4) {
+                if (!empty($sessionOrg)) {
+                    $budgetQuery->andWhere(['org_id' => $sessionOrg]);
+                } elseif (!empty($user->org_id)) {
+                    $budgetQuery->andWhere(['org_id' => $user->org_id]);
+                }
+            }
+        }
+        // ถ้า budgets เก็บเป็น int ธรรมดา ใช้ sum ได้เลย
+        $totalBudgets = (int) $budgetQuery->sum('budgets');
+
+        // 4.2 แจกแจงตาม researchTypeID
+        // จะได้เป็น array แบบ [1 => 10, 2 => 5, ...]
+        $typeData = [];
+        $typeRows = (clone $budgetQuery)
+            ->select(['researchTypeID', 'cnt' => 'COUNT(*)'])
+            ->groupBy('researchTypeID')
+            ->orderBy('researchTypeID')
+            ->asArray()
+            ->all();
+        foreach ($typeRows as $row) {
+            $typeData[$row['researchTypeID']] = (int) $row['cnt'];
+        }
+
+        // 4.3 แจกแจงตาม researchFundID
+        $fundData = [];
+        $fundRows = (clone $budgetQuery)
+            ->select(['researchFundID', 'cnt' => 'COUNT(*)'])
+            ->groupBy('researchFundID')
+            ->orderBy('researchFundID')
+            ->asArray()
+            ->all();
+        foreach ($fundRows as $row) {
+            $fundData[$row['researchFundID']] = (int) $row['cnt'];
+        }
+
+        // 4.4 แจกแจงตาม jobStatusID
+        $statusData = [];
+        $statusRows = (clone $budgetQuery)
+            ->select(['jobStatusID', 'cnt' => 'COUNT(*)'])
+            ->groupBy('jobStatusID')
+            ->orderBy('jobStatusID')
+            ->asArray()
+            ->all();
+        foreach ($statusRows as $row) {
+            $statusData[$row['jobStatusID']] = (int) $row['cnt'];
         }
 
         return $this->render('index', [
@@ -150,14 +205,21 @@ class ReportController extends Controller
             'seriesO'     => $seriesO,
             'categoriesO' => $categoriesO,
 
-            // box
+            // box บน
             'counttype1'  => $counttype1,
             'counttype2'  => $counttype2,
             'counttype3'  => $counttype3,
             'counttype4'  => $counttype4,
             'countuser'   => $countuser,
 
+            // สิทธิ์
             'isSelfRole'  => $isSelfRole,
+
+            // ✅ ส่ง 4 ประเด็นใหม่ไปให้ view
+            'totalBudgets' => $totalBudgets,
+            'typeData'     => $typeData,
+            'fundData'     => $fundData,
+            'statusData'   => $statusData,
         ]);
     }
 }

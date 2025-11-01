@@ -89,40 +89,38 @@ $this->params['breadcrumbs'][] = $this->title;
         <div class="card-body">
             <div class="row align-items-stretch">
                 <div class="col-lg-9 col-12 mb-3 mb-lg-0 text-center">
-                    <?=
-                        Highcharts::widget([
-                            'options' => [
-                                'chart' => [
-                                    'height' => 360,
-                                    'backgroundColor' => 'transparent',
-                                ],
-                                'title' => ['text' => ''],
-                                'xAxis' => [
-                                    'categories' => $categoriesY
-                                ],
-                                'yAxis' => [
-                                    'title' => ['text' => 'จำนวน(โครงการ)']
-                                ],
-                                'plotOptions' => [
-                                    'series' => [
-                                        'borderWidth' => 0,
-                                        'dataLabels' => [
-                                            'enabled' => true,
-                                        ]
-                                    ]
-                                ],
+                    <?= Highcharts::widget([
+                        'options' => [
+                            'chart' => [
+                                'height' => 360,
+                                'backgroundColor' => 'transparent',
+                            ],
+                            'title' => ['text' => ''],
+                            'xAxis' => [
+                                'categories' => $categoriesY
+                            ],
+                            'yAxis' => [
+                                'title' => ['text' => 'จำนวน(โครงการ)']
+                            ],
+                            'plotOptions' => [
                                 'series' => [
-                                    [
-                                        'type' => 'column',
-                                        'colorByPoint' => true,
-                                        'name' => 'จำนวนโครงการ',
-                                        'data' => $seriesY,
+                                    'borderWidth' => 0,
+                                    'dataLabels' => [
+                                        'enabled' => true,
                                     ]
-                                ],
-                                'credits' => ['enabled' => false],
-                            ]
-                        ]);
-                    ?>
+                                ]
+                            ],
+                            'series' => [
+                                [
+                                    'type' => 'column',
+                                    'colorByPoint' => true,
+                                    'name' => 'จำนวนโครงการ',
+                                    'data' => $seriesY,
+                                ]
+                            ],
+                            'credits' => ['enabled' => false],
+                        ]
+                    ]); ?>
                 </div>
                 <div class="col-lg-3 col-12">
                     <div class="berry-smallbox bg-berry-success">
@@ -173,6 +171,86 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 
+    <!-- CARD ใหม่: รายงาน 4 ประเด็น -->
+    <div class="card dashboard-card mb-4">
+        <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 text-white">
+                <i class="fas fa-table mr-1"></i> สรุป 4 ประเด็นหลักจากโครงการวิจัย
+            </h5>
+            <span class="text-white-50 small">งบประมาณ / ประเภทโครงการ / ประเภทการวิจัย / สถานะงาน</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+
+                <!-- 1) งบประมาณรวม -->
+                <div class="col-md-3 col-12 mb-3">
+                    <div class="berry-smallbox bg-berry-success">
+                        <div class="inner">
+                            <p class="label mb-1">งบประมาณรวม</p>
+                            <h4 class="value mb-0">
+                                <?= number_format($totalBudgets, 0) ?> บาท
+                            </h4>
+                            <small>เฉพาะโครงการที่คุณมีสิทธิ์เห็น</small>
+                        </div>
+                        <div class="icon"><i class="fas fa-coins"></i></div>
+                    </div>
+                </div>
+
+                <!-- 2) ประเภทโครงการ -->
+                <div class="col-md-3 col-12 mb-3">
+                    <div class="berry-smallbox bg-berry-info">
+                        <div class="inner">
+                            <p class="label mb-1">ประเภทโครงการ</p>
+                            <?php if (!empty($typeData)): ?>
+                                <?php foreach ($typeData as $tid => $cnt): ?>
+                                    <div>ประเภท <?= Html::encode($tid) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div>ไม่มีข้อมูล</div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="icon"><i class="fas fa-list"></i></div>
+                    </div>
+                </div>
+
+                <!-- 3) ประเภทการวิจัย -->
+                <div class="col-md-3 col-12 mb-3">
+                    <div class="berry-smallbox bg-berry-warning">
+                        <div class="inner">
+                            <p class="label mb-1">ประเภทการวิจัย</p>
+                            <?php if (!empty($fundData)): ?>
+                                <?php foreach ($fundData as $fid => $cnt): ?>
+                                    <div>ทุน <?= Html::encode($fid) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div>ไม่มีข้อมูล</div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="icon"><i class="fas fa-flask"></i></div>
+                    </div>
+                </div>
+
+                <!-- 4) สถานะงาน -->
+                <div class="col-md-3 col-12 mb-3">
+                    <div class="berry-smallbox bg-berry-secondary">
+                        <div class="inner">
+                            <p class="label mb-1">สถานะงาน</p>
+                            <?php if (!empty($statusData)): ?>
+                                <?php foreach ($statusData as $sid => $cnt): ?>
+                                    <div>สถานะ <?= Html::encode($sid) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div>ไม่มีข้อมูล</div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="icon"><i class="fas fa-tasks"></i></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
     <!-- CARD 2: กราฟหน่วยงาน -->
     <div class="card dashboard-card mb-4">
         <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
@@ -184,40 +262,38 @@ $this->params['breadcrumbs'][] = $this->title;
         <div class="card-body">
             <div class="row">
                 <div class="col-12 text-center">
-                    <?=
-                        Highcharts::widget([
-                            'options' => [
-                                'chart' => [
-                                    'height' => 420,
-                                    'backgroundColor' => 'transparent',
-                                ],
-                                'title' => ['text' => ''],
-                                'xAxis' => [
-                                    'categories' => $categoriesO
-                                ],
-                                'yAxis' => [
-                                    'title' => ['text' => 'จำนวน(โครงการ)']
-                                ],
-                                'plotOptions' => [
-                                    'series' => [
-                                        'borderWidth' => 0,
-                                        'dataLabels' => [
-                                            'enabled' => true,
-                                        ]
-                                    ]
-                                ],
+                    <?= Highcharts::widget([
+                        'options' => [
+                            'chart' => [
+                                'height' => 420,
+                                'backgroundColor' => 'transparent',
+                            ],
+                            'title' => ['text' => ''],
+                            'xAxis' => [
+                                'categories' => $categoriesO
+                            ],
+                            'yAxis' => [
+                                'title' => ['text' => 'จำนวน(โครงการ)']
+                            ],
+                            'plotOptions' => [
                                 'series' => [
-                                    [
-                                        'type' => 'spline',
-                                        'colorByPoint' => true,
-                                        'name' => 'จำนวนโครงการ',
-                                        'data' => $seriesO,
+                                    'borderWidth' => 0,
+                                    'dataLabels' => [
+                                        'enabled' => true,
                                     ]
-                                ],
-                                'credits' => ['enabled' => false],
-                            ]
-                        ]);
-                    ?>
+                                ]
+                            ],
+                            'series' => [
+                                [
+                                    'type' => 'spline',
+                                    'colorByPoint' => true,
+                                    'name' => 'จำนวนโครงการ',
+                                    'data' => $seriesO,
+                                ]
+                            ],
+                            'credits' => ['enabled' => false],
+                        ]
+                    ]); ?>
                 </div>
             </div>
         </div>
