@@ -78,7 +78,7 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 
-    <!-- CARD 1: กราฟปี -->
+    <!-- CARD 1: กราฟจำนวนโครงการรายปี -->
     <div class="card dashboard-card mb-4">
         <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
             <h5 class="mb-0 text-white">
@@ -203,9 +203,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             <p class="label mb-1">ประเภทโครงการ</p>
                             <?php if (!empty($typeData)): ?>
                                 <?php foreach ($typeData as $tid => $cnt): ?>
-                                    <?php
-                                        $label = $restypeMap[$tid]['restypename'] ?? ('ประเภท ' . $tid);
-                                    ?>
+                                    <?php $label = $restypeMap[$tid]['restypename'] ?? ('ประเภท ' . $tid); ?>
                                     <div><?= Html::encode($label) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
                                 <?php endforeach; ?>
                             <?php else: ?>
@@ -223,9 +221,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             <p class="label mb-1">ประเภทการวิจัย</p>
                             <?php if (!empty($fundData)): ?>
                                 <?php foreach ($fundData as $fid => $cnt): ?>
-                                    <?php
-                                        $label = $resfundMap[$fid]['researchFundName'] ?? ('ทุน ' . $fid);
-                                    ?>
+                                    <?php $label = $resfundMap[$fid]['researchFundName'] ?? ('ทุน ' . $fid); ?>
                                     <div><?= Html::encode($label) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
                                 <?php endforeach; ?>
                             <?php else: ?>
@@ -243,9 +239,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             <p class="label mb-1">สถานะงาน</p>
                             <?php if (!empty($statusData)): ?>
                                 <?php foreach ($statusData as $sid => $cnt): ?>
-                                    <?php
-                                        $label = $resstatusMap[$sid]['statusname'] ?? ('สถานะ ' . $sid);
-                                    ?>
+                                    <?php $label = $resstatusMap[$sid]['statusname'] ?? ('สถานะ ' . $sid); ?>
                                     <div><?= Html::encode($label) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
                                 <?php endforeach; ?>
                             <?php else: ?>
@@ -256,16 +250,14 @@ $this->params['breadcrumbs'][] = $this->title;
                     </div>
                 </div>
 
-                <!-- 5) แหล่งทุน -->
+                <!-- 5) แหล่งทุนรวม -->
                 <div class="col-md-3 col-12 mb-3">
                     <div class="berry-smallbox bg-berry-info">
                         <div class="inner">
-                            <p class="label mb-1">แหล่งทุน</p>
+                            <p class="label mb-1">แหล่งทุน (รวม)</p>
                             <?php if (!empty($agencyData)): ?>
                                 <?php foreach ($agencyData as $aid => $cnt): ?>
-                                    <?php
-                                        $label = $agencyMap[$aid]['fundingAgencyName'] ?? ('แหล่งทุน ' . $aid);
-                                    ?>
+                                    <?php $label = $agencyMap[$aid]['fundingAgencyName'] ?? ('แหล่งทุน ' . $aid); ?>
                                     <div><?= Html::encode($label) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
                                 <?php endforeach; ?>
                             <?php else: ?>
@@ -280,7 +272,126 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 
-    <!-- CARD 2: กราฟหน่วยงาน -->
+    <!-- CARD: งบประมาณรายปี -->
+    <div class="card dashboard-card mb-4">
+        <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 text-white">
+                <i class="fas fa-chart-line mr-1"></i> งบประมาณรายปี (บาท)
+            </h5>
+            <span class="text-white-50 small">รวมงบประมาณของโครงการในแต่ละปี</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <?= Highcharts::widget([
+                        'options' => [
+                            'chart' => [
+                                'type' => 'column',
+                                'height' => 360,
+                                'backgroundColor' => 'transparent',
+                            ],
+                            'title' => ['text' => ''],
+                            'xAxis' => [
+                                'categories' => $categoriesY,
+                            ],
+                            'yAxis' => [
+                                'title' => ['text' => 'งบประมาณ (บาท)'],
+                            ],
+                            'tooltip' => [
+                                'pointFormat' => '{series.name}: <b>{point.y:,.0f}</b> บาท',
+                            ],
+                            'plotOptions' => [
+                                'column' => [
+                                    'dataLabels' => [
+                                        'enabled' => true,
+                                        'format'  => '{point.y:,.0f}',
+                                    ]
+                                ]
+                            ],
+                            'series' => [
+                                [
+                                    'name' => 'งบประมาณ',
+                                    'data' => $budgetSeriesY,
+                                    'colorByPoint' => true,
+                                ]
+                            ],
+                            'credits' => ['enabled' => false],
+                        ]
+                    ]); ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ CARD: แหล่งทุนรายปี -->
+    <div class="card dashboard-card mb-4">
+        <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 text-white">
+                <i class="fas fa-sitemap mr-1"></i> แหล่งทุนรายปี
+            </h5>
+            <span class="text-white-50 small">จำนวนโครงการในแต่ละแหล่งทุน (เฉพาะที่มีโครงการ)</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-9 col-12 mb-3 mb-lg-0 text-center">
+                    <?= Highcharts::widget([
+                        'options' => [
+                            'chart' => [
+                                'type' => 'column',
+                                'height' => 420,
+                                'backgroundColor' => 'transparent',
+                            ],
+                            'title' => ['text' => ''],
+                            'xAxis' => [
+                                'categories' => $categoriesY,
+                                'crosshair'  => true,
+                            ],
+                            'yAxis' => [
+                                'min'   => 0,
+                                'title' => ['text' => 'จำนวนโครงการ'],
+                            ],
+                            'tooltip' => [
+                                'shared' => true,
+                            ],
+                            'plotOptions' => [
+                                'column' => [
+                                    'dataLabels' => [
+                                        'enabled' => true,
+                                    ]
+                                ]
+                            ],
+                            // ✅ series แหล่งทุน (เฉพาะที่มีโครงการ)
+                            'series'  => $fundingSeries,
+                            'credits' => ['enabled' => false],
+                        ]
+                    ]); ?>
+                </div>
+                <div class="col-lg-3 col-12">
+                    <div class="berry-smallbox bg-berry-info" style="min-height: 100%;">
+                        <div class="inner">
+                            <p class="label mb-1">แหล่งทุนที่มีโครงการ</p>
+                            <?php if (!empty($fundingTotalNonZero)): ?>
+                                <?php foreach ($fundingTotalNonZero as $ag): ?>
+                                    <div>
+                                        <?= Html::encode($ag['name']) ?> :
+                                        <span class="badge badge-light"><?= (int)$ag['total'] ?> โครงการ</span>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div>ไม่มีข้อมูล</div>
+                            <?php endif; ?>
+                            <small class="d-block mt-2 text-muted">
+                                แสดงเฉพาะแหล่งทุนที่มีโครงการในช่วง 5 ปี
+                            </small>
+                        </div>
+                        <div class="icon"><i class="fas fa-hand-holding-usd"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD: กราฟหน่วยงาน -->
     <div class="card dashboard-card mb-4">
         <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
             <h5 class="mb-0 text-white">
