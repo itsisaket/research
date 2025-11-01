@@ -82,7 +82,6 @@ class Researchpro extends \yii\db\ActiveRecord
         ];
     }
 
-
     public function getUserid(){  
         $session = Yii::$app->session;
         $ty=$session['ty'];

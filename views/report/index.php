@@ -171,13 +171,13 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 
-    <!-- CARD ใหม่: รายงาน 4 ประเด็น -->
+    <!-- CARD: สรุป 5 ประเด็น -->
     <div class="card dashboard-card mb-4">
         <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
             <h5 class="mb-0 text-white">
-                <i class="fas fa-table mr-1"></i> สรุป 4 ประเด็นหลักจากโครงการวิจัย
+                <i class="fas fa-table mr-1"></i> สรุปข้อมูลโครงการตามหัวข้อหลัก
             </h5>
-            <span class="text-white-50 small">งบประมาณ / ประเภทโครงการ / ประเภทการวิจัย / สถานะงาน</span>
+            <span class="text-white-50 small">งบประมาณ / ประเภทโครงการ / ประเภทการวิจัย / สถานะงาน / แหล่งทุน</span>
         </div>
         <div class="card-body">
             <div class="row">
@@ -203,7 +203,10 @@ $this->params['breadcrumbs'][] = $this->title;
                             <p class="label mb-1">ประเภทโครงการ</p>
                             <?php if (!empty($typeData)): ?>
                                 <?php foreach ($typeData as $tid => $cnt): ?>
-                                    <div>ประเภท <?= Html::encode($tid) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
+                                    <?php
+                                        $label = $restypeMap[$tid]['restypename'] ?? ('ประเภท ' . $tid);
+                                    ?>
+                                    <div><?= Html::encode($label) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <div>ไม่มีข้อมูล</div>
@@ -220,7 +223,10 @@ $this->params['breadcrumbs'][] = $this->title;
                             <p class="label mb-1">ประเภทการวิจัย</p>
                             <?php if (!empty($fundData)): ?>
                                 <?php foreach ($fundData as $fid => $cnt): ?>
-                                    <div>ทุน <?= Html::encode($fid) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
+                                    <?php
+                                        $label = $resfundMap[$fid]['researchFundName'] ?? ('ทุน ' . $fid);
+                                    ?>
+                                    <div><?= Html::encode($label) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <div>ไม่มีข้อมูล</div>
@@ -237,13 +243,36 @@ $this->params['breadcrumbs'][] = $this->title;
                             <p class="label mb-1">สถานะงาน</p>
                             <?php if (!empty($statusData)): ?>
                                 <?php foreach ($statusData as $sid => $cnt): ?>
-                                    <div>สถานะ <?= Html::encode($sid) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
+                                    <?php
+                                        $label = $resstatusMap[$sid]['statusname'] ?? ('สถานะ ' . $sid);
+                                    ?>
+                                    <div><?= Html::encode($label) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <div>ไม่มีข้อมูล</div>
                             <?php endif; ?>
                         </div>
                         <div class="icon"><i class="fas fa-tasks"></i></div>
+                    </div>
+                </div>
+
+                <!-- 5) แหล่งทุน -->
+                <div class="col-md-3 col-12 mb-3">
+                    <div class="berry-smallbox bg-berry-info">
+                        <div class="inner">
+                            <p class="label mb-1">แหล่งทุน</p>
+                            <?php if (!empty($agencyData)): ?>
+                                <?php foreach ($agencyData as $aid => $cnt): ?>
+                                    <?php
+                                        $label = $agencyMap[$aid]['fundingAgencyName'] ?? ('แหล่งทุน ' . $aid);
+                                    ?>
+                                    <div><?= Html::encode($label) ?> : <?= Html::encode($cnt) ?> โครงการ</div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div>ไม่มีข้อมูล</div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="icon"><i class="fas fa-hand-holding-usd"></i></div>
                     </div>
                 </div>
 
