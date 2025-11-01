@@ -288,7 +288,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <!-- ✅ CARD: แหล่งทุนรายปี -->
     <div class="card dashboard-card mb-4">
-        <div class="card-header bg-gradient-warning d-flex align-items-center justify-content-between">
+        <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
             <h5 class="mb-0 text-white">
                 <i class="fas fa-sitemap mr-1"></i> แหล่งทุนรายปี
             </h5>
@@ -353,7 +353,7 @@ $this->params['breadcrumbs'][] = $this->title;
             </div>
         </div>
     </div>
-
+<? /*
     <!-- CARD: กราฟหน่วยงาน -->
     <div class="card dashboard-card mb-4">
         <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
@@ -401,5 +401,5 @@ $this->params['breadcrumbs'][] = $this->title;
             </div>
         </div>
     </div>
-
+*/?>
 </div>
