@@ -51,22 +51,28 @@ $displayRole = $profile['academic_type_name']
 /**
  * ==============================
  * 4) รูปโปรไฟล์
- *    - ต้องการให้: "ถ้า login แล้วให้แสดงภาพจาก $authenBase"
+ *    - ถ้า login แล้วให้แสดงภาพจาก $authenBase
  * ==============================
  */
+
+// ✅ เตรียมค่าเริ่มต้น
 $authenBase = rtrim(Yii::$app->params['authenBase'] ?? 'https://sci-sskru.com/authen', '/');
 $fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 
-// รูปดิบจากโปรไฟล์/JWT
+// ✅ ตัวแปรผู้ใช้
+$user     = Yii::$app->user ?? null;
+$identity = $user && !$user->isGuest ? $user->identity : null;
+
+// ✅ ดึงข้อมูลรูปจากโปรไฟล์หรือ JWT
 $imgRaw = trim((string)($profile['img'] ?? $claims['img'] ?? ''));
 
-// เริ่มจาก fallback
+// ✅ กำหนดรูปเริ่มต้นเป็น fallback
 $avatarUrl = $fallback;
 
-// ถ้ามีรูป
+// ✅ ถ้ามีรูป
 if ($imgRaw !== '') {
     if (filter_var($imgRaw, FILTER_VALIDATE_URL)) {
-        // เป็น URL เต็มแล้ว
+        // เป็น URL เต็มอยู่แล้ว
         $avatarUrl = $imgRaw;
     } else {
         // เป็นชื่อไฟล์ → ต่อกับฐาน authenBase
@@ -74,8 +80,9 @@ if ($imgRaw !== '') {
     }
 }
 
-// ✅ บังคับตามที่คุณขอ: ถ้า "ล็อกอินแล้ว" และ "imgRaw ไม่ใช่ URL" → ให้ใช้ฐาน $authenBase แน่นอน
-if (!$user->isGuest && $imgRaw !== '' && !filter_var($imgRaw, FILTER_VALIDATE_URL)) {
+// ✅ เงื่อนไขเพิ่มเติม:
+// ถ้า "ล็อกอินแล้ว" และ "imgRaw ไม่ใช่ URL" → ให้ใช้ฐาน $authenBase แน่นอน
+if ($identity && $imgRaw !== '' && !filter_var($imgRaw, FILTER_VALIDATE_URL)) {
     $avatarUrl = $authenBase . '/' . ltrim($imgRaw, '/');
 }
 
@@ -84,6 +91,7 @@ $cacheVer = $profile['updated_at'] ?? $claims['updated_at'] ?? '';
 if ($cacheVer && $avatarUrl !== $fallback) {
     $avatarUrl .= (strpos($avatarUrl, '?') === false ? '?' : '&') . 'v=' . rawurlencode($cacheVer);
 }
+
 
 /**
  * ==============================

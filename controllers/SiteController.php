@@ -63,37 +63,57 @@ class SiteController extends Controller
             ]);
         }
     }
+
     public function actionIndex()
     {
+        $session = Yii::$app->session;
+
+        // 👉 ดึงสถานะผู้ใช้
         $user    = Yii::$app->user->identity;
         $isGuest = Yii::$app->user->isGuest;
 
         $displayName  = null;
         $displayEmail = null;
 
+        // 👉 ถ้าล็อกอินแล้ว ค่อยเตรียมข้อมูลแสดงชื่อ
         if (!$isGuest && $user) {
-
             // ลองดึงจาก session เผื่อได้ตัวเต็มจาก HRM
-            $hrmProfile = Yii::$app->session->get('hrmProfile', []);
+            $hrmProfile = $session->get('hrmProfile', []);
 
             // 1) เรียงลำดับความสำคัญของชื่อ
             $displayName =
                 ($user->uname ?? null)                              // จาก tb_user.uname
-            ?: ($user->name ?? null)                               // ถ้า model มี name
-            ?: (($hrmProfile['title_name'] ?? '')                  // จากโปรไฟล์ HRM
-                .($hrmProfile['first_name'] ?? '')
-                .' '
-                .($hrmProfile['last_name'] ?? ''))
-            ?: ($user->username ?? null)                           // อย่างน้อยก็ให้เห็นรหัสบุคลากร
-            ?: 'ไม่ระบุชื่อ';
+                ?: ($user->name ?? null)                            // ถ้า model มีฟิลด์ name
+                ?: ( // จากโปรไฟล์ HRM (title + first + last)
+                    trim(
+                        ($hrmProfile['title_name'] ?? '') . ' ' .
+                        ($hrmProfile['first_name'] ?? '') . ' ' .
+                        ($hrmProfile['last_name'] ?? '')
+                    )
+                )
+                ?: ($user->username ?? null)                        // อย่างน้อยให้เห็น username
+                ?: 'ไม่ระบุชื่อ';
 
             // 2) อีเมล
             $displayEmail =
                 ($user->email ?? null)
-            ?: ($hrmProfile['email'] ?? null)
-            ?: '-';
+                ?: ($hrmProfile['email'] ?? null)
+                ?: '-';
         }
 
+        // ==========================
+        // ✅ เช็กครั้งแรกเท่านั้น
+        // ==========================
+        $loginFlag = $session->get('login', 0);
+        if ($loginFlag != 9) {
+            // ตั้ง flag ว่า "เช็กแล้ว"
+            $session->set('login', 9);
+                return $this->redirect(['site/login']);
+        }
+
+        // ==========================
+        // ✅ มาถึงตรงนี้แปลว่า "เคยเช็กแล้ว"
+        // ==========================
         return $this->render('index', [
             'isGuest'      => $isGuest,
             'u'            => $user,
@@ -101,6 +121,7 @@ class SiteController extends Controller
             'displayEmail' => $displayEmail,
         ]);
     }
+
 
     /** ============================
      *  หน้า Login / SSO Auto-login
