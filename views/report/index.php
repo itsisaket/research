@@ -353,7 +353,7 @@ $this->params['breadcrumbs'][] = $this->title;
             </div>
         </div>
     </div>
-<? /*
+<?php /*
     <!-- CARD: กราฟหน่วยงาน -->
     <div class="card dashboard-card mb-4">
         <div class="card-header bg-gradient-primary d-flex align-items-center justify-content-between">
@@ -401,5 +401,6 @@ $this->params['breadcrumbs'][] = $this->title;
             </div>
         </div>
     </div>
-*/?>
+*/
+?>
 </div>

@@ -23,7 +23,7 @@ $user = Yii::$app->user->identity ?? null;
           <i class="ti ti-dashboard"></i>
         </li>
         <li class="pc-item">
-          <a class="pc-link" href="<?= Url::to(['/site/login']) ?>">
+          <a class="pc-link" href="<?= Url::to(['/site/index']) ?>">
             <span class="pc-micon"><i class="ti ti-dashboard"></i></span><span class="pc-mtext">หน้าหลัก</span></a
           >
         </li>
