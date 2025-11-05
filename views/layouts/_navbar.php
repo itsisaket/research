@@ -56,8 +56,8 @@ $displayRole = $profile['academic_type_name']
  */
 
 // ✅ เตรียมค่าเริ่มต้น
-$authenBase = rtrim(Yii::$app->params['authenBase'] ?? 'https://sci-sskru.com/authen', '/');
-$fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
+$authenBase = rtrim(Yii::$app->params['authenBase'] ?? 'https://sci-sskru.com/authen', '/') . '/';
+$fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg', true);
 
 // ✅ ตัวแปรผู้ใช้
 $user     = Yii::$app->user ?? null;
@@ -75,15 +75,15 @@ if ($imgRaw !== '') {
         // เป็น URL เต็มอยู่แล้ว
         $avatarUrl = $imgRaw;
     } else {
-        // เป็นชื่อไฟล์ → ต่อกับฐาน authenBase
-        $avatarUrl = $authenBase . '/' . ltrim($imgRaw, '/');
+        // เป็นชื่อไฟล์ → ต่อกับฐาน authenBase (ตัด / หน้าออก)
+        $avatarUrl = $authenBase . ltrim($imgRaw, '/');
     }
 }
 
 // ✅ เงื่อนไขเพิ่มเติม:
 // ถ้า "ล็อกอินแล้ว" และ "imgRaw ไม่ใช่ URL" → ให้ใช้ฐาน $authenBase แน่นอน
 if ($identity && $imgRaw !== '' && !filter_var($imgRaw, FILTER_VALIDATE_URL)) {
-    $avatarUrl = $authenBase . '/' . ltrim($imgRaw, '/');
+    $avatarUrl = $authenBase . ltrim($imgRaw, '/');
 }
 
 // ✅ เพิ่ม cache-busting

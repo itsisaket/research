@@ -74,6 +74,7 @@ class SiteController extends Controller
         }
         // ถ้า login แล้ว → เข้าหน้ารายงาน
         return $this->redirect(['report/index']);
+        
 
 
     }
