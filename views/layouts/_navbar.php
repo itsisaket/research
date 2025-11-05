@@ -1,6 +1,7 @@
 <?php
 use yii\helpers\Html;
 use yii\helpers\Url;
+use yii\helpers\Json;           // ✅ เพิ่มบรรทัดนี้
 use app\models\User as UserModel;
 
 /**
@@ -59,9 +60,8 @@ $displayRole = $profile['academic_type_name']
 $authenBase = rtrim(Yii::$app->params['authenBase'] ?? 'https://sci-sskru.com/authen', '/') . '/';
 $fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg', true);
 
-// ✅ ตัวแปรผู้ใช้
-$user     = Yii::$app->user ?? null;
-$identity = $user && !$user->isGuest ? $user->identity : null;
+// ✅ ตัวแปรผู้ใช้ (ไม่ต้องประกาศ $user ซ้ำ)
+$identity = !$user->isGuest ? $user->identity : null;
 
 // ✅ ดึงข้อมูลรูปจากโปรไฟล์หรือ JWT
 $imgRaw = trim((string)($profile['img'] ?? $claims['img'] ?? ''));
@@ -75,13 +75,12 @@ if ($imgRaw !== '') {
         // เป็น URL เต็มอยู่แล้ว
         $avatarUrl = $imgRaw;
     } else {
-        // เป็นชื่อไฟล์ → ต่อกับฐาน authenBase
+        // เป็น path/ชื่อไฟล์ → ต่อกับฐาน authenBase (กัน / ซ้อน)
         $avatarUrl = $authenBase . ltrim($imgRaw, '/');
     }
 }
 
-// ✅ เงื่อนไขเพิ่มเติม:
-// ถ้า "ล็อกอินแล้ว" และ "imgRaw ไม่ใช่ URL" → ให้ใช้ฐาน $authenBase แน่นอน
+// ✅ เงื่อนไขเพิ่มเติม: ล็อกอินแล้วและ imgRaw ไม่ใช่ URL → ใช้ฐาน $authenBase แน่นอน
 if ($identity && $imgRaw !== '' && !filter_var($imgRaw, FILTER_VALIDATE_URL)) {
     $avatarUrl = $authenBase . ltrim($imgRaw, '/');
 }
@@ -91,6 +90,7 @@ $cacheVer = $profile['updated_at'] ?? $claims['updated_at'] ?? '';
 if ($cacheVer && $avatarUrl !== $fallback) {
     $avatarUrl .= (strpos($avatarUrl, '?') === false ? '?' : '&') . 'v=' . rawurlencode($cacheVer);
 }
+
 
 
 
@@ -287,25 +287,36 @@ $jsAvatar = <<<JS
     return;
   }
 
-  // 4) ประกอบ URL ให้ใช้ฐานเดียวกับ PHP
-  var base = '{$authenBase}';
-  var raw  = (profile.img || '').trim();
+  // 4) ประกอบ URL ให้ใช้ฐานเดียวกับ PHP (ฐานลงท้ายด้วย '/')
+  var base = JSON.parse('{$this->context->view->renderPhpFile(
+      null,
+      [],
+      function(){ echo Json::htmlEncode($authenBase); }
+  )}');
+  var fallback = JSON.parse('{$this->context->view->renderPhpFile(
+      null,
+      [],
+      function(){ echo Json::htmlEncode($fallback); }
+  )}');
+
+  var raw  = String(profile.img || '').trim();
   var full = '';
 
   if (/^https?:\\/\\//i.test(raw)) {
     full = raw;
   } else {
-    full = base + '/' + raw.replace(/^\\/+/, '');
+    // base ลงท้ายด้วย '/', ตัด '/' นำหน้าของ raw ออก → กัน '//'
+    full = base + raw.replace(/^\\/+/, '');
   }
 
   // 5) อัปเดตรูปบน navbar
   var avatar = document.getElementById('nav-avatar');
   if (avatar) {
-    avatar.src = full;
     avatar.onerror = function(){
       this.onerror = null;
-      this.src = '{$fallback}';
+      this.src = fallback;
     };
+    avatar.src = full;
   }
 })();
 JS;
