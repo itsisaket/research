@@ -17,43 +17,33 @@ class SiteController extends Controller
     private const CLOCK_SKEW       = 120;               // ยอม clock-skew 120s
     private const MAX_BODY_BYTES   = 1048576;           // 1MB
 
-public function behaviors()
-{
-    return [
-        'access' => [
-            'class' => AccessControl::class,
-            'rules' => [
-                // ✅ อนุญาต avatar-proxy ให้ทุกคน (ต้องมาก่อน rule ทั่วไป)
-                [
-                    'actions' => ['avatar-proxy'],
-                    'allow'   => true,
-                    'roles'   => ['?', '@'],
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::class,
+                'rules' => [
+                    [
+                        // ✅ เปิดให้ my-profile ใช้ได้แม้ยังไม่ login (ใช้ตอน sync SSO)
+                        'actions' => ['index', 'login', 'error', 'about', 'my-profile'],
+                        'allow'   => true,
+                    ],
+                    [
+                        'actions' => ['logout'],
+                        'allow'   => true,
+                        'roles'   => ['@'],
+                    ],
                 ],
-                [
-                    // ✅ เปิดให้ index/login/error/about/my-profile โดยไม่ต้องล็อกอิน
-                    'actions' => ['index', 'login', 'error', 'about', 'my-profile'],
-                    'allow'   => true,
-                ],
-                [
-                    // ✅ logout ต้องล็อกอิน
-                    'actions' => ['logout'],
-                    'allow'   => true,
-                    'roles'   => ['@'],
-                ],
-                // (ไม่มี rule อื่น แปลว่า action อื่นๆ จะถูก block ตามค่า default → 403)
             ],
-        ],
-        'verbs' => [
-            'class'   => VerbFilter::class,
-            'actions' => [
-                'avatar-proxy' => ['GET'],  // ✅ รับเฉพาะ GET
-                'my-profile'   => ['POST'],
-                'logout'       => ['POST'],
+            'verbs' => [
+                'class'   => VerbFilter::class,
+                'actions' => [
+                    'my-profile' => ['POST'],
+                    'logout'     => ['POST'],
+                ],
             ],
-        ],
-    ];
-}
-
+        ];
+    }
 
     public function actions()
     {
@@ -63,14 +53,15 @@ public function behaviors()
             ],
         ];
     }
-
-    public function beforeAction($action)
+    public function actionError()
     {
-        if (in_array($action->id, ['avatar-proxy','login','error','about','index','my-profile'], true)) {
-            return parent::beforeAction($action);
+        $exception = Yii::$app->errorHandler->exception;
+        if ($exception !== null) {
+            return $this->render('error', [
+                'name' => $exception->getName(),
+                'message' => Yii::$app->params['showErrorDetail'] ? $exception->getMessage() : 'เกิดข้อผิดพลาดในระบบ',
+            ]);
         }
-        // ... logic เดิมของคุณ ...
-        return parent::beforeAction($action);
     }
 
     public function actionIndex()
@@ -264,55 +255,6 @@ public function behaviors()
         }
         Yii::$app->request->getCsrfToken(true);
         return $this->goHome();
-    }
-
-    public function actionAvatarProxy($src)
-    {
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_RAW;
-
-        // 2.1 Allowlist โฮสต์ต้นทาง
-        $allowedHosts = ['sci-sskru.com','www.sci-sskru.com'];
-        $url = filter_var($src, FILTER_VALIDATE_URL) ? $src : null;
-        if (!$url) {
-            return $this->redirect(\yii\helpers\Url::to('@web/template/berry/images/user/avatar-2.jpg', true));
-        }
-        $host = parse_url($url, PHP_URL_HOST);
-        if (!in_array($host, $allowedHosts, true)) {
-            throw new \yii\web\BadRequestHttpException('Host not allowed'); // 400 แทน 403
-        }
-
-        // 2.2 ดึงรูป (ใช้ cURL จะชัวร์กว่า)
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_TIMEOUT => 5,
-            CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_HTTPHEADER => [
-                'User-Agent: SES-AvatarProxy/1.0',
-                'Referer:',
-            ],
-        ]);
-        $data = curl_exec($ch);
-        $http = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        curl_close($ch);
-
-        if ($data === false || $http >= 400) {
-            // ต้นทางไม่ให้โหลด/ไม่มีไฟล์ → ใช้ fallback
-            return $this->redirect(\yii\helpers\Url::to('@web/template/berry/images/user/avatar-2.jpg', true));
-        }
-
-        // 2.3 เดา mime จากนามสกุล
-        $ext  = strtolower(pathinfo(parse_url($url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
-        $mime = [
-            'jpg'=>'image/jpeg','jpeg'=>'image/jpeg','png'=>'image/png',
-            'gif'=>'image/gif','webp'=>'image/webp','svg'=>'image/svg+xml'
-        ][$ext] ?? 'image/jpeg';
-
-        $res = \Yii::$app->response;
-        $res->headers->set('Content-Type', $mime);
-        $res->headers->set('Cache-Control', 'public, max-age=3600');
-        return $data;
     }
 
     public function actionAbout()
