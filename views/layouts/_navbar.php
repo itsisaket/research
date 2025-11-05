@@ -1,7 +1,7 @@
 <?php
 use yii\helpers\Html;
 use yii\helpers\Url;
-use yii\helpers\Json;           // ✅ เพิ่มบรรทัดนี้
+use yii\helpers\Json;
 use app\models\User as UserModel;
 
 /**
@@ -51,48 +51,57 @@ $displayRole = $profile['academic_type_name']
 
 /**
  * ==============================
- * 4) รูปโปรไฟล์
- *    - ถ้า login แล้วให้แสดงภาพจาก $authenBase
+ * 4) รูปโปรไฟล์ (ใช้ $authenBase เมื่อ login)
  * ==============================
  */
 
-// ✅ เตรียมค่าเริ่มต้น
+// ✅ ค่าเริ่มต้น
 $authenBase = rtrim(Yii::$app->params['authenBase'] ?? 'https://sci-sskru.com/authen', '/') . '/';
 $fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg', true);
 
-// ✅ ตัวแปรผู้ใช้ (ไม่ต้องประกาศ $user ซ้ำ)
+// ✅ ตัวแปรผู้ใช้
 $identity = !$user->isGuest ? $user->identity : null;
 
-// ✅ ดึงข้อมูลรูปจากโปรไฟล์หรือ JWT
-$imgRaw = trim((string)($profile['img'] ?? $claims['img'] ?? ''));
+// ✅ helper: ต่อ URL กัน '//' กลางสตริง
+$joinUrl = function(string $base, string $path): string {
+    $base = rtrim($base, '/');
+    $path = ltrim($path, '/');
+    return $base . '/' . $path;
+};
 
-// ✅ กำหนดรูปเริ่มต้นเป็น fallback
+// ✅ รองรับหลายคีย์ของรูป
+$imgCandidates = [
+    $profile['img']            ?? null,
+    $claims['img']             ?? null,
+    $profile['avatar']         ?? null,
+    $claims['avatar']          ?? null,
+    $profile['profile_image']  ?? null,
+    $claims['profile_image']   ?? null,
+];
+$imgRaw = trim((string) array_values(array_filter($imgCandidates))[0] ?? '');
+
+// ✅ คำนวณ avatar URL
 $avatarUrl = $fallback;
 
-// ✅ ถ้ามีรูป
 if ($imgRaw !== '') {
     if (filter_var($imgRaw, FILTER_VALIDATE_URL)) {
-        // เป็น URL เต็มอยู่แล้ว
+        // เป็น URL เต็ม
         $avatarUrl = $imgRaw;
     } else {
-        // เป็น path/ชื่อไฟล์ → ต่อกับฐาน authenBase (กัน / ซ้อน)
-        $avatarUrl = $authenBase . ltrim($imgRaw, '/');
+        // เป็น path/ชื่อไฟล์ → ต่อกับฐาน authenBase
+        $avatarUrl = $joinUrl($authenBase, $imgRaw);
     }
 }
-
-// ✅ เงื่อนไขเพิ่มเติม: ล็อกอินแล้วและ imgRaw ไม่ใช่ URL → ใช้ฐาน $authenBase แน่นอน
+// ถ้าล็อกอินและ imgRaw ไม่ใช่ URL → บังคับใช้ฐาน $authenBase
 if ($identity && $imgRaw !== '' && !filter_var($imgRaw, FILTER_VALIDATE_URL)) {
-    $avatarUrl = $authenBase . ltrim($imgRaw, '/');
+    $avatarUrl = $joinUrl($authenBase, $imgRaw);
 }
 
-// ✅ เพิ่ม cache-busting
+// ✅ cache-busting
 $cacheVer = $profile['updated_at'] ?? $claims['updated_at'] ?? '';
 if ($cacheVer && $avatarUrl !== $fallback) {
     $avatarUrl .= (strpos($avatarUrl, '?') === false ? '?' : '&') . 'v=' . rawurlencode($cacheVer);
 }
-
-
-
 
 /**
  * ==============================
@@ -102,11 +111,13 @@ if ($cacheVer && $avatarUrl !== $fallback) {
 $ssoLoginUrl  = Yii::$app->params['ssoLoginUrl'] ?? 'https://sci-sskru.com/hrm/login';
 $callbackPath = Url::to(['/site/index']);
 
+// ไอคอนทักทาย
 $greetIconHtml = Html::tag('i', '', [
     'class' => 'ti ti-user-circle me-2 align-text-bottom',
     'title' => 'ผู้ใช้',
     'aria-label' => 'ผู้ใช้',
 ]);
+
 ?>
 <!-- Header -->
 <header class="pc-header">
@@ -135,12 +146,16 @@ $greetIconHtml = Html::tag('i', '', [
           <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0"
              data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
             <?= Html::img($avatarUrl, [
-                'alt'   => Html::encode($displayName),
-                'class' => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
-                'style' => 'width:44px;height:44px;object-fit:cover;',
-                'onerror' => "this.onerror=null;this.src='".Html::encode($fallback)."';",
-                'title' => $displayName,
-                'id'    => 'nav-avatar',
+                'alt'             => Html::encode($displayName),
+                'class'           => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
+                'style'           => 'width:44px;height:44px;object-fit:cover;',
+                'onerror'         => "this.onerror=null;this.src='".Html::encode($fallback)."';",
+                'title'           => $displayName,
+                'id'              => 'nav-avatar',
+                'loading'         => 'lazy',
+                'referrerpolicy'  => 'no-referrer',
+                'crossorigin'     => 'anonymous',
+                'data-current-src'=> $avatarUrl, // debug เร็วใน DevTools
             ]) ?>
             <span><i class="ti ti-settings"></i></span>
           </a>
@@ -262,62 +277,41 @@ $this->registerJs($jsAuth, \yii\web\View::POS_END);
 /**
  * ==============================
  * 7) JS: อัปเดตรูปจากโปรไฟล์ที่มาทีหลัง (AJAX / localStorage)
- *    - ใช้ $authenBase และ $fallback จาก PHP
+ *    - ฝังตัวแปรจาก PHP → JS ด้วย Json::htmlEncode
  * ==============================
  */
+$jsBase     = Json::htmlEncode(rtrim($authenBase, '/')); // string พร้อม quote
+$jsFallback = Json::htmlEncode($fallback);
+
 $jsAvatar = <<<JS
 (function updateSesAvatar(){
-  // 1) ลองอ่านจากตัวแปร global ก่อน
+  // อ่านจาก global หรือ localStorage
   var profile = window.profile || window.userProfile || null;
-
-  // 2) ถ้าไม่มี ให้ลองจาก localStorage
   if (!profile) {
-    try {
-      var ls = localStorage.getItem('userInfo');
-      if (ls) {
-        profile = JSON.parse(ls);
-      }
-    } catch (e) {
-      profile = null;
-    }
+    try { profile = JSON.parse(localStorage.getItem('userInfo') || 'null'); } catch (e) {}
   }
+  if (!profile) return;
 
-  // 3) ถ้าไม่มีโปรไฟล์หรือไม่มีรูป → ไม่ทำอะไร
-  if (!profile || !profile.img) {
-    return;
-  }
+  // รองรับหลายคีย์ของภาพ
+  var raw = String(profile.img || profile.avatar || profile.profile_image || '').trim();
+  if (!raw) return;
 
-  // 4) ประกอบ URL ให้ใช้ฐานเดียวกับ PHP (ฐานลงท้ายด้วย '/')
-  var base = JSON.parse('{$this->context->view->renderPhpFile(
-      null,
-      [],
-      function(){ echo Json::htmlEncode($authenBase); }
-  )}');
-  var fallback = JSON.parse('{$this->context->view->renderPhpFile(
-      null,
-      [],
-      function(){ echo Json::htmlEncode($fallback); }
-  )}');
+  var base = {$jsBase};
+  var fallback = {$jsFallback};
 
-  var raw  = String(profile.img || '').trim();
-  var full = '';
+  // ต่อ URL กัน '//' กลางสตริง
+  var full = /^https?:\\/\\//i.test(raw) ? raw : (base + '/' + raw.replace(/^\\/+/, ''));
 
-  if (/^https?:\\/\\//i.test(raw)) {
-    full = raw;
-  } else {
-    // base ลงท้ายด้วย '/', ตัด '/' นำหน้าของ raw ออก → กัน '//'
-    full = base + raw.replace(/^\\/+/, '');
-  }
-
-  // 5) อัปเดตรูปบน navbar
   var avatar = document.getElementById('nav-avatar');
-  if (avatar) {
-    avatar.onerror = function(){
-      this.onerror = null;
-      this.src = fallback;
-    };
-    avatar.src = full;
-  }
+  if (!avatar) return;
+
+  avatar.onerror = function(){
+    this.onerror = null;
+    this.src = fallback;
+  };
+  avatar.src = full;
+
+  try { console.debug('[SES avatar] try:', full); } catch(e) {}
 })();
 JS;
 $this->registerJs($jsAvatar, \yii\web\View::POS_END);
