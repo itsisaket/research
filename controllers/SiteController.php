@@ -63,7 +63,7 @@ public function behaviors()
             ],
         ];
     }
-    
+
     public function beforeAction($action)
     {
         if (in_array($action->id, ['avatar-proxy','login','error','about','index','my-profile'], true)) {
@@ -71,17 +71,6 @@ public function behaviors()
         }
         // ... logic เดิมของคุณ ...
         return parent::beforeAction($action);
-    }
-
-    public function actionError()
-    {
-        $exception = Yii::$app->errorHandler->exception;
-        if ($exception !== null) {
-            return $this->render('error', [
-                'name' => $exception->getName(),
-                'message' => Yii::$app->params['showErrorDetail'] ? $exception->getMessage() : 'เกิดข้อผิดพลาดในระบบ',
-            ]);
-        }
     }
 
     public function actionIndex()

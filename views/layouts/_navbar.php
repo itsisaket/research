@@ -145,18 +145,18 @@ $greetIconHtml = Html::tag('i', '', [
         <li class="dropdown pc-h-item header-user-profile">
           <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0"
              data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-            <?= Html::img($avatarUrl, [
-                'alt'             => Html::encode($displayName),
-                'class'           => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
-                'style'           => 'width:44px;height:44px;object-fit:cover;',
-                'onerror'         => "this.onerror=null;this.src='".Html::encode($fallback)."';",
-                'title'           => $displayName,
-                'id'              => 'nav-avatar',
-                'loading'         => 'lazy',
-                'referrerpolicy'  => 'no-referrer',
-                'crossorigin'     => 'anonymous',
-                'data-current-src'=> $avatarUrl, // debug เร็วใน DevTools
-            ]) ?>
+              <?= Html::img($imgSrc, [
+                  'alt'             => Html::encode($displayName),
+                  'class'           => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
+                  'style'           => 'width:44px;height:44px;object-fit:cover;',
+                  'onerror'         => "this.onerror=null;this.src='".Html::encode($fallback)."';",
+                  'title'           => $displayName,
+                  'id'              => 'nav-avatar',
+                  'loading'         => 'lazy',
+                  'referrerpolicy'  => 'no-referrer',
+                  'crossorigin'     => 'anonymous',
+                  'data-current-src'=> $imgSrc,
+              ]) ?>
             <span><i class="ti ti-settings"></i></span>
           </a>
 
@@ -280,27 +280,37 @@ $this->registerJs($jsAuth, \yii\web\View::POS_END);
  *    - ฝังตัวแปรจาก PHP → JS ด้วย Json::htmlEncode
  * ==============================
  */
-$jsBase     = Json::htmlEncode(rtrim($authenBase, '/')); // string พร้อม quote
+$jsBase     = Json::htmlEncode(rtrim($authenBase, '/'));
 $jsFallback = Json::htmlEncode($fallback);
+$proxyBase  = Json::htmlEncode(Url::to(['site/avatar-proxy', 'src' => ''], true)); // base ของ proxy
+$hostOrigin = Json::htmlEncode(Yii::$app->request->hostInfo);
 
 $jsAvatar = <<<JS
 (function updateSesAvatar(){
-  // อ่านจาก global หรือ localStorage
   var profile = window.profile || window.userProfile || null;
   if (!profile) {
     try { profile = JSON.parse(localStorage.getItem('userInfo') || 'null'); } catch (e) {}
   }
   if (!profile) return;
 
-  // รองรับหลายคีย์ของภาพ
   var raw = String(profile.img || profile.avatar || profile.profile_image || '').trim();
   if (!raw) return;
 
-  var base = {$jsBase};
+  var base     = {$jsBase};
   var fallback = {$jsFallback};
+  var proxy    = {$proxyBase};    // เช่น https://yourapp/site/avatar-proxy?src=
+  var origin   = {$hostOrigin};
 
-  // ต่อ URL กัน '//' กลางสตริง
+  // สร้าง URL เต็ม
   var full = /^https?:\\/\\//i.test(raw) ? raw : (base + '/' + raw.replace(/^\\/+/, ''));
+
+  // ถ้าข้ามโดเมน → ชี้ไป proxy
+  try {
+    if (full.indexOf(origin) !== 0) {
+      // เข้ารหัสค่าพารามิเตอร์ src ให้ปลอดภัย
+      full = proxy + encodeURIComponent(full);
+    }
+  } catch (e) {}
 
   var avatar = document.getElementById('nav-avatar');
   if (!avatar) return;
