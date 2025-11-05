@@ -75,7 +75,7 @@ if ($imgRaw !== '') {
         // เป็น URL เต็มอยู่แล้ว
         $avatarUrl = $imgRaw;
     } else {
-        // เป็นชื่อไฟล์ → ต่อกับฐาน authenBase (ตัด / หน้าออก)
+        // เป็นชื่อไฟล์ → ต่อกับฐาน authenBase
         $avatarUrl = $authenBase . ltrim($imgRaw, '/');
     }
 }
@@ -91,6 +91,7 @@ $cacheVer = $profile['updated_at'] ?? $claims['updated_at'] ?? '';
 if ($cacheVer && $avatarUrl !== $fallback) {
     $avatarUrl .= (strpos($avatarUrl, '?') === false ? '?' : '&') . 'v=' . rawurlencode($cacheVer);
 }
+
 
 
 /**
