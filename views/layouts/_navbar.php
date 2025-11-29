@@ -97,6 +97,10 @@ $greetIconHtml = Html::tag('i', '', [
     'title' => 'ผู้ใช้',
     'aria-label' => 'ผู้ใช้',
 ]);
+
+echo "<pre>"; print_r($imgRaw); echo "</pre>";
+echo "<pre>"; print_r($avatarUrl); echo "</pre>";
+
 ?>
 <!-- Header -->
 <header class="pc-header">
@@ -124,14 +128,14 @@ $greetIconHtml = Html::tag('i', '', [
         <li class="dropdown pc-h-item header-user-profile">
           <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0"
              data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-              <?= Html::img('https://sci-sskru.com/authen/uploads/5.jpg', [
-                  'alt'   => Html::encode($displayName),
-                  'class' => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
-                  'style' => 'width:44px;height:44px;object-fit:cover;',
-                  'onerror' => "this.onerror=null;this.src='" . Html::encode($fallback) . "';",
-                  'title' => $displayName,
-                  'id'    => 'nav-avatar',
-              ]) ?>
+                <?= Html::img($avatarUrl, [
+                    'alt'   => Html::encode($displayName),
+                    'class' => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
+                    'style' => 'width:44px;height:44px;object-fit:cover;',
+                    'onerror' => "this.onerror=null;this.src='{$fallback}';",
+                    'title' => Html::encode($displayName),
+                    'id'    => 'nav-avatar',
+                ]) ?>
             <span><i class="ti ti-settings"></i></span>
           </a>
 
