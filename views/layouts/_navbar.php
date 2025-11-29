@@ -23,95 +23,23 @@ if ($id && property_exists($id, 'access_token') && is_string($id->access_token))
     $claims = UserModel::decodeJwtPayload($id->access_token) ?: [];
 }
 
-/**
- * ==============================
- * 2) กำหนดชื่อแสดงผล
- * ==============================
- */
-$title = trim((string)($profile['title_name'] ?? ($claims['title_name'] ?? '')));
-$first = trim((string)($profile['first_name'] ?? ($claims['first_name'] ?? '')));
-$last  = trim((string)($profile['last_name']  ?? ($claims['last_name']  ?? '')));
-
-$fullCore = trim(($title !== '' ? $title . ' ' : '') . trim($first . ' ' . $last));
-
-// เตรียม fallback จาก identity (กัน null ก่อน)
-$coreFallback = null;
-if ($id) {
-    if (property_exists($id, 'name') && !empty($id->name)) {
-        $coreFallback = $id->name;
-    } elseif (property_exists($id, 'username') && !empty($id->username)) {
-        $coreFallback = $id->username;
-    }
-}
-
-// ✅ ประกอบ displayName ให้เรียบร้อย
-if ($user->isGuest) {
-    $displayName = 'Guest';
-} else {
-    if ($fullCore !== '') {
-        $displayName = 'คุณ ' . $fullCore;
-    } elseif (!empty($coreFallback)) {
-        $displayName = $coreFallback;
-    } elseif (!empty($claims['name'] ?? null)) {
-        $displayName = $claims['name'];
-    } else {
-        $displayName = 'User';
-    }
-}
-
-/**
- * ==============================
- * 3) ตำแหน่ง/บทบาท
- * ==============================
- */
-$displayRole = $profile['academic_type_name']
-    ?? ($claims['academic_type_name'] ?? null)
-    ?? ($profile['employee_type_name'] ?? null)
-    ?? ($claims['employee_type_name'] ?? null)
-    ?? ($profile['category_type_name'] ?? null)
-    ?? ($claims['category_type_name'] ?? null)
-    ?? null;
-
-/**
- * ==============================
- * 4) ข้อมูลพื้นฐานจาก tb_user
- *     - แสดงด้วย label:
- *       username => ชื่อบัญชีผู้ใช้ (Username)
- *       prefix   => คำนำหน้า
- *       uname    => ชื่อ
- *       luname   => นามสกุล
- * ==============================
- */
 $usernameVal = $id->username ?? ($claims['username'] ?? null);
 $prefixVal   = $id->prefix   ?? ($profile['title_name'] ?? ($claims['title_name'] ?? null));
 $unameVal    = $id->uname    ?? ($profile['first_name'] ?? ($claims['first_name'] ?? null));
 $lunameVal   = $id->luname   ?? ($profile['last_name']  ?? ($claims['last_name']  ?? null));
-
-/**
- * ==============================
- * 5) รูปโปรไฟล์
- * ==============================
- */
-$fallback = Url::to('@web/template/berry/images/user/avatar-2.jpg');
-$authenBase = Yii::$app->params['authenBase'] ?? ''; // เช่น 'https://sci-sskru.com/hrm/uploads/'
-
-$imgRaw = trim((string)($profile['img'] ?? ($claims['img'] ?? '')));
-$avatarUrl = $fallback;
-
-if ($imgRaw !== '') {
-    if (filter_var($imgRaw, FILTER_VALIDATE_URL)) {
-        $avatarUrl = $imgRaw;
-    } elseif (!empty($authenBase)) {
-        $base = rtrim($authenBase, '/') . '/';
-        $avatarUrl = $base . ltrim($imgRaw, '/');
-    }
+// ✅ ประกอบ displayName ให้เรียบร้อย
+if ($user->isGuest) {
+    $displayName = 'Guest';
+} else {
+    $displayName = '<b>Hi,: </b>'.$unameVal.' '.$lunameVal ;
 }
 
-/**
- * ==============================
- * 6) SSO / Callback
- * ==============================
- */
+$pic = $id->img   ?? ($profile['img']  ?? ($claims['img']  ?? null));
+$fallback = Url::to('@web/template/berry/images/user/avatar-2.jpg');
+$authenBase = Yii::$app->params['authenBase'] ?? ''; // เช่น 'https://sci-sskru.com/hrm/uploads/'
+$avatarUrl = $fallback;
+
+
 $ssoLoginUrl  = Yii::$app->params['ssoLoginUrl'] ?? 'https://sci-sskru.com/hrm/login';
 $callbackPath = Url::to(['/site/index'], true);
 
