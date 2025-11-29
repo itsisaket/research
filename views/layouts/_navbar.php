@@ -55,32 +55,35 @@ $displayRole = $profile['academic_type_name']
  * ==============================
  */
 
-// ✅ ค่าเริ่มต้น
+<?php
+// 1) Base ของระบบ authen
 $authenBase = rtrim('https://sci-sskru.com/authen', '/');
-$fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 
-// ✅ ผู้ใช้
-$user     = Yii::$app->user ?? null;
-$identity = $user && !$user->isGuest ? $user->identity : null;
+// 2) fallback เวลาไม่พบรูปจาก authen
+//    ถ้าอยากให้ใช้รูป default จาก authen เช่น no-image.jpg ก็ใช้ URL ตรงๆไปเลย
+$fallback   = 'https://sci-sskru.com/authen/uploads/no-image.jpg';
 
-// ✅ ดึง img จาก profile หรือ JWT
+// 3) ดึงข้อมูลรูปจาก profile หรือ JWT
 $imgRaw = trim((string)($profile['img'] ?? $claims['img'] ?? ''));
 
-// ✅ กำหนด fallback ก่อน
+// 4) ตั้งค่าเริ่มต้นเป็น fallback
 $avatarUrl = $fallback;
 
-// ✅ ถ้ามีรูป
+// 5) ถ้ามีค่ารูปจาก token
 if ($imgRaw !== '') {
 
-    // กรณี img เป็น absolute URL เช่น https://domain.com/uploads/xx.jpg
-    if (preg_match('/^https?:\/\//i', $imgRaw)) {
+    // กรณีเป็น absolute URL อยู่แล้ว เช่น https://.../xxx.jpg
+    if (preg_match('~^https?://~i', $imgRaw)) {
         $avatarUrl = $imgRaw;
+
     } else {
-        // กรณี img เป็น path เช่น "/uploads/5.jpg"
-        $cleanPath = ltrim($imgRaw, '/'); // ลบเฉพาะ slash ซ้าย
-        $avatarUrl = $authenBase . '/' . $cleanPath;
+        // กรณีเป็น path แบบ "/uploads/5.jpg" หรือ "uploads/5.jpg"
+        $cleanPath = ltrim($imgRaw, '/');              // ตัด / ซ้ายทิ้ง
+        $avatarUrl = $authenBase . '/' . $cleanPath;   // => https://sci-sskru.com/authen/uploads/5.jpg
     }
 }
+?>
+
 
 
 
@@ -98,8 +101,10 @@ $greetIconHtml = Html::tag('i', '', [
     'aria-label' => 'ผู้ใช้',
 ]);
 
-echo "<pre>"; print_r($imgRaw); echo "</pre>";
-echo "<pre>"; print_r($avatarUrl); echo "</pre>";
+echo "<pre>";
+echo 'imgRaw = '; var_dump($imgRaw);
+echo 'avatarUrl = '; var_dump($avatarUrl);
+echo "</pre>";
 
 ?>
 <!-- Header -->
