@@ -39,7 +39,10 @@ if ($user->isGuest) {
     $displayName = 'Hi,: ';
 }
 
-$pic = $id->employee_type_id ?? ($claims['employee_type_id'] ?? null);
+$pic = $profile['img']
+    ?? ($claims['img']
+    ?? ($id->img ?? '-'));
+
 
 $fallback = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 $authenBase = Yii::$app->params['authenBase'] ?? ''; // เช่น 'https://sci-sskru.com/hrm/uploads/'
@@ -54,6 +57,9 @@ $greetIconHtml = Html::tag('i', '', [
     'title'      => 'ผู้ใช้',
     'aria-label' => 'ผู้ใช้',
 ]);
+
+
+echo '<pre>'; var_dump($profile, $claims, $pic); echo '</pre>';
 ?>
 
 <!-- Header -->
