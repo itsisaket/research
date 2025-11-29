@@ -65,8 +65,6 @@ $greetIconHtml = Html::tag('i', '', [
     'aria-label' => 'ผู้ใช้',
 ]);
 
-
-echo '<pre>'; var_dump($profile, $claims, $pic); echo '</pre>';
 ?>
 
 <!-- Header -->
