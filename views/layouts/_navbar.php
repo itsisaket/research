@@ -101,10 +101,6 @@ $greetIconHtml = Html::tag('i', '', [
     'aria-label' => 'ผู้ใช้',
 ]);
 
-echo "<pre>";
-echo 'imgRaw = '; var_dump($imgRaw);
-echo 'avatarUrl = '; var_dump($avatarUrl);
-echo "</pre>";
 
 ?>
 <!-- Header -->
