@@ -2235,3 +2235,999 @@ $_SERVER = [
     'REQUEST_TIME_FLOAT' => 1764387570.895
     'REQUEST_TIME' => 1764387570
 ]
+2025-11-29 04:44:35 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][warning][sso.sync] SSO auto-login failed: Getting unknown property: yii\web\Application::sso
+2025-11-29 04:44:35 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][error][yii\base\ErrorException:2] yii\base\ErrorException: Undefined variable $csrf in C:\xampp\htdocs\research\views\site\login.php:2
+Stack trace:
+#0 C:\xampp\htdocs\research\views\site\login.php(2): yii\base\ErrorHandler->handleError(2, 'Undefined varia...', 'C:\\xampp\\htdocs...', 2)
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\View.php(348): require('C:\\xampp\\htdocs...')
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\View.php(258): yii\base\View->renderPhpFile('C:\\xampp\\htdocs...', Array)
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\View.php(157): yii\base\View->renderFile('C:\\xampp\\htdocs...', Array, Object(app\controllers\SiteController))
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(413): yii\base\View->render('login', Array, Object(app\controllers\SiteController))
+#5 C:\xampp\htdocs\research\controllers\SiteController.php(104): yii\base\Controller->render('login')
+#6 [internal function]: app\controllers\SiteController->actionLogin()
+#7 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#9 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('login', Array)
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('site/login', Array)
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#12 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#13 {main}
+2025-11-29 04:44:35 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][info][application] $_GET = []
+
+$_POST = []
+
+$_FILES = []
+
+$_COOKIE = [
+    'research-ssid' => 'eof50ui0hpm1h5b9lod96k8qr9'
+    '_csrf' => 'bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa:2:{i:0;s:5:\"_csrf\";i:1;s:32:\"YGw56rXqVcc0hQah9jBWgymdBCXCo5V8\";}'
+]
+
+$_SESSION = [
+    '__flash' => []
+    'first_check_done' => true
+]
+
+$_SERVER = [
+    'REDIRECT_REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_REDIRECT_STATUS' => '200'
+    'REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_STATUS' => '200'
+    'MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'PHPRC' => '\\xampp\\php'
+    'TMP' => '\\xampp\\tmp'
+    'HTTP_HOST' => 'localhost'
+    'HTTP_CONNECTION' => 'keep-alive'
+    'HTTP_CACHE_CONTROL' => 'max-age=0'
+    'HTTP_SEC_CH_UA' => '\"Chromium\";v=\"142\", \"Microsoft Edge\";v=\"142\", \"Not_A Brand\";v=\"99\"'
+    'HTTP_SEC_CH_UA_MOBILE' => '?0'
+    'HTTP_SEC_CH_UA_PLATFORM' => '\"Windows\"'
+    'HTTP_UPGRADE_INSECURE_REQUESTS' => '1'
+    'HTTP_USER_AGENT' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0'
+    'HTTP_ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
+    'HTTP_SEC_FETCH_SITE' => 'none'
+    'HTTP_SEC_FETCH_MODE' => 'navigate'
+    'HTTP_SEC_FETCH_USER' => '?1'
+    'HTTP_SEC_FETCH_DEST' => 'document'
+    'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br, zstd'
+    'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9,th;q=0.8'
+    'HTTP_COOKIE' => 'research-ssid=eof50ui0hpm1h5b9lod96k8qr9; _csrf=bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa%3A2%3A%7Bi%3A0%3Bs%3A5%3A%22_csrf%22%3Bi%3A1%3Bs%3A32%3A%22YGw56rXqVcc0hQah9jBWgymdBCXCo5V8%22%3B%7D'
+    'PATH' => 'C:\\Python313\\Scripts\\;C:\\Python313\\;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\ProgramData\\chocolatey\\bin;C:\\xampp\\php;C:\\ProgramData\\ComposerSetup\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\nodejs\\;C:\\Users\\teera\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\teera\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\teera\\AppData\\Roaming\\Composer\\vendor\\bin;C:\\Users\\teera\\AppData\\Local\\GitHubDesktop\\bin;C:\\Users\\teera\\AppData\\Roaming\\npm'
+    'SystemRoot' => 'C:\\Windows'
+    'COMSPEC' => 'C:\\Windows\\system32\\cmd.exe'
+    'PATHEXT' => '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW'
+    'WINDIR' => 'C:\\Windows'
+    'SERVER_SIGNATURE' => '<address>Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12 Server at localhost Port 80</address>
+'
+    'SERVER_SOFTWARE' => 'Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12'
+    'SERVER_NAME' => 'localhost'
+    'SERVER_ADDR' => '::1'
+    'SERVER_PORT' => '80'
+    'REMOTE_ADDR' => '::1'
+    'DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'REQUEST_SCHEME' => 'http'
+    'CONTEXT_PREFIX' => ''
+    'CONTEXT_DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'SERVER_ADMIN' => 'postmaster@localhost'
+    'SCRIPT_FILENAME' => 'C:/xampp/htdocs/research/web/index.php'
+    'REMOTE_PORT' => '59400'
+    'REDIRECT_URL' => '/research/web/site/login'
+    'GATEWAY_INTERFACE' => 'CGI/1.1'
+    'SERVER_PROTOCOL' => 'HTTP/1.1'
+    'REQUEST_METHOD' => 'GET'
+    'QUERY_STRING' => ''
+    'REQUEST_URI' => '/research/site/login'
+    'SCRIPT_NAME' => '/research/web/index.php'
+    'PHP_SELF' => '/research/web/index.php'
+    'REQUEST_TIME_FLOAT' => 1764387875.0883
+    'REQUEST_TIME' => 1764387875
+]
+2025-11-29 04:44:38 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][error][yii\db\Exception] PDOException: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:722
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(722): PDO->__construct('mysql:host=loca...', 'lascinfo', Object(SensitiveParameterValue), NULL)
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(637): yii\db\Connection->createPdoInstance()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(402): yii\db\Connection->getSlavePdo(true)
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(426): yii\db\mysql\QueryBuilder->supportsFractionalSeconds()
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(59): yii\db\mysql\QueryBuilder->defaultTimeTypeMap()
+#7 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\BaseObject.php(112): yii\db\mysql\QueryBuilder->init()
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\QueryBuilder.php(116): yii\base\BaseObject->__construct(Array)
+#9 [internal function]: yii\db\QueryBuilder->__construct(Object(yii\db\Connection), Array)
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\di\Container.php(417): ReflectionClass->newInstanceArgs(Array)
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\di\Container.php(176): yii\di\Container->build('yii\\db\\mysql\\Qu...', Array, Array)
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\BaseYii.php(354): yii\di\Container->get('yii\\db\\mysql\\Qu...', Array)
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(261): yii\BaseYii::createObject('yii\\db\\mysql\\Qu...', Array)
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(247): yii\db\mysql\Schema->createQueryBuilder()
+#15 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(884): yii\db\Schema->getQueryBuilder()
+#16 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveQuery.php(349): yii\db\Connection->getQueryBuilder()
+#17 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Query.php(481): yii\db\ActiveQuery->createCommand(Object(yii\db\Connection))
+#18 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveQuery.php(373): yii\db\Query->queryScalar('COUNT(*)', Object(yii\db\Connection))
+#19 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Query.php(368): yii\db\ActiveQuery->queryScalar('COUNT(*)', Object(yii\db\Connection))
+#20 C:\xampp\htdocs\research\controllers\ReportController.php(88): yii\db\Query->count()
+#21 [internal function]: app\controllers\ReportController->actionIndex()
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#23 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#24 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('index', Array)
+#25 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('report/index', Array)
+#26 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#27 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#28 {main}
+
+Next yii\db\Exception: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:648
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(402): yii\db\Connection->getSlavePdo(true)
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(426): yii\db\mysql\QueryBuilder->supportsFractionalSeconds()
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(59): yii\db\mysql\QueryBuilder->defaultTimeTypeMap()
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\BaseObject.php(112): yii\db\mysql\QueryBuilder->init()
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\QueryBuilder.php(116): yii\base\BaseObject->__construct(Array)
+#7 [internal function]: yii\db\QueryBuilder->__construct(Object(yii\db\Connection), Array)
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\di\Container.php(417): ReflectionClass->newInstanceArgs(Array)
+#9 C:\xampp\htdocs\research\vendor\yiisoft\yii2\di\Container.php(176): yii\di\Container->build('yii\\db\\mysql\\Qu...', Array, Array)
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\BaseYii.php(354): yii\di\Container->get('yii\\db\\mysql\\Qu...', Array)
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(261): yii\BaseYii::createObject('yii\\db\\mysql\\Qu...', Array)
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(247): yii\db\mysql\Schema->createQueryBuilder()
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(884): yii\db\Schema->getQueryBuilder()
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveQuery.php(349): yii\db\Connection->getQueryBuilder()
+#15 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Query.php(481): yii\db\ActiveQuery->createCommand(Object(yii\db\Connection))
+#16 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveQuery.php(373): yii\db\Query->queryScalar('COUNT(*)', Object(yii\db\Connection))
+#17 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Query.php(368): yii\db\ActiveQuery->queryScalar('COUNT(*)', Object(yii\db\Connection))
+#18 C:\xampp\htdocs\research\controllers\ReportController.php(88): yii\db\Query->count()
+#19 [internal function]: app\controllers\ReportController->actionIndex()
+#20 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#21 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('index', Array)
+#23 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('report/index', Array)
+#24 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#25 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#26 {main}
+Additional Information:
+Array
+(
+    [0] => HY000
+    [1] => 1045
+    [2] => Access denied for user 'lascinfo'@'localhost' (using password: YES)
+)
+
+2025-11-29 04:44:37 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][info][application] $_GET = []
+
+$_POST = []
+
+$_FILES = []
+
+$_COOKIE = [
+    'research-ssid' => 'eof50ui0hpm1h5b9lod96k8qr9'
+    '_csrf' => 'bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa:2:{i:0;s:5:\"_csrf\";i:1;s:32:\"YGw56rXqVcc0hQah9jBWgymdBCXCo5V8\";}'
+]
+
+$_SESSION = [
+    '__flash' => []
+    'first_check_done' => true
+]
+
+$_SERVER = [
+    'REDIRECT_REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_REDIRECT_STATUS' => '200'
+    'REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_STATUS' => '200'
+    'MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'PHPRC' => '\\xampp\\php'
+    'TMP' => '\\xampp\\tmp'
+    'HTTP_HOST' => 'localhost'
+    'HTTP_CONNECTION' => 'keep-alive'
+    'HTTP_UPGRADE_INSECURE_REQUESTS' => '1'
+    'HTTP_USER_AGENT' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0'
+    'HTTP_ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
+    'HTTP_SEC_FETCH_SITE' => 'same-origin'
+    'HTTP_SEC_FETCH_MODE' => 'navigate'
+    'HTTP_SEC_FETCH_USER' => '?1'
+    'HTTP_SEC_FETCH_DEST' => 'document'
+    'HTTP_SEC_CH_UA' => '\"Chromium\";v=\"142\", \"Microsoft Edge\";v=\"142\", \"Not_A Brand\";v=\"99\"'
+    'HTTP_SEC_CH_UA_MOBILE' => '?0'
+    'HTTP_SEC_CH_UA_PLATFORM' => '\"Windows\"'
+    'HTTP_REFERER' => 'http://localhost/research/site/login'
+    'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br, zstd'
+    'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9,th;q=0.8'
+    'HTTP_COOKIE' => 'research-ssid=eof50ui0hpm1h5b9lod96k8qr9; _csrf=bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa%3A2%3A%7Bi%3A0%3Bs%3A5%3A%22_csrf%22%3Bi%3A1%3Bs%3A32%3A%22YGw56rXqVcc0hQah9jBWgymdBCXCo5V8%22%3B%7D'
+    'PATH' => 'C:\\Python313\\Scripts\\;C:\\Python313\\;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\ProgramData\\chocolatey\\bin;C:\\xampp\\php;C:\\ProgramData\\ComposerSetup\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\nodejs\\;C:\\Users\\teera\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\teera\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\teera\\AppData\\Roaming\\Composer\\vendor\\bin;C:\\Users\\teera\\AppData\\Local\\GitHubDesktop\\bin;C:\\Users\\teera\\AppData\\Roaming\\npm'
+    'SystemRoot' => 'C:\\Windows'
+    'COMSPEC' => 'C:\\Windows\\system32\\cmd.exe'
+    'PATHEXT' => '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW'
+    'WINDIR' => 'C:\\Windows'
+    'SERVER_SIGNATURE' => '<address>Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12 Server at localhost Port 80</address>
+'
+    'SERVER_SOFTWARE' => 'Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12'
+    'SERVER_NAME' => 'localhost'
+    'SERVER_ADDR' => '::1'
+    'SERVER_PORT' => '80'
+    'REMOTE_ADDR' => '::1'
+    'DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'REQUEST_SCHEME' => 'http'
+    'CONTEXT_PREFIX' => ''
+    'CONTEXT_DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'SERVER_ADMIN' => 'postmaster@localhost'
+    'SCRIPT_FILENAME' => 'C:/xampp/htdocs/research/web/index.php'
+    'REMOTE_PORT' => '63484'
+    'REDIRECT_URL' => '/research/web/report/index'
+    'GATEWAY_INTERFACE' => 'CGI/1.1'
+    'SERVER_PROTOCOL' => 'HTTP/1.1'
+    'REQUEST_METHOD' => 'GET'
+    'QUERY_STRING' => ''
+    'REQUEST_URI' => '/research/report/index'
+    'SCRIPT_NAME' => '/research/web/index.php'
+    'PHP_SELF' => '/research/web/index.php'
+    'REQUEST_TIME_FLOAT' => 1764387877.4592
+    'REQUEST_TIME' => 1764387877
+]
+2025-11-29 04:44:40 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][error][yii\db\Exception] PDOException: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:722
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(722): PDO->__construct('mysql:host=loca...', 'lascinfo', Object(SensitiveParameterValue), NULL)
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(637): yii\db\Connection->createPdoInstance()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(261): yii\db\Connection->getSlavePdo(true)
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(1181): yii\db\Command->prepare(true)
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(417): yii\db\Command->queryInternal('fetchAll', NULL)
+#7 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(366): yii\db\Command->queryAll()
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(134): yii\db\mysql\Schema->findColumns(Object(yii\db\TableSchema))
+#9 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(756): yii\db\mysql\Schema->loadTableSchema('tb_user')
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(192): yii\db\Schema->getTableMetadata('tb_user', 'schema', false)
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(445): yii\db\Schema->getTableSchema('tb_user')
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(479): yii\db\ActiveRecord::getTableSchema()
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(498): yii\db\ActiveRecord->attributes()
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(289): yii\db\BaseActiveRecord->hasAttribute('uid')
+#15 C:\xampp\htdocs\research\vendor\yiisoft\yii2\validators\Validator.php(257): yii\db\BaseActiveRecord->__get('uid')
+#16 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Model.php(389): yii\validators\Validator->validateAttributes(Object(app\models\AccountSearch), Array)
+#17 C:\xampp\htdocs\research\models\AccountSearch.php(54): yii\base\Model->validate()
+#18 C:\xampp\htdocs\research\controllers\AccountController.php(84): app\models\AccountSearch->search(Array)
+#19 [internal function]: app\controllers\AccountController->actionIndex()
+#20 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#21 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('', Array)
+#23 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('account', Array)
+#24 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#25 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#26 {main}
+
+Next yii\db\Exception: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:648
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(261): yii\db\Connection->getSlavePdo(true)
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(1181): yii\db\Command->prepare(true)
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(417): yii\db\Command->queryInternal('fetchAll', NULL)
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(366): yii\db\Command->queryAll()
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(134): yii\db\mysql\Schema->findColumns(Object(yii\db\TableSchema))
+#7 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(756): yii\db\mysql\Schema->loadTableSchema('tb_user')
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(192): yii\db\Schema->getTableMetadata('tb_user', 'schema', false)
+#9 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(445): yii\db\Schema->getTableSchema('tb_user')
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(479): yii\db\ActiveRecord::getTableSchema()
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(498): yii\db\ActiveRecord->attributes()
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(289): yii\db\BaseActiveRecord->hasAttribute('uid')
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\validators\Validator.php(257): yii\db\BaseActiveRecord->__get('uid')
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Model.php(389): yii\validators\Validator->validateAttributes(Object(app\models\AccountSearch), Array)
+#15 C:\xampp\htdocs\research\models\AccountSearch.php(54): yii\base\Model->validate()
+#16 C:\xampp\htdocs\research\controllers\AccountController.php(84): app\models\AccountSearch->search(Array)
+#17 [internal function]: app\controllers\AccountController->actionIndex()
+#18 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#19 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#20 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('', Array)
+#21 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('account', Array)
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#23 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#24 {main}
+Additional Information:
+Array
+(
+    [0] => HY000
+    [1] => 1045
+    [2] => Access denied for user 'lascinfo'@'localhost' (using password: YES)
+)
+
+2025-11-29 04:44:39 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][info][application] $_GET = []
+
+$_POST = []
+
+$_FILES = []
+
+$_COOKIE = [
+    'research-ssid' => 'eof50ui0hpm1h5b9lod96k8qr9'
+    '_csrf' => 'bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa:2:{i:0;s:5:\"_csrf\";i:1;s:32:\"YGw56rXqVcc0hQah9jBWgymdBCXCo5V8\";}'
+]
+
+$_SESSION = [
+    '__flash' => []
+    'first_check_done' => true
+]
+
+$_SERVER = [
+    'REDIRECT_REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_REDIRECT_STATUS' => '200'
+    'REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_STATUS' => '200'
+    'MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'PHPRC' => '\\xampp\\php'
+    'TMP' => '\\xampp\\tmp'
+    'HTTP_HOST' => 'localhost'
+    'HTTP_CONNECTION' => 'keep-alive'
+    'HTTP_SEC_CH_UA' => '\"Chromium\";v=\"142\", \"Microsoft Edge\";v=\"142\", \"Not_A Brand\";v=\"99\"'
+    'HTTP_SEC_CH_UA_MOBILE' => '?0'
+    'HTTP_SEC_CH_UA_PLATFORM' => '\"Windows\"'
+    'HTTP_UPGRADE_INSECURE_REQUESTS' => '1'
+    'HTTP_USER_AGENT' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0'
+    'HTTP_ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
+    'HTTP_SEC_FETCH_SITE' => 'same-origin'
+    'HTTP_SEC_FETCH_MODE' => 'navigate'
+    'HTTP_SEC_FETCH_USER' => '?1'
+    'HTTP_SEC_FETCH_DEST' => 'document'
+    'HTTP_REFERER' => 'http://localhost/research/report/index'
+    'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br, zstd'
+    'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9,th;q=0.8'
+    'HTTP_COOKIE' => 'research-ssid=eof50ui0hpm1h5b9lod96k8qr9; _csrf=bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa%3A2%3A%7Bi%3A0%3Bs%3A5%3A%22_csrf%22%3Bi%3A1%3Bs%3A32%3A%22YGw56rXqVcc0hQah9jBWgymdBCXCo5V8%22%3B%7D'
+    'PATH' => 'C:\\Python313\\Scripts\\;C:\\Python313\\;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\ProgramData\\chocolatey\\bin;C:\\xampp\\php;C:\\ProgramData\\ComposerSetup\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\nodejs\\;C:\\Users\\teera\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\teera\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\teera\\AppData\\Roaming\\Composer\\vendor\\bin;C:\\Users\\teera\\AppData\\Local\\GitHubDesktop\\bin;C:\\Users\\teera\\AppData\\Roaming\\npm'
+    'SystemRoot' => 'C:\\Windows'
+    'COMSPEC' => 'C:\\Windows\\system32\\cmd.exe'
+    'PATHEXT' => '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW'
+    'WINDIR' => 'C:\\Windows'
+    'SERVER_SIGNATURE' => '<address>Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12 Server at localhost Port 80</address>
+'
+    'SERVER_SOFTWARE' => 'Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12'
+    'SERVER_NAME' => 'localhost'
+    'SERVER_ADDR' => '::1'
+    'SERVER_PORT' => '80'
+    'REMOTE_ADDR' => '::1'
+    'DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'REQUEST_SCHEME' => 'http'
+    'CONTEXT_PREFIX' => ''
+    'CONTEXT_DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'SERVER_ADMIN' => 'postmaster@localhost'
+    'SCRIPT_FILENAME' => 'C:/xampp/htdocs/research/web/index.php'
+    'REMOTE_PORT' => '57848'
+    'REDIRECT_URL' => '/research/web/account'
+    'GATEWAY_INTERFACE' => 'CGI/1.1'
+    'SERVER_PROTOCOL' => 'HTTP/1.1'
+    'REQUEST_METHOD' => 'GET'
+    'QUERY_STRING' => ''
+    'REQUEST_URI' => '/research/account'
+    'SCRIPT_NAME' => '/research/web/index.php'
+    'PHP_SELF' => '/research/web/index.php'
+    'REQUEST_TIME_FLOAT' => 1764387879.6203
+    'REQUEST_TIME' => 1764387879
+]
+2025-11-29 04:44:40 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][error][yii\db\Exception] PDOException: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:722
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(722): PDO->__construct('mysql:host=loca...', 'lascinfo', Object(SensitiveParameterValue), NULL)
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(637): yii\db\Connection->createPdoInstance()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(261): yii\db\Connection->getSlavePdo(true)
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(1181): yii\db\Command->prepare(true)
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(417): yii\db\Command->queryInternal('fetchAll', NULL)
+#7 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(366): yii\db\Command->queryAll()
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(134): yii\db\mysql\Schema->findColumns(Object(yii\db\TableSchema))
+#9 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(756): yii\db\mysql\Schema->loadTableSchema('tb_researchpro')
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(192): yii\db\Schema->getTableMetadata('tb_researchpro', 'schema', false)
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(445): yii\db\Schema->getTableSchema('tb_researchpro')
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(479): yii\db\ActiveRecord::getTableSchema()
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(498): yii\db\ActiveRecord->attributes()
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(289): yii\db\BaseActiveRecord->hasAttribute('projectID')
+#15 C:\xampp\htdocs\research\vendor\yiisoft\yii2\validators\Validator.php(257): yii\db\BaseActiveRecord->__get('projectID')
+#16 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Model.php(389): yii\validators\Validator->validateAttributes(Object(app\models\ResearchproSearch), Array)
+#17 C:\xampp\htdocs\research\models\ResearchproSearch.php(53): yii\base\Model->validate()
+#18 C:\xampp\htdocs\research\controllers\ResearchproController.php(54): app\models\ResearchproSearch->search(Array)
+#19 [internal function]: app\controllers\ResearchproController->actionIndex()
+#20 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#21 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('', Array)
+#23 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('researchpro', Array)
+#24 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#25 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#26 {main}
+
+Next yii\db\Exception: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:648
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(261): yii\db\Connection->getSlavePdo(true)
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(1181): yii\db\Command->prepare(true)
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(417): yii\db\Command->queryInternal('fetchAll', NULL)
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(366): yii\db\Command->queryAll()
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(134): yii\db\mysql\Schema->findColumns(Object(yii\db\TableSchema))
+#7 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(756): yii\db\mysql\Schema->loadTableSchema('tb_researchpro')
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(192): yii\db\Schema->getTableMetadata('tb_researchpro', 'schema', false)
+#9 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(445): yii\db\Schema->getTableSchema('tb_researchpro')
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(479): yii\db\ActiveRecord::getTableSchema()
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(498): yii\db\ActiveRecord->attributes()
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(289): yii\db\BaseActiveRecord->hasAttribute('projectID')
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\validators\Validator.php(257): yii\db\BaseActiveRecord->__get('projectID')
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Model.php(389): yii\validators\Validator->validateAttributes(Object(app\models\ResearchproSearch), Array)
+#15 C:\xampp\htdocs\research\models\ResearchproSearch.php(53): yii\base\Model->validate()
+#16 C:\xampp\htdocs\research\controllers\ResearchproController.php(54): app\models\ResearchproSearch->search(Array)
+#17 [internal function]: app\controllers\ResearchproController->actionIndex()
+#18 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#19 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#20 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('', Array)
+#21 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('researchpro', Array)
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#23 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#24 {main}
+Additional Information:
+Array
+(
+    [0] => HY000
+    [1] => 1045
+    [2] => Access denied for user 'lascinfo'@'localhost' (using password: YES)
+)
+
+2025-11-29 04:44:40 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][info][application] $_GET = []
+
+$_POST = []
+
+$_FILES = []
+
+$_COOKIE = [
+    'research-ssid' => 'eof50ui0hpm1h5b9lod96k8qr9'
+    '_csrf' => 'bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa:2:{i:0;s:5:\"_csrf\";i:1;s:32:\"YGw56rXqVcc0hQah9jBWgymdBCXCo5V8\";}'
+]
+
+$_SESSION = [
+    '__flash' => []
+    'first_check_done' => true
+]
+
+$_SERVER = [
+    'REDIRECT_REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_REDIRECT_STATUS' => '200'
+    'REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_STATUS' => '200'
+    'MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'PHPRC' => '\\xampp\\php'
+    'TMP' => '\\xampp\\tmp'
+    'HTTP_HOST' => 'localhost'
+    'HTTP_CONNECTION' => 'keep-alive'
+    'HTTP_SEC_CH_UA' => '\"Chromium\";v=\"142\", \"Microsoft Edge\";v=\"142\", \"Not_A Brand\";v=\"99\"'
+    'HTTP_SEC_CH_UA_MOBILE' => '?0'
+    'HTTP_SEC_CH_UA_PLATFORM' => '\"Windows\"'
+    'HTTP_UPGRADE_INSECURE_REQUESTS' => '1'
+    'HTTP_USER_AGENT' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0'
+    'HTTP_ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
+    'HTTP_SEC_FETCH_SITE' => 'same-origin'
+    'HTTP_SEC_FETCH_MODE' => 'navigate'
+    'HTTP_SEC_FETCH_USER' => '?1'
+    'HTTP_SEC_FETCH_DEST' => 'document'
+    'HTTP_REFERER' => 'http://localhost/research/account'
+    'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br, zstd'
+    'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9,th;q=0.8'
+    'HTTP_COOKIE' => 'research-ssid=eof50ui0hpm1h5b9lod96k8qr9; _csrf=bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa%3A2%3A%7Bi%3A0%3Bs%3A5%3A%22_csrf%22%3Bi%3A1%3Bs%3A32%3A%22YGw56rXqVcc0hQah9jBWgymdBCXCo5V8%22%3B%7D'
+    'PATH' => 'C:\\Python313\\Scripts\\;C:\\Python313\\;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\ProgramData\\chocolatey\\bin;C:\\xampp\\php;C:\\ProgramData\\ComposerSetup\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\nodejs\\;C:\\Users\\teera\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\teera\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\teera\\AppData\\Roaming\\Composer\\vendor\\bin;C:\\Users\\teera\\AppData\\Local\\GitHubDesktop\\bin;C:\\Users\\teera\\AppData\\Roaming\\npm'
+    'SystemRoot' => 'C:\\Windows'
+    'COMSPEC' => 'C:\\Windows\\system32\\cmd.exe'
+    'PATHEXT' => '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW'
+    'WINDIR' => 'C:\\Windows'
+    'SERVER_SIGNATURE' => '<address>Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12 Server at localhost Port 80</address>
+'
+    'SERVER_SOFTWARE' => 'Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12'
+    'SERVER_NAME' => 'localhost'
+    'SERVER_ADDR' => '::1'
+    'SERVER_PORT' => '80'
+    'REMOTE_ADDR' => '::1'
+    'DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'REQUEST_SCHEME' => 'http'
+    'CONTEXT_PREFIX' => ''
+    'CONTEXT_DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'SERVER_ADMIN' => 'postmaster@localhost'
+    'SCRIPT_FILENAME' => 'C:/xampp/htdocs/research/web/index.php'
+    'REMOTE_PORT' => '55790'
+    'REDIRECT_URL' => '/research/web/researchpro'
+    'GATEWAY_INTERFACE' => 'CGI/1.1'
+    'SERVER_PROTOCOL' => 'HTTP/1.1'
+    'REQUEST_METHOD' => 'GET'
+    'QUERY_STRING' => ''
+    'REQUEST_URI' => '/research/researchpro'
+    'SCRIPT_NAME' => '/research/web/index.php'
+    'PHP_SELF' => '/research/web/index.php'
+    'REQUEST_TIME_FLOAT' => 1764387880.2995
+    'REQUEST_TIME' => 1764387880
+]
+2025-11-29 04:44:40 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][error][yii\db\Exception] PDOException: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:722
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(722): PDO->__construct('mysql:host=loca...', 'lascinfo', Object(SensitiveParameterValue), NULL)
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(637): yii\db\Connection->createPdoInstance()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(261): yii\db\Connection->getSlavePdo(true)
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(1181): yii\db\Command->prepare(true)
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(417): yii\db\Command->queryInternal('fetchAll', NULL)
+#7 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(366): yii\db\Command->queryAll()
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(134): yii\db\mysql\Schema->findColumns(Object(yii\db\TableSchema))
+#9 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(756): yii\db\mysql\Schema->loadTableSchema('tb_article')
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(192): yii\db\Schema->getTableMetadata('tb_article', 'schema', false)
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(445): yii\db\Schema->getTableSchema('tb_article')
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(479): yii\db\ActiveRecord::getTableSchema()
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(498): yii\db\ActiveRecord->attributes()
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(289): yii\db\BaseActiveRecord->hasAttribute('article_id')
+#15 C:\xampp\htdocs\research\vendor\yiisoft\yii2\validators\Validator.php(257): yii\db\BaseActiveRecord->__get('article_id')
+#16 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Model.php(389): yii\validators\Validator->validateAttributes(Object(app\models\ArticleSearch), Array)
+#17 C:\xampp\htdocs\research\models\ArticleSearch.php(53): yii\base\Model->validate()
+#18 C:\xampp\htdocs\research\controllers\ArticleController.php(69): app\models\ArticleSearch->search(Array)
+#19 [internal function]: app\controllers\ArticleController->actionIndex()
+#20 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#21 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('', Array)
+#23 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('article', Array)
+#24 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#25 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#26 {main}
+
+Next yii\db\Exception: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:648
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(261): yii\db\Connection->getSlavePdo(true)
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(1181): yii\db\Command->prepare(true)
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(417): yii\db\Command->queryInternal('fetchAll', NULL)
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(366): yii\db\Command->queryAll()
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(134): yii\db\mysql\Schema->findColumns(Object(yii\db\TableSchema))
+#7 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(756): yii\db\mysql\Schema->loadTableSchema('tb_article')
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(192): yii\db\Schema->getTableMetadata('tb_article', 'schema', false)
+#9 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(445): yii\db\Schema->getTableSchema('tb_article')
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(479): yii\db\ActiveRecord::getTableSchema()
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(498): yii\db\ActiveRecord->attributes()
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(289): yii\db\BaseActiveRecord->hasAttribute('article_id')
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\validators\Validator.php(257): yii\db\BaseActiveRecord->__get('article_id')
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Model.php(389): yii\validators\Validator->validateAttributes(Object(app\models\ArticleSearch), Array)
+#15 C:\xampp\htdocs\research\models\ArticleSearch.php(53): yii\base\Model->validate()
+#16 C:\xampp\htdocs\research\controllers\ArticleController.php(69): app\models\ArticleSearch->search(Array)
+#17 [internal function]: app\controllers\ArticleController->actionIndex()
+#18 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#19 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#20 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('', Array)
+#21 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('article', Array)
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#23 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#24 {main}
+Additional Information:
+Array
+(
+    [0] => HY000
+    [1] => 1045
+    [2] => Access denied for user 'lascinfo'@'localhost' (using password: YES)
+)
+
+2025-11-29 04:44:40 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][info][application] $_GET = []
+
+$_POST = []
+
+$_FILES = []
+
+$_COOKIE = [
+    'research-ssid' => 'eof50ui0hpm1h5b9lod96k8qr9'
+    '_csrf' => 'bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa:2:{i:0;s:5:\"_csrf\";i:1;s:32:\"YGw56rXqVcc0hQah9jBWgymdBCXCo5V8\";}'
+]
+
+$_SESSION = [
+    '__flash' => []
+    'first_check_done' => true
+]
+
+$_SERVER = [
+    'REDIRECT_REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_REDIRECT_STATUS' => '200'
+    'REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_STATUS' => '200'
+    'MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'PHPRC' => '\\xampp\\php'
+    'TMP' => '\\xampp\\tmp'
+    'HTTP_HOST' => 'localhost'
+    'HTTP_CONNECTION' => 'keep-alive'
+    'HTTP_SEC_CH_UA' => '\"Chromium\";v=\"142\", \"Microsoft Edge\";v=\"142\", \"Not_A Brand\";v=\"99\"'
+    'HTTP_SEC_CH_UA_MOBILE' => '?0'
+    'HTTP_SEC_CH_UA_PLATFORM' => '\"Windows\"'
+    'HTTP_UPGRADE_INSECURE_REQUESTS' => '1'
+    'HTTP_USER_AGENT' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0'
+    'HTTP_ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
+    'HTTP_SEC_FETCH_SITE' => 'same-origin'
+    'HTTP_SEC_FETCH_MODE' => 'navigate'
+    'HTTP_SEC_FETCH_USER' => '?1'
+    'HTTP_SEC_FETCH_DEST' => 'document'
+    'HTTP_REFERER' => 'http://localhost/research/researchpro'
+    'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br, zstd'
+    'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9,th;q=0.8'
+    'HTTP_COOKIE' => 'research-ssid=eof50ui0hpm1h5b9lod96k8qr9; _csrf=bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa%3A2%3A%7Bi%3A0%3Bs%3A5%3A%22_csrf%22%3Bi%3A1%3Bs%3A32%3A%22YGw56rXqVcc0hQah9jBWgymdBCXCo5V8%22%3B%7D'
+    'PATH' => 'C:\\Python313\\Scripts\\;C:\\Python313\\;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\ProgramData\\chocolatey\\bin;C:\\xampp\\php;C:\\ProgramData\\ComposerSetup\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\nodejs\\;C:\\Users\\teera\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\teera\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\teera\\AppData\\Roaming\\Composer\\vendor\\bin;C:\\Users\\teera\\AppData\\Local\\GitHubDesktop\\bin;C:\\Users\\teera\\AppData\\Roaming\\npm'
+    'SystemRoot' => 'C:\\Windows'
+    'COMSPEC' => 'C:\\Windows\\system32\\cmd.exe'
+    'PATHEXT' => '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW'
+    'WINDIR' => 'C:\\Windows'
+    'SERVER_SIGNATURE' => '<address>Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12 Server at localhost Port 80</address>
+'
+    'SERVER_SOFTWARE' => 'Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12'
+    'SERVER_NAME' => 'localhost'
+    'SERVER_ADDR' => '::1'
+    'SERVER_PORT' => '80'
+    'REMOTE_ADDR' => '::1'
+    'DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'REQUEST_SCHEME' => 'http'
+    'CONTEXT_PREFIX' => ''
+    'CONTEXT_DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'SERVER_ADMIN' => 'postmaster@localhost'
+    'SCRIPT_FILENAME' => 'C:/xampp/htdocs/research/web/index.php'
+    'REMOTE_PORT' => '56465'
+    'REDIRECT_URL' => '/research/web/article'
+    'GATEWAY_INTERFACE' => 'CGI/1.1'
+    'SERVER_PROTOCOL' => 'HTTP/1.1'
+    'REQUEST_METHOD' => 'GET'
+    'QUERY_STRING' => ''
+    'REQUEST_URI' => '/research/article'
+    'SCRIPT_NAME' => '/research/web/index.php'
+    'PHP_SELF' => '/research/web/index.php'
+    'REQUEST_TIME_FLOAT' => 1764387880.8288
+    'REQUEST_TIME' => 1764387880
+]
+2025-11-29 04:44:41 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][error][yii\db\Exception] PDOException: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:722
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(722): PDO->__construct('mysql:host=loca...', 'lascinfo', Object(SensitiveParameterValue), NULL)
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(637): yii\db\Connection->createPdoInstance()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(261): yii\db\Connection->getSlavePdo(true)
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(1181): yii\db\Command->prepare(true)
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(417): yii\db\Command->queryInternal('fetchAll', NULL)
+#7 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(366): yii\db\Command->queryAll()
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(134): yii\db\mysql\Schema->findColumns(Object(yii\db\TableSchema))
+#9 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(756): yii\db\mysql\Schema->loadTableSchema('tb_utilization')
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(192): yii\db\Schema->getTableMetadata('tb_utilization', 'schema', false)
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(445): yii\db\Schema->getTableSchema('tb_utilization')
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(479): yii\db\ActiveRecord::getTableSchema()
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(498): yii\db\ActiveRecord->attributes()
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(289): yii\db\BaseActiveRecord->hasAttribute('utilization_id')
+#15 C:\xampp\htdocs\research\vendor\yiisoft\yii2\validators\Validator.php(257): yii\db\BaseActiveRecord->__get('utilization_id')
+#16 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Model.php(389): yii\validators\Validator->validateAttributes(Object(app\models\UtilizationSearch), Array)
+#17 C:\xampp\htdocs\research\models\UtilizationSearch.php(53): yii\base\Model->validate()
+#18 C:\xampp\htdocs\research\controllers\UtilizationController.php(56): app\models\UtilizationSearch->search(Array)
+#19 [internal function]: app\controllers\UtilizationController->actionIndex()
+#20 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#21 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('', Array)
+#23 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('utilization', Array)
+#24 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#25 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#26 {main}
+
+Next yii\db\Exception: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:648
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(261): yii\db\Connection->getSlavePdo(true)
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(1181): yii\db\Command->prepare(true)
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Command.php(417): yii\db\Command->queryInternal('fetchAll', NULL)
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(366): yii\db\Command->queryAll()
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(134): yii\db\mysql\Schema->findColumns(Object(yii\db\TableSchema))
+#7 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(756): yii\db\mysql\Schema->loadTableSchema('tb_utilization')
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(192): yii\db\Schema->getTableMetadata('tb_utilization', 'schema', false)
+#9 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(445): yii\db\Schema->getTableSchema('tb_utilization')
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveRecord.php(479): yii\db\ActiveRecord::getTableSchema()
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(498): yii\db\ActiveRecord->attributes()
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\BaseActiveRecord.php(289): yii\db\BaseActiveRecord->hasAttribute('utilization_id')
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\validators\Validator.php(257): yii\db\BaseActiveRecord->__get('utilization_id')
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Model.php(389): yii\validators\Validator->validateAttributes(Object(app\models\UtilizationSearch), Array)
+#15 C:\xampp\htdocs\research\models\UtilizationSearch.php(53): yii\base\Model->validate()
+#16 C:\xampp\htdocs\research\controllers\UtilizationController.php(56): app\models\UtilizationSearch->search(Array)
+#17 [internal function]: app\controllers\UtilizationController->actionIndex()
+#18 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#19 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#20 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('', Array)
+#21 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('utilization', Array)
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#23 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#24 {main}
+Additional Information:
+Array
+(
+    [0] => HY000
+    [1] => 1045
+    [2] => Access denied for user 'lascinfo'@'localhost' (using password: YES)
+)
+
+2025-11-29 04:44:41 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][info][application] $_GET = []
+
+$_POST = []
+
+$_FILES = []
+
+$_COOKIE = [
+    'research-ssid' => 'eof50ui0hpm1h5b9lod96k8qr9'
+    '_csrf' => 'bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa:2:{i:0;s:5:\"_csrf\";i:1;s:32:\"YGw56rXqVcc0hQah9jBWgymdBCXCo5V8\";}'
+]
+
+$_SESSION = [
+    '__flash' => []
+    'first_check_done' => true
+]
+
+$_SERVER = [
+    'REDIRECT_REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_REDIRECT_STATUS' => '200'
+    'REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_STATUS' => '200'
+    'MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'PHPRC' => '\\xampp\\php'
+    'TMP' => '\\xampp\\tmp'
+    'HTTP_HOST' => 'localhost'
+    'HTTP_CONNECTION' => 'keep-alive'
+    'HTTP_SEC_CH_UA' => '\"Chromium\";v=\"142\", \"Microsoft Edge\";v=\"142\", \"Not_A Brand\";v=\"99\"'
+    'HTTP_SEC_CH_UA_MOBILE' => '?0'
+    'HTTP_SEC_CH_UA_PLATFORM' => '\"Windows\"'
+    'HTTP_UPGRADE_INSECURE_REQUESTS' => '1'
+    'HTTP_USER_AGENT' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0'
+    'HTTP_ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
+    'HTTP_SEC_FETCH_SITE' => 'same-origin'
+    'HTTP_SEC_FETCH_MODE' => 'navigate'
+    'HTTP_SEC_FETCH_USER' => '?1'
+    'HTTP_SEC_FETCH_DEST' => 'document'
+    'HTTP_REFERER' => 'http://localhost/research/article'
+    'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br, zstd'
+    'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9,th;q=0.8'
+    'HTTP_COOKIE' => 'research-ssid=eof50ui0hpm1h5b9lod96k8qr9; _csrf=bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa%3A2%3A%7Bi%3A0%3Bs%3A5%3A%22_csrf%22%3Bi%3A1%3Bs%3A32%3A%22YGw56rXqVcc0hQah9jBWgymdBCXCo5V8%22%3B%7D'
+    'PATH' => 'C:\\Python313\\Scripts\\;C:\\Python313\\;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\ProgramData\\chocolatey\\bin;C:\\xampp\\php;C:\\ProgramData\\ComposerSetup\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\nodejs\\;C:\\Users\\teera\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\teera\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\teera\\AppData\\Roaming\\Composer\\vendor\\bin;C:\\Users\\teera\\AppData\\Local\\GitHubDesktop\\bin;C:\\Users\\teera\\AppData\\Roaming\\npm'
+    'SystemRoot' => 'C:\\Windows'
+    'COMSPEC' => 'C:\\Windows\\system32\\cmd.exe'
+    'PATHEXT' => '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW'
+    'WINDIR' => 'C:\\Windows'
+    'SERVER_SIGNATURE' => '<address>Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12 Server at localhost Port 80</address>
+'
+    'SERVER_SOFTWARE' => 'Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12'
+    'SERVER_NAME' => 'localhost'
+    'SERVER_ADDR' => '::1'
+    'SERVER_PORT' => '80'
+    'REMOTE_ADDR' => '::1'
+    'DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'REQUEST_SCHEME' => 'http'
+    'CONTEXT_PREFIX' => ''
+    'CONTEXT_DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'SERVER_ADMIN' => 'postmaster@localhost'
+    'SCRIPT_FILENAME' => 'C:/xampp/htdocs/research/web/index.php'
+    'REMOTE_PORT' => '54396'
+    'REDIRECT_URL' => '/research/web/utilization'
+    'GATEWAY_INTERFACE' => 'CGI/1.1'
+    'SERVER_PROTOCOL' => 'HTTP/1.1'
+    'REQUEST_METHOD' => 'GET'
+    'QUERY_STRING' => ''
+    'REQUEST_URI' => '/research/utilization'
+    'SCRIPT_NAME' => '/research/web/index.php'
+    'PHP_SELF' => '/research/web/index.php'
+    'REQUEST_TIME_FLOAT' => 1764387881.287
+    'REQUEST_TIME' => 1764387881
+]
+2025-11-29 04:44:42 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][error][yii\db\Exception] PDOException: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:722
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(722): PDO->__construct('mysql:host=loca...', 'lascinfo', Object(SensitiveParameterValue), NULL)
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(637): yii\db\Connection->createPdoInstance()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(402): yii\db\Connection->getSlavePdo(true)
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(426): yii\db\mysql\QueryBuilder->supportsFractionalSeconds()
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(59): yii\db\mysql\QueryBuilder->defaultTimeTypeMap()
+#7 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\BaseObject.php(112): yii\db\mysql\QueryBuilder->init()
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\QueryBuilder.php(116): yii\base\BaseObject->__construct(Array)
+#9 [internal function]: yii\db\QueryBuilder->__construct(Object(yii\db\Connection), Array)
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\di\Container.php(417): ReflectionClass->newInstanceArgs(Array)
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\di\Container.php(176): yii\di\Container->build('yii\\db\\mysql\\Qu...', Array, Array)
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\BaseYii.php(354): yii\di\Container->get('yii\\db\\mysql\\Qu...', Array)
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(261): yii\BaseYii::createObject('yii\\db\\mysql\\Qu...', Array)
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(247): yii\db\mysql\Schema->createQueryBuilder()
+#15 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(884): yii\db\Schema->getQueryBuilder()
+#16 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveQuery.php(349): yii\db\Connection->getQueryBuilder()
+#17 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Query.php(481): yii\db\ActiveQuery->createCommand(Object(yii\db\Connection))
+#18 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveQuery.php(373): yii\db\Query->queryScalar('COUNT(*)', Object(yii\db\Connection))
+#19 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Query.php(368): yii\db\ActiveQuery->queryScalar('COUNT(*)', Object(yii\db\Connection))
+#20 C:\xampp\htdocs\research\controllers\ReportController.php(88): yii\db\Query->count()
+#21 [internal function]: app\controllers\ReportController->actionIndex()
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#23 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#24 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('index', Array)
+#25 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('report/index', Array)
+#26 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#27 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#28 {main}
+
+Next yii\db\Exception: SQLSTATE[HY000] [1045] Access denied for user 'lascinfo'@'localhost' (using password: YES) in C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php:648
+Stack trace:
+#0 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1067): yii\db\Connection->open()
+#1 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(1054): yii\db\Connection->getMasterPdo()
+#2 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(402): yii\db\Connection->getSlavePdo(true)
+#3 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(426): yii\db\mysql\QueryBuilder->supportsFractionalSeconds()
+#4 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\QueryBuilder.php(59): yii\db\mysql\QueryBuilder->defaultTimeTypeMap()
+#5 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\BaseObject.php(112): yii\db\mysql\QueryBuilder->init()
+#6 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\QueryBuilder.php(116): yii\base\BaseObject->__construct(Array)
+#7 [internal function]: yii\db\QueryBuilder->__construct(Object(yii\db\Connection), Array)
+#8 C:\xampp\htdocs\research\vendor\yiisoft\yii2\di\Container.php(417): ReflectionClass->newInstanceArgs(Array)
+#9 C:\xampp\htdocs\research\vendor\yiisoft\yii2\di\Container.php(176): yii\di\Container->build('yii\\db\\mysql\\Qu...', Array, Array)
+#10 C:\xampp\htdocs\research\vendor\yiisoft\yii2\BaseYii.php(354): yii\di\Container->get('yii\\db\\mysql\\Qu...', Array)
+#11 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\mysql\Schema.php(261): yii\BaseYii::createObject('yii\\db\\mysql\\Qu...', Array)
+#12 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Schema.php(247): yii\db\mysql\Schema->createQueryBuilder()
+#13 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Connection.php(884): yii\db\Schema->getQueryBuilder()
+#14 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveQuery.php(349): yii\db\Connection->getQueryBuilder()
+#15 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Query.php(481): yii\db\ActiveQuery->createCommand(Object(yii\db\Connection))
+#16 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\ActiveQuery.php(373): yii\db\Query->queryScalar('COUNT(*)', Object(yii\db\Connection))
+#17 C:\xampp\htdocs\research\vendor\yiisoft\yii2\db\Query.php(368): yii\db\ActiveQuery->queryScalar('COUNT(*)', Object(yii\db\Connection))
+#18 C:\xampp\htdocs\research\controllers\ReportController.php(88): yii\db\Query->count()
+#19 [internal function]: app\controllers\ReportController->actionIndex()
+#20 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\InlineAction.php(60): call_user_func_array(Array, Array)
+#21 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Controller.php(184): yii\base\InlineAction->runWithParams(Array)
+#22 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Module.php(555): yii\base\Controller->runAction('index', Array)
+#23 C:\xampp\htdocs\research\vendor\yiisoft\yii2\web\Application.php(103): yii\base\Module->runAction('report/index', Array)
+#24 C:\xampp\htdocs\research\vendor\yiisoft\yii2\base\Application.php(387): yii\web\Application->handleRequest(Object(yii\web\Request))
+#25 C:\xampp\htdocs\research\web\index.php(16): yii\base\Application->run()
+#26 {main}
+Additional Information:
+Array
+(
+    [0] => HY000
+    [1] => 1045
+    [2] => Access denied for user 'lascinfo'@'localhost' (using password: YES)
+)
+
+2025-11-29 04:44:42 [::1][-][eof50ui0hpm1h5b9lod96k8qr9][info][application] $_GET = []
+
+$_POST = []
+
+$_FILES = []
+
+$_COOKIE = [
+    'research-ssid' => 'eof50ui0hpm1h5b9lod96k8qr9'
+    '_csrf' => 'bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa:2:{i:0;s:5:\"_csrf\";i:1;s:32:\"YGw56rXqVcc0hQah9jBWgymdBCXCo5V8\";}'
+]
+
+$_SESSION = [
+    '__flash' => []
+    'first_check_done' => true
+]
+
+$_SERVER = [
+    'REDIRECT_REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_REDIRECT_STATUS' => '200'
+    'REDIRECT_MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'REDIRECT_MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'REDIRECT_OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'REDIRECT_PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'REDIRECT_PHPRC' => '\\xampp\\php'
+    'REDIRECT_TMP' => '\\xampp\\tmp'
+    'REDIRECT_STATUS' => '200'
+    'MIBDIRS' => 'C:/xampp/php/extras/mibs'
+    'MYSQL_HOME' => '\\xampp\\mysql\\bin'
+    'OPENSSL_CONF' => 'C:/xampp/apache/bin/openssl.cnf'
+    'PHP_PEAR_SYSCONF_DIR' => '\\xampp\\php'
+    'PHPRC' => '\\xampp\\php'
+    'TMP' => '\\xampp\\tmp'
+    'HTTP_HOST' => 'localhost'
+    'HTTP_CONNECTION' => 'keep-alive'
+    'HTTP_UPGRADE_INSECURE_REQUESTS' => '1'
+    'HTTP_USER_AGENT' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36 Edg/142.0.0.0'
+    'HTTP_ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7'
+    'HTTP_SEC_FETCH_SITE' => 'same-origin'
+    'HTTP_SEC_FETCH_MODE' => 'navigate'
+    'HTTP_SEC_FETCH_USER' => '?1'
+    'HTTP_SEC_FETCH_DEST' => 'document'
+    'HTTP_SEC_CH_UA' => '\"Chromium\";v=\"142\", \"Microsoft Edge\";v=\"142\", \"Not_A Brand\";v=\"99\"'
+    'HTTP_SEC_CH_UA_MOBILE' => '?0'
+    'HTTP_SEC_CH_UA_PLATFORM' => '\"Windows\"'
+    'HTTP_REFERER' => 'http://localhost/research/utilization'
+    'HTTP_ACCEPT_ENCODING' => 'gzip, deflate, br, zstd'
+    'HTTP_ACCEPT_LANGUAGE' => 'en-US,en;q=0.9,th;q=0.8'
+    'HTTP_COOKIE' => 'research-ssid=eof50ui0hpm1h5b9lod96k8qr9; _csrf=bf2336d0c8f4fce503dcef3110a93f2f9a11f814c1ee4892b1ef090005c19dcaa%3A2%3A%7Bi%3A0%3Bs%3A5%3A%22_csrf%22%3Bi%3A1%3Bs%3A32%3A%22YGw56rXqVcc0hQah9jBWgymdBCXCo5V8%22%3B%7D'
+    'PATH' => 'C:\\Python313\\Scripts\\;C:\\Python313\\;C:\\Windows\\system32;C:\\Windows;C:\\Windows\\System32\\Wbem;C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\;C:\\Windows\\System32\\OpenSSH\\;C:\\ProgramData\\chocolatey\\bin;C:\\xampp\\php;C:\\ProgramData\\ComposerSetup\\bin;C:\\Program Files\\Git\\cmd;C:\\Program Files\\nodejs\\;C:\\Users\\teera\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\teera\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\teera\\AppData\\Roaming\\Composer\\vendor\\bin;C:\\Users\\teera\\AppData\\Local\\GitHubDesktop\\bin;C:\\Users\\teera\\AppData\\Roaming\\npm'
+    'SystemRoot' => 'C:\\Windows'
+    'COMSPEC' => 'C:\\Windows\\system32\\cmd.exe'
+    'PATHEXT' => '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW'
+    'WINDIR' => 'C:\\Windows'
+    'SERVER_SIGNATURE' => '<address>Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12 Server at localhost Port 80</address>
+'
+    'SERVER_SOFTWARE' => 'Apache/2.4.58 (Win64) OpenSSL/3.1.3 PHP/8.2.12'
+    'SERVER_NAME' => 'localhost'
+    'SERVER_ADDR' => '::1'
+    'SERVER_PORT' => '80'
+    'REMOTE_ADDR' => '::1'
+    'DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'REQUEST_SCHEME' => 'http'
+    'CONTEXT_PREFIX' => ''
+    'CONTEXT_DOCUMENT_ROOT' => 'C:/xampp/htdocs'
+    'SERVER_ADMIN' => 'postmaster@localhost'
+    'SCRIPT_FILENAME' => 'C:/xampp/htdocs/research/web/index.php'
+    'REMOTE_PORT' => '60072'
+    'REDIRECT_URL' => '/research/web/report/index'
+    'GATEWAY_INTERFACE' => 'CGI/1.1'
+    'SERVER_PROTOCOL' => 'HTTP/1.1'
+    'REQUEST_METHOD' => 'GET'
+    'QUERY_STRING' => ''
+    'REQUEST_URI' => '/research/report/index'
+    'SCRIPT_NAME' => '/research/web/index.php'
+    'PHP_SELF' => '/research/web/index.php'
+    'REQUEST_TIME_FLOAT' => 1764387882.289
+    'REQUEST_TIME' => 1764387882
+]

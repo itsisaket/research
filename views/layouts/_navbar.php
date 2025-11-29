@@ -75,6 +75,11 @@ $displayRole = $profile['academic_type_name']
 /**
  * ==============================
  * 4) ข้อมูลพื้นฐานจาก tb_user
+ *     - แสดงด้วย label:
+ *       username => ชื่อบัญชีผู้ใช้ (Username)
+ *       prefix   => คำนำหน้า
+ *       uname    => ชื่อ
+ *       luname   => นามสกุล
  * ==============================
  */
 $usernameVal = $id->username ?? ($claims['username'] ?? null);
@@ -87,17 +92,17 @@ $lunameVal   = $id->luname   ?? ($profile['last_name']  ?? ($claims['last_name']
  * 5) รูปโปรไฟล์
  * ==============================
  */
-$fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
+$fallback = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 $authenBase = Yii::$app->params['authenBase'] ?? ''; // เช่น 'https://sci-sskru.com/hrm/uploads/'
 
-$imgRaw    = trim((string)($profile['img'] ?? ($claims['img'] ?? '')));
+$imgRaw = trim((string)($profile['img'] ?? ($claims['img'] ?? '')));
 $avatarUrl = $fallback;
 
 if ($imgRaw !== '') {
     if (filter_var($imgRaw, FILTER_VALIDATE_URL)) {
         $avatarUrl = $imgRaw;
     } elseif (!empty($authenBase)) {
-        $base      = rtrim($authenBase, '/') . '/';
+        $base = rtrim($authenBase, '/') . '/';
         $avatarUrl = $base . ltrim($imgRaw, '/');
     }
 }
@@ -185,22 +190,12 @@ $greetIconHtml = Html::tag('i', '', [
               <div class="dropdown-header">
                 <h4 class="mb-1">
                   <?= $greetIconHtml ?>
-                  <span class="small text-muted">
-                    <?= Html::encode($displayName) ?>
-                  </span>
+                  <span class="small text-muted"><?= Html::encode($displayName) ?> <?= Html::encode($unameVal ?: '-') ?> <?= Html::encode($lunameVal ?: '-') ?></span>
                 </h4>
 
                 <?php if (!empty($displayRole)): ?>
                   <div class="text-muted small mb-1"><?= Html::encode($displayRole) ?></div>
                 <?php endif; ?>
-
-                <!-- แสดง username / ชื่อ / นามสกุล (ถ้าต้องการให้ขึ้นชัด) -->
-                <div class="small mt-2 text-muted">
-                  <div><strong>ชื่อบัญชีผู้ใช้ (Username):</strong> <?= Html::encode($usernameVal ?: '-') ?></div>
-                  <div><strong>คำนำหน้า:</strong> <?= Html::encode($prefixVal ?: '-') ?></div>
-                  <div><strong>ชื่อ:</strong> <?= Html::encode($unameVal ?: '-') ?></div>
-                  <div><strong>นามสกุล:</strong> <?= Html::encode($lunameVal ?: '-') ?></div>
-                </div>
 
                 <hr class="my-2"/>
               </div>
@@ -266,7 +261,6 @@ $jsAuth = <<<JS
         localStorage.removeItem('accessToken');
         sessionStorage.clear();
       } catch (e) {}
-      // แล้วปล่อยให้ submit logout ตามปกติ
     });
   }
 })();
