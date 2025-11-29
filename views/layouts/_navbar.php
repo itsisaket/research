@@ -74,30 +74,34 @@ $displayRole = $profile['academic_type_name']
 
 /**
  * ==============================
- * 4) รูปโปรไฟล์
- *    - ถ้า login แล้วให้แสดงภาพจาก $authenBase
+ * 4) ข้อมูลพื้นฐานจาก tb_user
+ *     - แสดงด้วย label:
+ *       username => ชื่อบัญชีผู้ใช้ (Username)
+ *       prefix   => คำนำหน้า
+ *       uname    => ชื่อ
+ *       luname   => นามสกุล
  * ==============================
  */
+$usernameVal = $id->username ?? ($claims['username'] ?? null);
+$prefixVal   = $id->prefix   ?? ($profile['title_name'] ?? ($claims['title_name'] ?? null));
+$unameVal    = $id->uname    ?? ($profile['first_name'] ?? ($claims['first_name'] ?? null));
+$lunameVal   = $id->luname   ?? ($profile['last_name']  ?? ($claims['last_name']  ?? null));
 
-// ✅ ค่าเริ่มต้น
+/**
+ * ==============================
+ * 5) รูปโปรไฟล์
+ * ==============================
+ */
 $fallback = Url::to('@web/template/berry/images/user/avatar-2.jpg');
-
-// สมมติว่ากำหนดค่า $authenBase ไว้ใน params หรือ config อื่น ๆ
 $authenBase = Yii::$app->params['authenBase'] ?? ''; // เช่น 'https://sci-sskru.com/hrm/uploads/'
 
-// ✅ ดึงข้อมูลรูปจากโปรไฟล์หรือ JWT
 $imgRaw = trim((string)($profile['img'] ?? ($claims['img'] ?? '')));
-
-// เริ่มจาก fallback
 $avatarUrl = $fallback;
 
-// ✅ ถ้ามีรูป
 if ($imgRaw !== '') {
     if (filter_var($imgRaw, FILTER_VALIDATE_URL)) {
-        // เป็น URL เต็มอยู่แล้ว
         $avatarUrl = $imgRaw;
     } elseif (!empty($authenBase)) {
-        // เป็นชื่อไฟล์ → ต่อกับฐาน authenBase
         $base = rtrim($authenBase, '/') . '/';
         $avatarUrl = $base . ltrim($imgRaw, '/');
     }
@@ -105,11 +109,11 @@ if ($imgRaw !== '') {
 
 /**
  * ==============================
- * 5) SSO / Callback
+ * 6) SSO / Callback
  * ==============================
  */
 $ssoLoginUrl  = Yii::$app->params['ssoLoginUrl'] ?? 'https://sci-sskru.com/hrm/login';
-$callbackPath = Url::to(['/site/index'], true); // true = absolute URL เผื่อส่งไป SSO
+$callbackPath = Url::to(['/site/index'], true);
 
 $greetIconHtml = Html::tag('i', '', [
     'class'      => 'ti ti-user-circle me-2 align-text-bottom',
@@ -188,9 +192,27 @@ $greetIconHtml = Html::tag('i', '', [
                   <?= $greetIconHtml ?>
                   <span class="small text-muted"><?= Html::encode($displayName) ?></span>
                 </h4>
+
                 <?php if (!empty($displayRole)): ?>
-                  <div class="text-muted small"><?= Html::encode($displayRole) ?></div>
+                  <div class="text-muted small mb-1"><?= Html::encode($displayRole) ?></div>
                 <?php endif; ?>
+
+                <!-- ✅ บล็อกแสดงข้อมูล 4 ช่อง -->
+                <div class="small mt-2 text-muted">
+                  <div><strong>ชื่อบัญชีผู้ใช้ (Username):</strong>
+                    <?= Html::encode($usernameVal ?: '-') ?>
+                  </div>
+                  <div><strong>คำนำหน้า:</strong>
+                    <?= Html::encode($prefixVal ?: '-') ?>
+                  </div>
+                  <div><strong>ชื่อ:</strong>
+                    <?= Html::encode($unameVal ?: '-') ?>
+                  </div>
+                  <div><strong>นามสกุล:</strong>
+                    <?= Html::encode($lunameVal ?: '-') ?>
+                  </div>
+                </div>
+
                 <hr class="my-2"/>
               </div>
 
@@ -228,24 +250,15 @@ $greetIconHtml = Html::tag('i', '', [
 </header>
 
 <?php
-/**
- * ==============================
- * 6) JS: login/logout
- * ==============================
- */
 $jsAuth = <<<JS
 (function authSesNavbar(){
-  // Guest → Login
   const loginEl = document.getElementById('nav-login');
   if (loginEl) {
     loginEl.addEventListener('click', function(e){
       e.preventDefault();
       const sso = loginEl.dataset.ssoLogin || 'https://sci-sskru.com/hrm/login';
       const cb  = loginEl.dataset.callback  || '/site/index';
-
-      // สร้าง callback ให้เป็น URL ใน origin เดียวกัน (กัน open redirect)
       const back = new URL(cb, window.location.origin).href;
-
       const u = new URL(sso, window.location.href);
       if (!u.searchParams.has('redirect')) {
         u.searchParams.set('redirect', back);
@@ -254,7 +267,6 @@ $jsAuth = <<<JS
     });
   }
 
-  // Logout → ล้างตัวแปรฝั่ง Browser
   const logoutBtn  = document.getElementById('nav-logout-btn');
   const logoutForm = document.getElementById('nav-logout-form');
   if (logoutBtn && logoutForm) {
@@ -265,11 +277,9 @@ $jsAuth = <<<JS
         localStorage.removeItem('accessToken');
         sessionStorage.clear();
       } catch (e) {}
-      // แล้วปล่อยให้ submit logout ตามปกติ
     });
   }
 })();
 JS;
 $this->registerJs($jsAuth, \yii\web\View::POS_END);
-
 ?>
