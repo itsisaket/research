@@ -9,36 +9,43 @@ use app\models\User as UserModel;
  * ==============================
  */
 $user = Yii::$app->user;
-$id   = $user->identity; // ถ้า guest จะเป็น null
+$id   = $user->identity ?? null; // ถ้า guest จะเป็น null
 
-// โปรไฟล์จาก identity หรือจาก JWT
-$profile = [];
-if ($id && isset($id->profile) && is_array($id->profile)) {
-    $profile = $id->profile;
-}
+// ✅ ดึงโปรไฟล์ HRM จาก session (ส่งมาจาก actionMyProfile หลัง login)
+$profile = Yii::$app->session->get('hrmProfile', []);
 
 // ✅ ดึง JWT claims (fallback)
 $claims = [];
 if ($id && property_exists($id, 'access_token') && is_string($id->access_token)) {
     $claims = UserModel::decodeJwtPayload($id->access_token) ?: [];
 
-    // ⭐ flatten JWT profile → claims root
+    // ⭐ flatten JWT profile → claims root (เผื่ออนาคตมีใช้)
     if (isset($claims['profile']) && is_array($claims['profile'])) {
         $claims = array_merge($claims, $claims['profile']);
     }
 }
 
-$usernameVal = $id->username ?? ($claims['username'] ?? null);
-$prefixVal   = $id->prefix   ?? ($profile['title_name'] ?? ($claims['title_name'] ?? null));
-$unameVal    = $id->uname    ?? ($profile['first_name'] ?? ($claims['first_name'] ?? null));
-$lunameVal   = $id->luname   ?? ($profile['last_name']  ?? ($claims['last_name']  ?? null));
-// ✅ ประกอบ displayName ให้เรียบร้อย
+// ------------------------------
+// ค่าชื่อ-สกุล / username (กัน $id = null)
+// ------------------------------
+$usernameVal = $id ? $id->username : ($claims['username'] ?? null);
+$prefixVal   = $id ? ($id->prefix ?? null)   : null;
+$prefixVal   = $prefixVal   ?? ($profile['title_name'] ?? ($claims['title_name'] ?? null));
+
+$unameVal    = $id ? ($id->uname ?? null)    : null;
+$unameVal    = $unameVal    ?? ($profile['first_name'] ?? ($claims['first_name'] ?? null));
+
+$lunameVal   = $id ? ($id->luname ?? null)   : null;
+$lunameVal   = $lunameVal   ?? ($profile['last_name']  ?? ($claims['last_name']  ?? null));
+
+// ✅ ประกอบ displayName ให้เรียบร้อย (จะปรับทีหลังก็ได้)
 if ($user->isGuest) {
     $displayName = 'Guest';
 } else {
     $displayName = 'Hi,: ';
 }
 
+// ✅ รูปโปรไฟล์: ใช้จาก hrmProfile เป็นหลัก
 $pic = $profile['img']
     ?? ($claims['img']
     ?? ($id->img ?? '-'));
