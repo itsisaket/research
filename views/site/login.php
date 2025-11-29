@@ -148,7 +148,6 @@ function showCta(msg, type='warning'){
   const card     = $('profile-card');
   const actions  = $('actions-logout');
 
-
   statusEl.className = 'alert alert-' + type + ' mb-4';
   statusEl.textContent = msg;
   loginCta.classList.remove('d-none');
