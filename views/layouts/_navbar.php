@@ -55,25 +55,31 @@ $displayRole = $profile['academic_type_name']
  * ==============================
  */
 
-// ✅ เตรียมค่าเริ่มต้น
-$authenBase = rtrim('https://sci-sskru.com/authen');
+// ✅ ค่าเริ่มต้น
+$authenBase = rtrim('https://sci-sskru.com/authen', '/');
 $fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 
-// ✅ ตัวแปรผู้ใช้
+// ✅ ผู้ใช้
 $user     = Yii::$app->user ?? null;
 $identity = $user && !$user->isGuest ? $user->identity : null;
 
-// ✅ ดึงข้อมูลรูปจากโปรไฟล์หรือ JWT
+// ✅ ดึง img จาก profile หรือ JWT
 $imgRaw = trim((string)($profile['img'] ?? $claims['img'] ?? ''));
 
-// ✅ กำหนดรูปเริ่มต้นเป็น fallback
+// ✅ กำหนด fallback ก่อน
 $avatarUrl = $fallback;
 
 // ✅ ถ้ามีรูป
 if ($imgRaw !== '') {
-        //$avatarUrl = $authenBase . ltrim($imgRaw);
-        $avatarUrl = 'https://sci-sskru.com/authen/uploads/5.jpg';
-  
+
+    // กรณี img เป็น absolute URL เช่น https://domain.com/uploads/xx.jpg
+    if (preg_match('/^https?:\/\//i', $imgRaw)) {
+        $avatarUrl = $imgRaw;
+    } else {
+        // กรณี img เป็น path เช่น "/uploads/5.jpg"
+        $cleanPath = ltrim($imgRaw, '/'); // ลบเฉพาะ slash ซ้าย
+        $avatarUrl = $authenBase . '/' . $cleanPath;
+    }
 }
 
 
