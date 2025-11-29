@@ -55,7 +55,7 @@ $displayRole = $profile['academic_type_name']
  * ==============================
  */
 
-<?php
+
 // 1) Base ของระบบ authen
 $authenBase = rtrim('https://sci-sskru.com/authen', '/');
 
@@ -82,7 +82,7 @@ if ($imgRaw !== '') {
         $avatarUrl = $authenBase . '/' . $cleanPath;   // => https://sci-sskru.com/authen/uploads/5.jpg
     }
 }
-?>
+
 
 
 
