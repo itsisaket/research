@@ -37,7 +37,6 @@ $fullCore = trim(($title !== '' ? $title . ' ' : '') . trim($first . ' ' . $last
 // เตรียม fallback จาก identity (กัน null ก่อน)
 $coreFallback = null;
 if ($id) {
-    // แล้วแต่ model ว่ามี property อะไรบ้าง
     if (property_exists($id, 'name') && !empty($id->name)) {
         $coreFallback = $id->name;
     } elseif (property_exists($id, 'username') && !empty($id->username)) {
@@ -99,7 +98,6 @@ if ($imgRaw !== '') {
         $avatarUrl = $imgRaw;
     } elseif (!empty($authenBase)) {
         // เป็นชื่อไฟล์ → ต่อกับฐาน authenBase
-        // ตัด / หน้าไฟล์ และให้แน่ใจว่า base ลงท้ายด้วย /
         $base = rtrim($authenBase, '/') . '/';
         $avatarUrl = $base . ltrim($imgRaw, '/');
     }
@@ -146,7 +144,7 @@ $greetIconHtml = Html::tag('i', '', [
         <li class="dropdown pc-h-item header-user-profile">
           <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0"
              data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-              <?= Html::img('https://sci-sskru.com/authen/uploads/5.jpg', [
+              <?= Html::img($avatarUrl, [
                   'alt'   => Html::encode($displayName),
                   'class' => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
                   'style' => 'width:44px;height:44px;object-fit:cover;',
@@ -244,7 +242,10 @@ $jsAuth = <<<JS
       e.preventDefault();
       const sso = loginEl.dataset.ssoLogin || 'https://sci-sskru.com/hrm/login';
       const cb  = loginEl.dataset.callback  || '/site/index';
+
+      // สร้าง callback ให้เป็น URL ใน origin เดียวกัน (กัน open redirect)
       const back = new URL(cb, window.location.origin).href;
+
       const u = new URL(sso, window.location.href);
       if (!u.searchParams.has('redirect')) {
         u.searchParams.set('redirect', back);

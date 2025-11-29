@@ -10,7 +10,7 @@ $this->params['breadcrumbs'][] = $this->title;
 $this->params['isLoginPage'] = true;
 
 $csrf   = Yii::$app->request->getCsrfToken();
-$sync   = Url::to(['/site/my-profile']); // ✅ ตัวรับ sync จาก JWT → DB
+$sync   = Url::to(['/site/my-profile'], true); 
 $logout = Url::to(['/site/logout']);
 $index  = Url::to(['/site/index']);
 ?>
@@ -164,7 +164,20 @@ function showCta(msg, type='warning'){
 
   const token = localStorage.getItem('hrm-sci-token');
   const urlParams = new URLSearchParams(location.search);
-  const redirectTo = urlParams.get('redirect') || INDEX_URL;
+  let redirectTo = urlParams.get('redirect') || INDEX_URL;
+
+  // ✅ ป้องกัน open redirect: ให้ใช้ origin เดียวกันเท่านั้น
+  try {
+    const tmpUrl = new URL(redirectTo, location.origin);
+    if (tmpUrl.origin !== location.origin) {
+      redirectTo = INDEX_URL;
+    } else {
+      redirectTo = tmpUrl.href;
+    }
+  } catch (e) {
+    redirectTo = INDEX_URL;
+  }
+
 
   // 1) ไม่มีโทเคนเลย → ให้ไป login ที่ HRM
   if (!token) {
@@ -224,7 +237,20 @@ function showCta(msg, type='warning'){
     const category  = profile.category_type_name ?? '-';
     const employee  = profile.employee_type_name ?? '-';
     const academic  = profile.academic_type_name ?? '-';
-    const imgUrl    = profile.img ? ('https://sci-sskru.com/authen' + (profile.img.startsWith('/')?'':'/') + profile.img) : '';
+    const HRM_BASE = 'https://sci-sskru.com/authen';
+      function buildImgUrl(path) {
+        if (!path) return '';
+        // ถ้าเป็น URL เต็มอยู่แล้ว ไม่ต้อง prefix
+        if (/^https?:\/\//i.test(path)) {
+          return path;
+        }
+        return HRM_BASE + (path.startsWith('/') ? '' : '/') + path;
+      }
+
+      // ...
+
+      const imgUrl = buildImgUrl(profile.img);
+
 
     $('fullName').textContent = (`${titleName}${firstName} ${lastName}`).trim() || '-';
     $('email').textContent    = email;
