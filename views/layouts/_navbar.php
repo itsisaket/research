@@ -39,7 +39,7 @@ if ($user->isGuest) {
     $displayName = 'Hi,: ';
 }
 
-$pic = $id->img ?? ($claims['img'] ?? null);
+$pic = $id->img ?? ($profile['img'] ?? ($claims['profile']['img'] ?? null));
 
 $fallback = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 $authenBase = Yii::$app->params['authenBase'] ?? ''; // เช่น 'https://sci-sskru.com/hrm/uploads/'
