@@ -48,7 +48,7 @@ class AccountController extends Controller
 
                 // 2) นักวิจัยเข้าได้เฉพาะ view
                 [
-                    'actions' => ['view'],
+                    'actions' => ['view', 'update','resetpassword', 'logout'],
                     'allow' => true,
                     'roles' => ['researcher'], // position = 1
                 ],

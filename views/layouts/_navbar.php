@@ -56,7 +56,7 @@ $displayRole = $profile['academic_type_name']
  */
 
 // ✅ เตรียมค่าเริ่มต้น
-$authenBase = rtrim(Yii::$app->params['authenBase'] ?? 'https://sci-sskru.com/authen', '/');
+$authenBase = rtrim('https://sci-sskru.com/authen');
 $fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 
 // ✅ ตัวแปรผู้ใช้
@@ -71,26 +71,11 @@ $avatarUrl = $fallback;
 
 // ✅ ถ้ามีรูป
 if ($imgRaw !== '') {
-    if (filter_var($imgRaw, FILTER_VALIDATE_URL)) {
-        // เป็น URL เต็มอยู่แล้ว
-        $avatarUrl = $imgRaw;
-    } else {
-        // เป็นชื่อไฟล์ → ต่อกับฐาน authenBase
-        $avatarUrl = $authenBase . '/' . ltrim($imgRaw, '/');
-    }
+        //$avatarUrl = $authenBase . ltrim($imgRaw);
+        $avatarUrl = 'https://sci-sskru.com/authen/uploads/5.jpg';
+  
 }
 
-// ✅ เงื่อนไขเพิ่มเติม:
-// ถ้า "ล็อกอินแล้ว" และ "imgRaw ไม่ใช่ URL" → ให้ใช้ฐาน $authenBase แน่นอน
-if ($identity && $imgRaw !== '' && !filter_var($imgRaw, FILTER_VALIDATE_URL)) {
-    $avatarUrl = $authenBase . '/' . ltrim($imgRaw, '/');
-}
-
-// ✅ เพิ่ม cache-busting
-$cacheVer = $profile['updated_at'] ?? $claims['updated_at'] ?? '';
-if ($cacheVer && $avatarUrl !== $fallback) {
-    $avatarUrl .= (strpos($avatarUrl, '?') === false ? '?' : '&') . 'v=' . rawurlencode($cacheVer);
-}
 
 
 /**
@@ -133,14 +118,14 @@ $greetIconHtml = Html::tag('i', '', [
         <li class="dropdown pc-h-item header-user-profile">
           <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0"
              data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-            <?= Html::img($avatarUrl, [
-                'alt'   => Html::encode($displayName),
-                'class' => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
-                'style' => 'width:44px;height:44px;object-fit:cover;',
-                'onerror' => "this.onerror=null;this.src='".Html::encode($fallback)."';",
-                'title' => $displayName,
-                'id'    => 'nav-avatar',
-            ]) ?>
+              <?= Html::img('https://sci-sskru.com/authen/uploads/5.jpg', [
+                  'alt'   => Html::encode($displayName),
+                  'class' => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
+                  'style' => 'width:44px;height:44px;object-fit:cover;',
+                  'onerror' => "this.onerror=null;this.src='" . Html::encode($fallback) . "';",
+                  'title' => $displayName,
+                  'id'    => 'nav-avatar',
+              ]) ?>
             <span><i class="ti ti-settings"></i></span>
           </a>
 
@@ -258,55 +243,4 @@ $jsAuth = <<<JS
 JS;
 $this->registerJs($jsAuth, \yii\web\View::POS_END);
 
-/**
- * ==============================
- * 7) JS: อัปเดตรูปจากโปรไฟล์ที่มาทีหลัง (AJAX / localStorage)
- *    - ใช้ $authenBase และ $fallback จาก PHP
- * ==============================
- */
-$jsAvatar = <<<JS
-(function updateSesAvatar(){
-  // 1) ลองอ่านจากตัวแปร global ก่อน
-  var profile = window.profile || window.userProfile || null;
-
-  // 2) ถ้าไม่มี ให้ลองจาก localStorage
-  if (!profile) {
-    try {
-      var ls = localStorage.getItem('userInfo');
-      if (ls) {
-        profile = JSON.parse(ls);
-      }
-    } catch (e) {
-      profile = null;
-    }
-  }
-
-  // 3) ถ้าไม่มีโปรไฟล์หรือไม่มีรูป → ไม่ทำอะไร
-  if (!profile || !profile.img) {
-    return;
-  }
-
-  // 4) ประกอบ URL ให้ใช้ฐานเดียวกับ PHP
-  var base = '{$authenBase}';
-  var raw  = (profile.img || '').trim();
-  var full = '';
-
-  if (/^https?:\\/\\//i.test(raw)) {
-    full = raw;
-  } else {
-    full = base + '/' + raw.replace(/^\\/+/, '');
-  }
-
-  // 5) อัปเดตรูปบน navbar
-  var avatar = document.getElementById('nav-avatar');
-  if (avatar) {
-    avatar.src = full;
-    avatar.onerror = function(){
-      this.onerror = null;
-      this.src = '{$fallback}';
-    };
-  }
-})();
-JS;
-$this->registerJs($jsAvatar, \yii\web\View::POS_END);
 ?>
