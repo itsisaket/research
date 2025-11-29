@@ -1,6 +1,6 @@
 <?php
-use yii\helpers\Html;
 use yii\helpers\Url;
+use yii\helpers\Html;
 use app\models\User as UserModel;
 
 /**
@@ -9,10 +9,13 @@ use app\models\User as UserModel;
  * ==============================
  */
 $user = Yii::$app->user;
-$id   = $user->identity ?? null;
+$id   = $user->identity; // ถ้า guest จะเป็น null
 
 // โปรไฟล์จาก identity หรือจาก JWT
-$profile = is_array($id->profile ?? null) ? $id->profile : [];
+$profile = [];
+if ($id && isset($id->profile) && is_array($id->profile)) {
+    $profile = $id->profile;
+}
 
 // ✅ ดึง JWT claims (fallback)
 $claims = [];
@@ -25,15 +28,37 @@ if ($id && property_exists($id, 'access_token') && is_string($id->access_token))
  * 2) กำหนดชื่อแสดงผล
  * ==============================
  */
-$title = trim((string)($profile['title_name'] ?? $claims['title_name'] ?? ''));
-$first = trim((string)($profile['first_name'] ?? $claims['first_name'] ?? ''));
-$last  = trim((string)($profile['last_name']  ?? $claims['last_name']  ?? ''));
+$title = trim((string)($profile['title_name'] ?? ($claims['title_name'] ?? '')));
+$first = trim((string)($profile['first_name'] ?? ($claims['first_name'] ?? '')));
+$last  = trim((string)($profile['last_name']  ?? ($claims['last_name']  ?? '')));
 
 $fullCore = trim(($title !== '' ? $title . ' ' : '') . trim($first . ' ' . $last));
 
-$displayName = $user->isGuest
-    ? 'Guest'
-    : ($fullCore !== '' ? 'คุณ ' . $fullCore : ($id->name ?? $claims['name'] ?? $id->username ?? 'User'));
+// เตรียม fallback จาก identity (กัน null ก่อน)
+$coreFallback = null;
+if ($id) {
+    // แล้วแต่ model ว่ามี property อะไรบ้าง
+    if (property_exists($id, 'name') && !empty($id->name)) {
+        $coreFallback = $id->name;
+    } elseif (property_exists($id, 'username') && !empty($id->username)) {
+        $coreFallback = $id->username;
+    }
+}
+
+// ✅ ประกอบ displayName ให้เรียบร้อย
+if ($user->isGuest) {
+    $displayName = 'Guest';
+} else {
+    if ($fullCore !== '') {
+        $displayName = 'คุณ ' . $fullCore;
+    } elseif (!empty($coreFallback)) {
+        $displayName = $coreFallback;
+    } elseif (!empty($claims['name'] ?? null)) {
+        $displayName = $claims['name'];
+    } else {
+        $displayName = 'User';
+    }
+}
 
 /**
  * ==============================
@@ -41,11 +66,11 @@ $displayName = $user->isGuest
  * ==============================
  */
 $displayRole = $profile['academic_type_name']
-    ?? $claims['academic_type_name']
-    ?? $profile['employee_type_name']
-    ?? $claims['employee_type_name']
-    ?? $profile['category_type_name']
-    ?? $claims['category_type_name']
+    ?? ($claims['academic_type_name'] ?? null)
+    ?? ($profile['employee_type_name'] ?? null)
+    ?? ($claims['employee_type_name'] ?? null)
+    ?? ($profile['category_type_name'] ?? null)
+    ?? ($claims['category_type_name'] ?? null)
     ?? null;
 
 /**
@@ -55,37 +80,30 @@ $displayRole = $profile['academic_type_name']
  * ==============================
  */
 
+// ✅ ค่าเริ่มต้น
+$fallback = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 
-// 1) Base ของระบบ authen
-$authenBase = rtrim('https://sci-sskru.com/authen', '/');
+// สมมติว่ากำหนดค่า $authenBase ไว้ใน params หรือ config อื่น ๆ
+$authenBase = Yii::$app->params['authenBase'] ?? ''; // เช่น 'https://sci-sskru.com/hrm/uploads/'
 
-// 2) fallback เวลาไม่พบรูปจาก authen
-//    ถ้าอยากให้ใช้รูป default จาก authen เช่น no-image.jpg ก็ใช้ URL ตรงๆไปเลย
-$fallback   = 'https://sci-sskru.com/authen/uploads/no-image.jpg';
+// ✅ ดึงข้อมูลรูปจากโปรไฟล์หรือ JWT
+$imgRaw = trim((string)($profile['img'] ?? ($claims['img'] ?? '')));
 
-// 3) ดึงข้อมูลรูปจาก profile หรือ JWT
-$imgRaw = trim((string)($profile['img'] ?? $claims['img'] ?? ''));
-
-// 4) ตั้งค่าเริ่มต้นเป็น fallback
+// เริ่มจาก fallback
 $avatarUrl = $fallback;
 
-// 5) ถ้ามีค่ารูปจาก token
+// ✅ ถ้ามีรูป
 if ($imgRaw !== '') {
-
-    // กรณีเป็น absolute URL อยู่แล้ว เช่น https://.../xxx.jpg
-    if (preg_match('~^https?://~i', $imgRaw)) {
+    if (filter_var($imgRaw, FILTER_VALIDATE_URL)) {
+        // เป็น URL เต็มอยู่แล้ว
         $avatarUrl = $imgRaw;
-
-    } else {
-        // กรณีเป็น path แบบ "/uploads/5.jpg" หรือ "uploads/5.jpg"
-        $cleanPath = ltrim($imgRaw, '/');              // ตัด / ซ้ายทิ้ง
-        $avatarUrl = $authenBase . '/' . $cleanPath;   // => https://sci-sskru.com/authen/uploads/5.jpg
+    } elseif (!empty($authenBase)) {
+        // เป็นชื่อไฟล์ → ต่อกับฐาน authenBase
+        // ตัด / หน้าไฟล์ และให้แน่ใจว่า base ลงท้ายด้วย /
+        $base = rtrim($authenBase, '/') . '/';
+        $avatarUrl = $base . ltrim($imgRaw, '/');
     }
 }
-
-
-
-
 
 /**
  * ==============================
@@ -93,16 +111,15 @@ if ($imgRaw !== '') {
  * ==============================
  */
 $ssoLoginUrl  = Yii::$app->params['ssoLoginUrl'] ?? 'https://sci-sskru.com/hrm/login';
-$callbackPath = Url::to(['/site/index']);
+$callbackPath = Url::to(['/site/index'], true); // true = absolute URL เผื่อส่งไป SSO
 
 $greetIconHtml = Html::tag('i', '', [
-    'class' => 'ti ti-user-circle me-2 align-text-bottom',
-    'title' => 'ผู้ใช้',
+    'class'      => 'ti ti-user-circle me-2 align-text-bottom',
+    'title'      => 'ผู้ใช้',
     'aria-label' => 'ผู้ใช้',
 ]);
-
-
 ?>
+
 <!-- Header -->
 <header class="pc-header">
   <div class="header-wrapper">
@@ -129,14 +146,14 @@ $greetIconHtml = Html::tag('i', '', [
         <li class="dropdown pc-h-item header-user-profile">
           <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0"
              data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-                <?= Html::img($avatarUrl, [
-                    'alt'   => Html::encode($displayName),
-                    'class' => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
-                    'style' => 'width:44px;height:44px;object-fit:cover;',
-                    'onerror' => "this.onerror=null;this.src='{$fallback}';",
-                    'title' => Html::encode($displayName),
-                    'id'    => 'nav-avatar',
-                ]) ?>
+              <?= Html::img('https://sci-sskru.com/authen/uploads/5.jpg', [
+                  'alt'   => Html::encode($displayName),
+                  'class' => 'user-avtar rounded-circle border border-2 border-white shadow-sm',
+                  'style' => 'width:44px;height:44px;object-fit:cover;',
+                  'onerror' => "this.onerror=null;this.src='" . Html::encode($fallback) . "';",
+                  'title' => $displayName,
+                  'id'    => 'nav-avatar',
+              ]) ?>
             <span><i class="ti ti-settings"></i></span>
           </a>
 
