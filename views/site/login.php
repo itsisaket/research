@@ -10,7 +10,7 @@ $this->params['breadcrumbs'][] = $this->title;
 $this->params['isLoginPage'] = true;
 
 $csrf   = Yii::$app->request->getCsrfToken();
-$sync   = Url::to(['/site/my-profile'], true); 
+$sync   = Url::to(['/site/my-profile']); 
 $logout = Url::to(['/site/logout']);
 $index  = Url::to(['/site/index']);
 ?>
