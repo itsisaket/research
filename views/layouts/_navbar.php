@@ -35,6 +35,7 @@ if ($user->isGuest) {
 }
 
 $pic = $id->img   ?? ($profile['img']  ?? ($claims['img']  ?? null));
+
 $fallback = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 $authenBase = Yii::$app->params['authenBase'] ?? ''; // เช่น 'https://sci-sskru.com/hrm/uploads/'
 $avatarUrl = $fallback;
@@ -120,14 +121,15 @@ $greetIconHtml = Html::tag('i', '', [
                   <?= $greetIconHtml ?>
                   <span class="small text-muted"><b><?= Html::encode($displayName) ?></b> <?= Html::encode($unameVal ?: '-') ?> <?= Html::encode($lunameVal ?: '-') ?></span>
                 </h4>
-              <?= $pic;?>
+
                 <?php if (!empty($displayRole)): ?>
                   <div class="text-muted small mb-1"><?= Html::encode($displayRole) ?></div>
                 <?php endif; ?>
 
                 <hr class="my-2"/>
               </div>
-
+                  <?= $greetIconHtml ?>
+                  <span class="small text-muted"><b><?= Html::encode($displayName) ?></b> <?= Html::encode($pic ?: '-') ?></span>
               <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 280px)">
                 <?= Html::a(
                       '<i class="ti ti-settings"></i><span> ข้อมูลส่วนตัว</span>',
