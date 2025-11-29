@@ -31,7 +31,7 @@ $lunameVal   = $id->luname   ?? ($profile['last_name']  ?? ($claims['last_name']
 if ($user->isGuest) {
     $displayName = 'Guest';
 } else {
-    $displayName = '<b>Hi,: </b>'.$unameVal.' '.$lunameVal ;
+    $displayName = 'Hi,: ';
 }
 
 $pic = $id->img   ?? ($profile['img']  ?? ($claims['img']  ?? null));
@@ -118,9 +118,9 @@ $greetIconHtml = Html::tag('i', '', [
               <div class="dropdown-header">
                 <h4 class="mb-1">
                   <?= $greetIconHtml ?>
-                  <span class="small text-muted"><?= Html::encode($displayName) ?> <?= Html::encode($unameVal ?: '-') ?> <?= Html::encode($lunameVal ?: '-') ?></span>
+                  <span class="small text-muted"><b><?= Html::encode($displayName) ?></b> <?= Html::encode($unameVal ?: '-') ?> <?= Html::encode($lunameVal ?: '-') ?></span>
                 </h4>
-
+              <?= $pic;?>
                 <?php if (!empty($displayRole)): ?>
                   <div class="text-muted small mb-1"><?= Html::encode($displayRole) ?></div>
                 <?php endif; ?>
