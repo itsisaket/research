@@ -1,106 +1,3 @@
-<?php
-use yii\helpers\Html;
-use yii\helpers\Url;
-
-/** @var yii\web\View $this */
-$this->title = 'Login';
-$this->params['breadcrumbs'][] = $this->title;
-
-/* บอก layout ว่านี่คือหน้า login → ไม่ต้องตรวจ token/redirect ซ้ำ */
-$this->params['isLoginPage'] = true;
-
-$csrf   = Yii::$app->request->getCsrfToken();
-$sync   = Url::to(['/site/my-profile'], true); 
-$logout = Url::to(['/site/logout']);
-$index  = Url::to(['/site/index']);
-?>
-<div class="d-flex justify-content-center align-items-center min-vh-100 bg-light">
-  <div class="container text-center" style="max-width:720px;">
-    <h1 class="h3 mb-4"><?= Html::encode($this->title) ?></h1>
-
-    <div id="status" class="alert alert-info mb-4">กำลังตรวจสอบ...</div>
-
-    <!-- เมื่อยังไม่มี token ให้กดไป login HRM -->
-    <div id="login-cta" class="d-none">
-      <a id="btn-login" href="https://sci-sskru.com/hrm/login" class="btn btn-success">คลิ๊กเข้าสู่ระบบ</a>
-      <a href="<?= $index ?>" class="btn btn-outline-secondary ms-2" data-pjax="0">กลับหน้าแรก</a>
-    </div>
-
-    <!-- การ์ดโปรไฟล์ -->
-    <div id="profile-card" class="card shadow-sm mx-auto d-none">
-      <div class="card-body">
-        <div class="d-flex align-items-start gap-3 mb-3 justify-content-center">
-          <img id="avatar" alt="avatar" class="rounded-circle border bg-light"
-               style="width:96px;height:96px;object-fit:cover;">
-          <div class="text-start">
-            <div id="fullName" class="fw-semibold placeholder-glow">
-              <span class="placeholder col-6"></span>
-            </div>
-            <div id="email" class="text-muted small placeholder-glow">
-              <span class="placeholder col-4"></span>
-            </div>
-            <div id="pid" class="text-muted small"></div>
-          </div>
-        </div>
-
-        <div class="row g-3 text-start">
-          <div class="col-md-6">
-            <div class="border rounded p-2">
-              <div class="text-muted small">หน่วยงาน</div>
-              <div id="dept_name" class="fw-semibold placeholder-glow">
-                <span class="placeholder col-8"></span>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="border rounded p-2">
-              <div class="text-muted small">สายงาน</div>
-              <div id="category_type_name" class="fw-semibold placeholder-glow">
-                <span class="placeholder col-6"></span>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="border rounded p-2">
-              <div class="text-muted small">ประเภทพนักงาน</div>
-              <div id="employee_type_name" class="fw-semibold placeholder-glow">
-                <span class="placeholder col-6"></span>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="border rounded p-2">
-              <div class="text-muted small">ตำแหน่งวิชาการ</div>
-              <div id="academic_type_name" class="fw-semibold placeholder-glow">
-                <span class="placeholder col-6"></span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ปุ่มออกจากระบบ -->
-    <div id="actions-logout" class="d-none mt-4">
-      <?php
-        echo Html::beginForm(['site/logout'], 'post', [
-          'id' => 'page-logout-form',
-          'class' => 'd-inline',
-          'data-pjax' => '0',
-        ]);
-      ?>
-        <button type="submit" class="btn btn-danger" id="page-logout-btn">
-          คลิ๊กออกจากระบบ
-        </button>
-      <?php echo Html::endForm(); ?>
-
-      <a href="<?= $index ?>" class="btn btn-outline-secondary ms-2" data-pjax="0">
-        กลับหน้าแรก
-      </a>
-    </div>
-  </div>
-</div>
-
 <script>
 const CSRF_TOKEN = <?= json_encode($csrf) ?>;
 const SYNC_URL   = <?= json_encode($sync) ?>;   // ← controller ที่จะสร้าง/อัปเดต tb_user และตั้ง position=1 ถ้าเป็น user ใหม่
@@ -178,7 +75,6 @@ function showCta(msg, type='warning'){
     redirectTo = INDEX_URL;
   }
 
-
   // 1) ไม่มีโทเคนเลย → ให้ไป login ที่ HRM
   if (!token) {
     showCta('ยังไม่มีข้อมูลโทเคน (ไม่พบ hrm-sci-token)');
@@ -237,20 +133,18 @@ function showCta(msg, type='warning'){
     const category  = profile.category_type_name ?? '-';
     const employee  = profile.employee_type_name ?? '-';
     const academic  = profile.academic_type_name ?? '-';
+
+    // ✅ จัดการรูป: รองรับทั้ง path และ URL เต็ม
     const HRM_BASE = 'https://sci-sskru.com/authen';
-      function buildImgUrl(path) {
-        if (!path) return '';
-        // ถ้าเป็น URL เต็มอยู่แล้ว ไม่ต้อง prefix
-        if (/^https?:\/\//i.test(path)) {
-          return path;
-        }
-        return HRM_BASE + (path.startsWith('/') ? '' : '/') + path;
+    function buildImgUrl(path) {
+      if (!path) return '';
+      // ถ้าเป็น URL เต็มอยู่แล้ว ไม่ต้อง prefix
+      if (/^https?:\/\//i.test(path)) {
+        return path;
       }
-
-      // ...
-
-      const imgUrl = buildImgUrl(profile.img);
-
+      return HRM_BASE + (path.startsWith('/') ? '' : '/') + path;
+    }
+    const imgUrl = buildImgUrl(profile.img);
 
     $('fullName').textContent = (`${titleName}${firstName} ${lastName}`).trim() || '-';
     $('email').textContent    = email;
@@ -260,20 +154,29 @@ function showCta(msg, type='warning'){
     $('employee_type_name').textContent = employee;
     $('academic_type_name').textContent = academic;
 
+    // ✅ อัปเดตรูป avatar ทั้งการ์ดและ navbar
     if (imgUrl) {
+      // รูปใน card หน้า login
       $('avatar').src = imgUrl;
       $('avatar').alt = (`${firstName} ${lastName}`).trim() || 'avatar';
       $('avatar').onerror = () => { $('avatar').removeAttribute('src'); };
+
+      // รูปใน navbar (layout) ถ้ามี
+      const navAvatar = document.getElementById('nav-avatar');
+      if (navAvatar) {
+        navAvatar.src = imgUrl;
+      }
     } else {
       $('avatar').removeAttribute('src');
       $('avatar').alt = 'avatar';
     }
+
     stopPlaceholders();
   } catch {
     stopPlaceholders();
   }
 
- 
+  // 6) SYNC เข้าระบบ SES
   try {
     const res = await fetch(SYNC_URL, {
       method:'POST',
@@ -286,20 +189,17 @@ function showCta(msg, type='warning'){
     const data = await res.json().catch(()=>({}));
 
     if (res.ok && data && data.ok) {
-      // ถ้า backend รับแล้ว → ไปหน้าที่ตั้งใจ
       statusEl.className = 'alert alert-success mb-4';
       statusEl.textContent = 'เข้าสู่ระบบสำเร็จ กำลังเปลี่ยนหน้า...';
       window.location.href = redirectTo;
       return;
     }
 
-    // ถ้า backend ไม่ ok → แค่บอกว่า sync ไม่สำเร็จ แต่ยังไม่ต้องลบ token
     statusEl.className = 'alert alert-warning mb-4';
     statusEl.textContent = data?.error || 'ไม่สามารถ sync ข้อมูลเข้าสู่ระบบได้ (token ยังอยู่ใน browser)';
     loginCta.classList.remove('d-none');
 
   } catch(e){
-    // เซิร์ฟเวอร์ล่ม → ยังไม่ต้องลบ token
     statusEl.className = 'alert alert-warning mb-4';
     statusEl.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ขอลองใหม่หรือติดต่อผู้ดูแลระบบ';
     loginCta.classList.remove('d-none');
