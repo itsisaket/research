@@ -21,6 +21,11 @@ if ($id && isset($id->profile) && is_array($id->profile)) {
 $claims = [];
 if ($id && property_exists($id, 'access_token') && is_string($id->access_token)) {
     $claims = UserModel::decodeJwtPayload($id->access_token) ?: [];
+
+    // ⭐ flatten JWT profile → claims root
+    if (isset($claims['profile']) && is_array($claims['profile'])) {
+        $claims = array_merge($claims, $claims['profile']);
+    }
 }
 
 $usernameVal = $id->username ?? ($claims['username'] ?? null);
@@ -34,7 +39,7 @@ if ($user->isGuest) {
     $displayName = 'Hi,: ';
 }
 
-$pic = $id->img   ?? ($profile['img']  ?? ($claims['img']  ?? null));
+$pic = $id->img ?? ($claims['img'] ?? null);
 
 $fallback = Url::to('@web/template/berry/images/user/avatar-2.jpg');
 $authenBase = Yii::$app->params['authenBase'] ?? ''; // เช่น 'https://sci-sskru.com/hrm/uploads/'
