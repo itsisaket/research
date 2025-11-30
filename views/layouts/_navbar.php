@@ -11,6 +11,7 @@ use app\models\User as UserModel;
 $user = Yii::$app->user;
 $id   = $user->identity ?? null; // ถ้า guest จะเป็น null
 
+
 // ✅ ดึงโปรไฟล์ HRM จาก session (ส่งมาจาก actionMyProfile หลัง login)
 $profile = Yii::$app->session->get('hrmProfile', []);
 

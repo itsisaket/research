@@ -8,49 +8,39 @@ use yii\web\ForbiddenHttpException;
 
 class HanumanRule extends AccessRule
 {
-    /**
-     * ตรวจสอบสิทธิ์จาก roles ที่กำหนดใน rule
-     */
     protected function matchRole($user)
     {
         $actionId = Yii::$app->controller->action->id ?? null;
 
-        // ✅ ปล่อย action error เสมอ
+        // ปล่อย error เสมอ
         if ($actionId === 'error') {
             return true;
         }
 
-        // ✅ ถ้า rule นี้ไม่กำหนด roles เลย → public
+        // ถ้า rule ไม่ได้กำหนด roles เลย → ถือว่า public
         if (empty($this->roles)) {
             return true;
         }
 
-        // ==============================
-        // 1) กรณี Guest (ยังไม่ล็อกอิน)
-        // ==============================
+        // ---------- 1) กรณียังไม่ล็อกอิน (guest) ----------
         if ($user->getIsGuest()) {
             foreach ($this->roles as $role) {
-                // อนุญาต rule ที่ระบุ '?'
                 if ($role === '?') {
-                    return true;
+                    return true; // อนุญาต rule ที่ระบุ '?'
                 }
             }
-            // rule นี้ต้องการ role อื่น (เช่น '@' หรือชื่อ role) แต่เป็น guest → ไม่ผ่าน
-            return false;
+            return false; // rule นี้ต้องใช้ role อย่างอื่น
         }
 
-        // ==============================
-        // 2) กรณีล็อกอินแล้ว
-        // ==============================
+        // ---------- 2) กรณีล็อกอินแล้ว ----------
         $identity = $user->identity;
         if (!$identity) {
             throw new ForbiddenHttpException('กรุณาเข้าสู่ระบบ');
         }
 
-        // 🔹 role ผูกกับ field position (ปรับชื่อตรงนี้ให้ตรงกับ model ของคุณ)
+        // ผูก role กับ field position
         $u_type = (int)($identity->position ?? 0);
 
-        // 🔹 mapping ชื่อ role → ตัวเลข
         $roleMap = [
             'researcher' => 1,
             'staff'      => 2,
@@ -64,12 +54,12 @@ class HanumanRule extends AccessRule
                 return true;
             }
 
-            // ตัวเลขตรง ๆ เช่น '1', '4'
+            // ระบุเป็นตัวเลข เช่น '1', '4'
             if (is_numeric($role) && (int)$role === $u_type) {
                 return true;
             }
 
-            // ใช้ชื่อ role ตาม roleMap เช่น 'admin', 'researcher'
+            // ระบุเป็นชื่อ เช่น 'admin', 'researcher'
             if (isset($roleMap[$role]) && $roleMap[$role] === $u_type) {
                 return true;
             }
