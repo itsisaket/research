@@ -318,11 +318,14 @@ public function actionMyProfile()
         );
 
         // ให้ตอบ 200 พร้อม JSON error กลับไปแทน 500
-        return [
-            'ok'      => false,
-            'error'   => 'fatal',
-            'message' => YII_DEBUG ? $e->getMessage() : 'internal error',
-        ];
+            return [
+                'ok'      => false,
+                'error'   => 'fatal',
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'trace'   => explode("\n", $e->getTraceAsString()),
+            ];
     }
 }
 
