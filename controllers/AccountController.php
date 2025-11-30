@@ -47,7 +47,7 @@ public function behaviors()
                 [
                     'actions' => ['index', 'regis'],
                     'allow'   => true,
-                    'roles'   => ['?', '@'],
+
                 ],
 
                 /** --------------------------------------
