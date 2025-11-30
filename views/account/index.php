@@ -53,32 +53,51 @@ $this->params['breadcrumbs'][] = $this->title;
               [
                   'format' => 'raw',
                   'value' => function($model){
-                      $user = Yii::$app->user->identity;
-                      if (
-                          $user && ($user->position == 4 || $user->id == $model->uid)
-                      ) {
-                          return
-                              Html::a(
-                                  '<i class="fa fa-edit"></i> แก้ไข',
-                                  ['update', 'id' => $model->uid],
-                                  ['class' => 'btn btn-warning btn-sm']
-                              )
-                              . ' ' .
-                              Html::a(
-                                  '<i class="fa fa-trash"></i> ลบ',
-                                  ['delete', 'id' => $model->uid],
-                                  [
-                                      'class' => 'btn btn-danger btn-sm',
-                                      'data' => [
-                                          'confirm' => 'Are you sure you want to delete this item?',
-                                          'method' => 'post',
-                                      ],
-                                  ]
-                              );
+                      $identity = Yii::$app->user->identity;
+
+                      // ถ้ายังไม่ได้ล็อกอิน → ไม่โชว์ปุ่ม
+                      if (!$identity instanceof \app\models\User) {
+                          return null;
                       }
-                      return null;
+
+                      // ดึง roles จาก JWT (array ของ string)
+                      $roles = is_array($identity->roles) ? $identity->roles : [];
+
+                      // เป็น admin ถ้า:
+                      // 1) มี 'admin' อยู่ใน $roles
+                      // 2) หรือ position เป็นรหัส admin ตาม constant
+                      $isAdmin =
+                          in_array('admin', $roles, true) ||
+                          (is_numeric($identity->position ?? null)
+                          && (int)$identity->position === \app\models\User::admin);
+
+                      if (!$isAdmin) {
+                          // researcher / คนอื่น → ดูได้อย่างเดียว ไม่แก้/ลบ
+                          return null;
+                      }
+
+                      // ✅ เฉพาะ admin แสดงปุ่มแก้ไข/ลบ
+                      return
+                          Html::a(
+                              '<i class="fa fa-edit"></i> แก้ไข',
+                              ['update', 'id' => $model->uid],
+                              ['class' => 'btn btn-warning btn-sm']
+                          )
+                          . ' ' .
+                          Html::a(
+                              '<i class="fa fa-trash"></i> ลบ',
+                              ['delete', 'id' => $model->uid],
+                              [
+                                  'class' => 'btn btn-danger btn-sm',
+                                  'data' => [
+                                      'confirm' => 'Are you sure you want to delete this item?',
+                                      'method' => 'post',
+                                  ],
+                              ]
+                          );
                   }
               ],
+
 
               
             ],
