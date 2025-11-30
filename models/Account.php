@@ -35,14 +35,14 @@ class Account extends \yii\db\ActiveRecord implements IdentityInterface
 
         // ฟอร์มปกติ ใช้ตอนกรอกเองในระบบ
         $sc['default'] = [
-            'username','password','prefix','uname','luname','org_id','dept_id','email','tel',
+            'username','password','prefix','uname','luname','org_id','dept_code','email','tel',
             'position','password_reset_token','authKey','dayup'
         ];
 
         // ซิงก์จาก SSO/JWT → เบากว่า ไม่บังคับทุกช่อง
         // ให้บังคับแค่ตัวที่เรามั่นใจว่ามี (username = personal_id)
         $sc['ssoSync'] = [
-            'username','prefix','uname','luname','org_id','dept_id','email','tel','position',
+            'username','prefix','uname','luname','org_id','dept_code','email','tel','position',
             'password_reset_token','authKey','dayup'
         ];
 
@@ -60,7 +60,7 @@ class Account extends \yii\db\ActiveRecord implements IdentityInterface
             [['username'], 'required', 'on' => ['default','ssoSync']],
 
             // ถ้าเป็นฟอร์มปกติ → บังคับเพิ่ม
-            [['prefix', 'uname', 'luname', 'org_id','dept_id', 'email', 'tel'], 'required', 'on' => ['default']],
+            [['prefix', 'uname', 'luname', 'org_id','dept_code', 'email', 'tel'], 'required', 'on' => ['default']],
 
             // อนุญาต password ว่างได้ -> แปลง '' เป็น NULL
             ['password', 'filter', 'filter' => function($v){ return $v === '' ? null : $v; }],
@@ -98,7 +98,7 @@ class Account extends \yii\db\ActiveRecord implements IdentityInterface
             'uname' => 'ชื่อสมาชิก',
             'luname' => 'นามสกุล',
             'org_id' => 'หน่วยงานสังกัด/คณะ',
-            'dept_id' => 'หน่วยงานย่อย/สาขาวิชา',
+            'dept_code' => 'หน่วยงานย่อย/สาขาวิชา',
             'email' => 'Email',
             'tel' => 'เบอร์ติดต่อ',
             'position' => 'สถานะ',
