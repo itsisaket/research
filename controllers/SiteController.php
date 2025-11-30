@@ -12,7 +12,6 @@ use app\models\Account;
 use app\components\ApiAuthService;
 use yii\httpclient\Client;
 
-
 class SiteController extends Controller
 {
     private const SESSION_DURATION = 60 * 60 * 24 * 14; // 14 วัน
@@ -355,98 +354,147 @@ public function actionIndex()
         return $this->render('about');
     }
 
-    public function actionUpUserJson($personal_id = null)
-    {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $session = Yii::$app->session;
+public function actionUpUserJson($personal_id = null)
+{
+    // ❌ แบบ Flash + Redirect ไม่ต้อง set FORMAT_JSON
+    $session = Yii::$app->session;
 
-        try {
-            // เรียก API
-            $client = new \yii\httpclient\Client(['transport' => 'yii\httpclient\CurlTransport']);
-            $apiUrl = 'https://sci-sskru.com/authen/list-profiles';
+    // 0) ดึง token จาก identity (ที่คุณใช้ decodeJwtPayload ไว้ก่อนแล้ว)
+    $user = Yii::$app->user;
+    $id   = $user->identity ?? null;
 
-            $params = [];
-            if (!empty($personal_id)) {
-                $params['personal_id'] = $personal_id;
-            }
+    $token = $id->access_token ?? null;
+    if (empty($token)) {
+        $session->setFlash('danger', 'ไม่พบ Token จาก SSO (access_token ว่าง) ไม่สามารถเรียก list-profiles ได้');
+        return $this->redirect(['site/about']);
+    }
 
-            $response = $client->get($apiUrl, $params)->send();
+    try {
+        $client = new Client(['transport' => 'yii\httpclient\CurlTransport']);
+        $apiUrl = 'https://sci-sskru.com/authen/list-profiles';
 
-            if (!$response->isOk) {
-                $session->setFlash('danger', "เชื่อมต่อ API ไม่สำเร็จ (status: {$response->statusCode})");
-                return $this->redirect(['site/about']);
-            }
+        // =========================
+        // 1) ลองเรียกแบบ POST ก่อน
+        // =========================
+        $params = [];
+        if (!empty($personal_id)) {
+            $params['personal_id'] = $personal_id;
+        }
 
-            $json = $response->getData();
+        $response = $client->createRequest()
+            ->setMethod('POST')
+            ->setUrl($apiUrl)
+            ->setFormat(Client::FORMAT_JSON)
+            ->setHeaders([
+                'Authorization' => 'Bearer ' . $token,
+                'Content-Type'  => 'application/json',
+            ])
+            ->setData($params)
+            ->send();
 
-            if (!isset($json['data']) || !is_array($json['data']) || count($json['data']) === 0) {
-                $session->setFlash('warning', 'ไม่พบข้อมูลบุคลากรจากระบบ HRM');
-                return $this->redirect(['site/about']);
-            }
+        // ถ้า POST ไม่ ok → ลอง GET ตาม pattern JS
+        if (!$response->isOk) {
+            $response = $client->createRequest()
+                ->setMethod('GET')
+                ->setUrl($apiUrl)
+                ->setHeaders([
+                    'Authorization' => 'Bearer ' . $token,
+                ])
+                ->setData($params) // จะกลายเป็น query string ?personal_id=...
+                ->send();
+        }
 
-            // LOOP ทุกคน
-            $total   = count($json['data']);
-            $success = 0;
-            $failed  = 0;
-
-            foreach ($json['data'] as $profile) {
-                $username = $profile['personal_id'] ?? null;
-                if (empty($username)) {
-                    $failed++;
-                    continue;
-                }
-
-                $account = Account::findOne(['username' => $username]);
-                $isNew   = false;
-
-                if ($account === null) {
-                    $account = new Account();
-                    $account->scenario = 'ssoSync';
-                    $account->username = $username;
-                    $isNew = true;
-                } else {
-                    $account->scenario = 'ssoSync';
-                }
-
-                // Map HRM → tb_user
-                $account->prefix = 0;
-                $account->uname  = $profile['first_name'] ?? 'ไม่ระบุชื่อ';
-                $account->luname = $profile['last_name']  ?? '';
-                $account->org_id = (int)($profile['faculty_id'] ?? 0);
-                $account->dept_code = (int)($profile['dept_code'] ?? 0);
-
-                if ($account->email === null) $account->email = '';
-                if ($account->tel   === null) $account->tel = '';
-
-                try {
-                    $account->initDefaultsForSso();
-                } catch (\Throwable $e) {
-                    $failed++;
-                    continue;
-                }
-
-                if (!$account->save()) {
-                    $failed++;
-                    continue;
-                }
-
-                $success++;
-            }
-
-            // Flash message สรุป
-            if ($failed === 0) {
-                $session->setFlash('success', "อัปเดตข้อมูลบุคลากรสำเร็จทั้งหมด {$success} รายการ");
-            } else {
-                $session->setFlash('warning', "Sync เสร็จสิ้น: สำเร็จ {$success} รายการ, ล้มเหลว {$failed} รายการ");
-            }
-
-            return $this->redirect(['site/about']);
-
-        } catch (\Throwable $e) {
-            $session->setFlash('danger', 'เกิดข้อผิดพลาด: ' . $e->getMessage());
+        if (!$response->isOk) {
+            $session->setFlash(
+                'danger',
+                "เรียก list-profiles ไม่สำเร็จ (HTTP {$response->statusCode})"
+            );
             return $this->redirect(['site/about']);
         }
+
+        $json = $response->getData();
+
+        if (!isset($json['data']) || !is_array($json['data']) || count($json['data']) === 0) {
+            $session->setFlash('warning', 'ไม่พบข้อมูลบุคลากรจากระบบ HRM');
+            return $this->redirect(['site/about']);
+        }
+
+        // =========================
+        // 2) LOOP sync ทุกเรคคอร์ด
+        // =========================
+        $total   = count($json['data']);
+        $success = 0;
+        $failed  = 0;
+
+        foreach ($json['data'] as $profile) {
+            $username = $profile['personal_id'] ?? null;
+            if (empty($username)) {
+                $failed++;
+                continue;
+            }
+
+            $account = Account::findOne(['username' => $username]);
+            $isNew   = false;
+
+            if ($account === null) {
+                $account = new Account();
+                $account->scenario = 'ssoSync';
+                $account->username = $username;
+                $isNew = true;
+            } else {
+                $account->scenario = 'ssoSync';
+            }
+
+            // Map HRM → tb_user
+            $account->prefix    = 0;
+            $account->uname     = $profile['first_name'] ?? 'ไม่ระบุชื่อ';
+            $account->luname    = $profile['last_name']  ?? '';
+            $account->org_id    = (int)($profile['faculty_id'] ?? 0);
+            $account->dept_code = (int)($profile['dept_code']  ?? 0);
+
+            if ($account->email === null) $account->email = '';
+            if ($account->tel   === null) $account->tel   = '';
+
+            try {
+                $account->initDefaultsForSso();
+            } catch (\Throwable $e) {
+                Yii::error('initDefaultsForSso error: ' . $e->getMessage(), 'sso.sync');
+                $failed++;
+                continue;
+            }
+
+            if (!$account->save()) {
+                Yii::error(
+                    'HRM sync validate fail for username=' . $account->username
+                    . ' data=' . json_encode($account->attributes, JSON_UNESCAPED_UNICODE)
+                    . ' errors=' . json_encode($account->getErrors(), JSON_UNESCAPED_UNICODE),
+                    'sso.sync'
+                );
+                $failed++;
+                continue;
+            }
+
+            $success++;
+        }
+
+        // Flash ผลลัพธ์
+        if ($failed === 0) {
+            $session->setFlash('success', "อัปเดตข้อมูลบุคลากรสำเร็จทั้งหมด {$success} รายการ");
+        } else {
+            $session->setFlash(
+                'warning',
+                "Sync เสร็จสิ้น: สำเร็จ {$success} รายการ, ล้มเหลว {$failed} รายการ (รวม {$total})"
+            );
+        }
+
+        return $this->redirect(['site/about']);
+
+    } catch (\Throwable $e) {
+        Yii::error('HRM sync exception: ' . $e->getMessage(), 'sso.sync');
+        $session->setFlash('danger', 'เกิดข้อผิดพลาด: ' . $e->getMessage());
+        return $this->redirect(['site/about']);
     }
+}
 
 
 
