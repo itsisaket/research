@@ -2,6 +2,7 @@
 /** @var yii\web\View $this */
 /** @var bool $isGuest */
 /** @var \app\models\User|null $u */
+use yii\helpers\Url;
 
 use yii\helpers\Html;
 // ใช้ Highcharts เมื่อจำเป็นเท่านั้น; ถ้าไม่ใช้ ก็ตัด 2 บรรทัดถัดไปทิ้งได้
@@ -27,3 +28,34 @@ $this->title = 'หน้าหลัก';
   </div>
 
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const token = localStorage.getItem('hrm-sci-token');
+
+    // 1) ถ้าไม่มี token → ไปหน้า site/login ทันที
+    if (!token) {
+        window.location.href = '<?= Url::to(['report/index']) ?>';
+        return;
+    }
+
+    // 2) ถ้ามี token → ส่งไปให้ server เพื่อให้ PHP ตรวจสอบ JWT
+    // กัน loop: ส่งครั้งเดียวพอ ไม่วนซ้ำ
+    if (sessionStorage.getItem('sent-token') === '1') {
+        return;
+    }
+    sessionStorage.setItem('sent-token', '1');
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '<?= Url::to(['/site/index']) ?>';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'token';
+    input.value = token;
+
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+});
+</script>

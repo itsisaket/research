@@ -70,53 +70,35 @@ public function actionIndex()
 
     // 1) ถ้าล็อกอินแล้ว → ไปหน้า report
     if (!$user->isGuest) {
-
         Yii::$app->session->setFlash('success', 'สวัสดีผู้ใช้ที่ผ่านการยืนยันตัวตนแล้ว');
         return $this->redirect(['report/index']);
     }
-    else {
 
-        // 2) ยังไม่ได้ล็อกอิน → อ่าน token จาก request
-        Yii::$app->session->setFlash('info', 'กำลังตรวจสอบ token...');
+    $request = Yii::$app->request;
 
-        $raw  = Yii::$app->request->getRawBody();
-        $data = json_decode($raw, true);
+    // 2) ยังไม่ล็อกอิน + ถ้ามาแบบ POST แสดงว่ามาจาก JS ส่ง token มาให้
+    if ($request->isPost) {
+        $token = $request->post('token');
 
-        if (!is_array($data)) {
-            $data = Yii::$app->request->post();
-        }
-
-        $token = $data['token'] ?? null;
-
-        // 3) ถ้ามี token → เช็ค JWT payload
         if ($token) {
-
-            if (substr_count($token, '.') === 2) {
-
-                $claims = \app\models\User::decodeJwtPayload($token);
-
-                if (is_array($claims) && !empty($claims)) {
-
-                    Yii::$app->session->setFlash('success', 'Token ถูกต้อง → ส่งไปหน้า Login เพื่อทำ SSO');
-
-                    Yii::$app->session->set('sso_token', $token);
-
-                    return $this->redirect(['site/login']);
-                }
-            }
-
-            // --- token ผิด หรือ decode ไม่ได้ ---
-            Yii::$app->session->setFlash('warning', 'Token ไม่ถูกต้อง → เข้าหน้า Report ในฐานะ Guest');
-
-            return $this->redirect(['report/index']);
+            // TODO: ตรงนี้คุณจะเช็ค JWT payload เพิ่มก็ได้
+            Yii::$app->session->set('sso_token', $token);
+            Yii::$app->session->setFlash('info', 'พบ token → กำลังนำไปยืนยันตัวตนที่หน้า Login');
+            return $this->redirect(['site/login']);
         }
 
-        // 4) ไม่มี token เลย → สวัสดี Guest
-        Yii::$app->session->setFlash('info', 'สวัสดี Guest (ยังไม่ได้ล็อกอิน)');
-
+        // ถ้า POST มาแต่ไม่มี token → ปล่อยเป็น Guest ไป report
+        Yii::$app->session->setFlash('warning', 'ไม่พบ token → เข้าหน้า report ในฐานะ Guest');
         return $this->redirect(['report/index']);
     }
+
+    // 3) ยังเป็น Guest + เป็น GET ธรรมดา → ให้ render view (JS จะไปเช็ค localStorage เอง)
+    return $this->render('index', [
+        'isGuest' => $user->isGuest,
+        'u'       => $user->identity,
+    ]);
 }
+
 
 
 
