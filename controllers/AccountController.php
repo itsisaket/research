@@ -28,56 +28,54 @@ use yii\data\ActiveDataProvider;
 class AccountController extends Controller
 {
 
-    /**
+ /**
      * {@inheritdoc}
      */
-public function behaviors()
-{
-    return [
-        'access' => [
-            'class' => AccessControl::class,
-            'ruleConfig' => [
-                'class' => HanumanRule::class,
-            ],
-            'rules' => [
-
-                /** --------------------------------------
-                 * 1) Public (guest + login)
-                 * -------------------------------------- */
-                [
-                    'actions' => ['index', 'regis'],
-                    'allow'   => true,
-
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::class,
+                'ruleConfig' => [
+                    'class' => HanumanRule::class,
                 ],
+                // ถ้าอยากจำกัดให้ใช้เฉพาะบาง action ก็ใส่ 'only' ได้ เช่น:
+                // 'only' => ['index', 'view', 'create', 'update', 'delete', 'resetpassword', 'regis'],
+                'rules' => [
 
-                /** --------------------------------------
-                 * 2) Researcher (position = 1)
-                 * -------------------------------------- */
-                [
-                    'actions' => ['index','view', 'update', 'resetpassword'],
-                    'allow'   => true,
-                    'roles'   => ['researcher'], // Map ใน HanumanRule
-                ],
+                    // ✅ public (guest + login)
+                    [
+                        'actions' => ['index', 'regis'],
+                        'allow'   => true,
+                        // ไม่กำหนด roles → ทุกคนเข้าได้
+                    ],
 
-                /** --------------------------------------
-                 * 3) Admin (position = 4)
-                 * -------------------------------------- */
-                [
-                    'actions' => ['index','view', 'create', 'update', 'delete', 'resetpassword'],
-                    'allow'   => true,
-                    'roles'   => ['admin'],
+                    // ✅ นักวิจัย (position = 1)
+                    [
+                        'actions' => ['index','view', 'update', 'resetpassword'],
+                        'allow'   => true,
+                        'roles'   => ['researcher'], // ตรงกับ $roleMap ใน HanumanRule
+                    ],
+
+                    // ✅ admin (position = 4)
+                    [
+                        'actions' => ['index','view', 'create', 'update', 'delete', 'resetpassword'],
+                        'allow'   => true,
+                        'roles'   => ['admin'],
+                    ],
                 ],
             ],
-        ],
 
-        'verbs' => [
-            'class' => VerbFilter::class,
-            'actions' => [
-                'delete' => ['POST'],
+            // ถ้ามีใช้ VerbFilter ด้วย (เช่น ลบต้องเป็น POST)
+            'verbs' => [
+                'class' => VerbFilter::class,
+                'actions' => [
+                    'delete' => ['POST'],
+                ],
             ],
-        ],
-    ];
-}
+        ];
+    }
+
 
 
     /**
