@@ -296,7 +296,7 @@ public function actionMyProfile()
 
         return [
             'ok'     => true,
-            'userId' => $account->u_id,
+            'userId' => $account->uid,
             'user'   => [
                 'username'  => $account->username,
                 'prefix'    => $account->prefix,
