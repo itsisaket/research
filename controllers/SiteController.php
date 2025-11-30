@@ -446,15 +446,11 @@ public function actionUpUserJson($personal_id = null)
             }
 
             // Map HRM → tb_user
-            $account->prefix    = 0;
+            $account->prefix    = $profile['title_id']  ?? 0;
             $account->uname     = $profile['first_name'] ?? 'ไม่ระบุชื่อ';
             $account->luname    = $profile['last_name']  ?? '';
             $account->org_id    = (int)($profile['faculty_id'] ?? 0);
             $account->dept_code = (int)($profile['dept_code']  ?? 0);
-            $account->email = $profile['email']  ?? '';
-            $account->tel   = $profile['tel']  ?? '';
-
-
             try {
                 $account->initDefaultsForSso();
             } catch (\Throwable $e) {
