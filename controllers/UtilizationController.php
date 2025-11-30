@@ -24,17 +24,29 @@ class UtilizationController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
+                'ruleConfig' => [
+                    'class' => \app\components\HanumanRule::class, // 👈 ใช้ HanumanRule
+                ],
                 'rules' => [
-                    // ✅ ให้ทุกคน (หรืออย่างน้อยให้คนที่อยู่ในหน้า form) เรียก ajax ของ DepDrop ได้
+                    // ✅ public: ดู index, error, ajax ได้ทุกคน
                     [
-                        'actions' => ['index', 'error', 'get-amphur', 'get-district'],
-                        'allow' => true,
+                        'actions' => ['index', 'error'],
+                        'allow'   => true,
+                        'roles'   => ['?', '@'], // guest + login
                     ],
-                    // ✅ ที่เหลือต้องล็อกอิน
+
+                    // ✅ เฉพาะ researcher (position = 1) + admin (position = 4) ดู view ได้
                     [
-                        'actions' => ['view', 'create', 'update', 'delete'],
-                        'allow' => true,
-                        'roles' => ['@'],
+                        'actions' => ['view'],
+                        'allow'   => true,
+                        'roles'   => ['researcher', 'admin'],
+                    ],
+
+                    // ✅ เฉพาะ admin (position = 4) แก้ไข/ลบ/สร้างได้
+                    [
+                        'actions' => ['create', 'update', 'delete'],
+                        'allow'   => true,
+                        'roles'   => ['admin'],
                     ],
                 ],
             ],

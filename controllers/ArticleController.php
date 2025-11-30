@@ -28,29 +28,38 @@ class ArticleController extends Controller
     public function behaviors()
     {
         return [
-            // ✅ ป้องกันการเข้าถึงเฉพาะผู้ล็อกอิน
             'access' => [
                 'class' => AccessControl::class,
+                'ruleConfig' => [
+                    'class' => \app\components\HanumanRule::class, // 👈 ใช้ HanumanRule
+                ],
                 'rules' => [
-                    // ✅ เปิดให้ทุกคนเข้าได้
+                    // ✅ public: ดู index, error, ajax ได้ทุกคน
                     [
-                        'actions' => ['index','error'],
-                        'allow' => true,
+                        'actions' => ['index', 'error'],
+                        'allow'   => true,
+                        'roles'   => ['?', '@'], // guest + login
                     ],
-                    // ✅ ต้องล็อกอิน
+
+                    // ✅ เฉพาะ researcher (position = 1) + admin (position = 4) ดู view ได้
                     [
-                        'actions' => ['view', 'create', 'update', 'delete'],
-                        'allow' => true,
-                        'roles' => ['@'],
+                        'actions' => ['view'],
+                        'allow'   => true,
+                        'roles'   => ['researcher', 'admin'],
+                    ],
+
+                    // ✅ เฉพาะ admin (position = 4) แก้ไข/ลบ/สร้างได้
+                    [
+                        'actions' => ['create', 'update', 'delete'],
+                        'allow'   => true,
+                        'roles'   => ['admin'],
                     ],
                 ],
             ],
-
-            // ✅ กำหนด HTTP Method ให้ชัด (ป้องกันเรียกผิด)
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
-                    'delete' => ['POST'], 
+                    'delete' => ['POST'],
                 ],
             ],
         ];

@@ -39,31 +39,28 @@ class AccountController extends Controller
                     'class' => \app\components\HanumanRule::class, // 👈 ใช้ HanumanRule
                 ],
                 'rules' => [
-
-                    // ✅ public (guest + login)
+                    // ✅ public: ดู index, error, ajax ได้ทุกคน
                     [
-                        'actions' => ['index', 'regis'],
+                        'actions' => ['index', 'error'],
                         'allow'   => true,
                         'roles'   => ['?', '@'], // guest + login
                     ],
 
-                    // ✅ นักวิจัย (position = 1)
+                    // ✅ เฉพาะ researcher (position = 1) + admin (position = 4) ดู view ได้
                     [
-                        'actions' => ['view', 'update', 'resetpassword'],
+                        'actions' => ['view'],
                         'allow'   => true,
-                        'roles'   => ['researcher'], // ตรงกับ $roleMap ใน HanumanRule
+                        'roles'   => ['researcher', 'admin'],
                     ],
 
-                    // ✅ admin (position = 4)
+                    // ✅ เฉพาะ admin (position = 4) แก้ไข/ลบ/สร้างได้
                     [
-                        'actions' => ['create', 'update', 'delete', 'resetpassword'],
+                        'actions' => ['create', 'update', 'delete'],
                         'allow'   => true,
                         'roles'   => ['admin'],
                     ],
                 ],
             ],
-
-            // ถ้ามีใช้ VerbFilter ด้วย (เช่น ลบต้องเป็น POST)
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [

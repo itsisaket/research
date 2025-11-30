@@ -28,7 +28,7 @@ class ResearchproController extends Controller
                 'rules' => [
                     // ✅ public: ดู index, error, ajax ได้ทุกคน
                     [
-                        'actions' => ['index', 'error', 'get-amphur', 'get-district'],
+                        'actions' => ['index', 'error'],
                         'allow'   => true,
                         'roles'   => ['?', '@'], // guest + login
                     ],
