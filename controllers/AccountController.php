@@ -40,24 +40,25 @@ class AccountController extends Controller
                 'class' => HanumanRule::class,
             ],
             'rules' => [
-                // 1) ทุกคนเข้าได้
+                // 1) ทุกคนเข้าได้ (guest + login)
                 [
                     'actions' => ['index', 'regis'],
                     'allow' => true,
+                    'roles' => ['?', '@'], // 👈 เพิ่มบรรทัดนี้
                 ],
 
-                // 2) นักวิจัยเข้าได้เฉพาะ view
+                // 2) นักวิจัย
                 [
                     'actions' => ['index','view', 'update','resetpassword', 'logout'],
                     'allow' => true,
-                    'roles' => ['researcher'], // position = 1
+                    'roles' => ['researcher'],
                 ],
 
-                // 3) admin ทำได้ทุกอย่างที่ระบุ
+                // 3) admin
                 [
                     'actions' => ['index','view', 'create', 'update', 'delete', 'resetpassword', 'logout'],
                     'allow' => true,
-                    'roles' => ['admin'], // position = 4
+                    'roles' => ['admin'],
                 ],
             ],
         ],
