@@ -1,49 +1,56 @@
 <?php
-/**
- * @link http://www.yiiframework.com/
- * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
- */
 
 namespace app\components;
 
 use Yii;
+use yii\filters\AccessRule;
 use yii\web\ForbiddenHttpException;
-use app\models\User;
 
-class HanumanRule extends \yii\filters\AccessRule
+class HanumanRule extends AccessRule
 {
     /**
-     * @inheritdoc
+     * ตรวจสอบสิทธิ์จาก roles ที่กำหนดใน rule
      */
     protected function matchRole($user)
     {
-        // ✅ ปล่อยให้ทุกคนเข้าถึง action=error ได้
         $actionId = Yii::$app->controller->action->id ?? null;
+
+        // ✅ ปล่อย action error เสมอ
         if ($actionId === 'error') {
             return true;
         }
 
-        // ถ้า rule นี้ไม่กำหนด roles เลย → ผ่าน (เช่น index, regis แบบ public)
+        // ✅ ถ้า rule นี้ไม่กำหนด roles เลย → public
         if (empty($this->roles)) {
             return true;
         }
 
-        // ถ้ายังไม่ได้ login และ rule นี้ต้องการ role → ไม่ผ่าน
+        // ==============================
+        // 1) กรณี Guest (ยังไม่ล็อกอิน)
+        // ==============================
         if ($user->getIsGuest()) {
+            foreach ($this->roles as $role) {
+                // อนุญาต rule ที่ระบุ '?'
+                if ($role === '?') {
+                    return true;
+                }
+            }
+            // rule นี้ต้องการ role อื่น (เช่น '@' หรือชื่อ role) แต่เป็น guest → ไม่ผ่าน
             return false;
         }
 
-        // ดึง identity
-        $identity = Yii::$app->user->identity;
+        // ==============================
+        // 2) กรณีล็อกอินแล้ว
+        // ==============================
+        $identity = $user->identity;
         if (!$identity) {
             throw new ForbiddenHttpException('กรุณาเข้าสู่ระบบ');
         }
 
-        // ตรงนี้คุณผูก role กับตำแหน่งไว้ที่ field "position"
-        $u_type = (int)$identity->position;
+        // 🔹 role ผูกกับ field position (ปรับชื่อตรงนี้ให้ตรงกับ model ของคุณ)
+        $u_type = (int)($identity->position ?? 0);
 
-        // 🔹 กำหนด mapping ชื่อ role ↔ ตัวเลข
+        // 🔹 mapping ชื่อ role → ตัวเลข
         $roleMap = [
             'researcher' => 1,
             'staff'      => 2,
@@ -52,20 +59,18 @@ class HanumanRule extends \yii\filters\AccessRule
         ];
 
         foreach ($this->roles as $role) {
-            // guest
-            if ($role === '?' && $user->getIsGuest()) {
+            // '@' = ใครก็ได้ที่ล็อกอินแล้ว
+            if ($role === '@') {
                 return true;
             }
-            // logged in
-            elseif ($role === '@' && !$user->getIsGuest()) {
+
+            // ตัวเลขตรง ๆ เช่น '1', '4'
+            if (is_numeric($role) && (int)$role === $u_type) {
                 return true;
             }
-            // ระบุเป็นตัวเลขตรง ๆ เช่น '4'
-            elseif (is_numeric($role) && (int)$role === $u_type) {
-                return true;
-            }
-            // ระบุเป็นชื่อ เช่น 'admin', 'researcher'
-            elseif (isset($roleMap[$role]) && $roleMap[$role] === $u_type) {
+
+            // ใช้ชื่อ role ตาม roleMap เช่น 'admin', 'researcher'
+            if (isset($roleMap[$role]) && $roleMap[$role] === $u_type) {
                 return true;
             }
         }

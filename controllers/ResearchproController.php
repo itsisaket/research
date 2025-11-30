@@ -22,17 +22,29 @@ class ResearchproController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
+                'ruleConfig' => [
+                    'class' => \app\components\HanumanRule::class, // 👈 ใช้ HanumanRule
+                ],
                 'rules' => [
-                    // ✅ เปิด index, error, และ ajax ของ DepDrop
+                    // ✅ public: ดู index, error, ajax ได้ทุกคน
                     [
                         'actions' => ['index', 'error', 'get-amphur', 'get-district'],
-                        'allow' => true,
+                        'allow'   => true,
+                        'roles'   => ['?', '@'], // guest + login
                     ],
-                    // ✅ ส่วนที่เหลือต้องล็อกอิน
+
+                    // ✅ เฉพาะ researcher (position = 1) + admin (position = 4) ดู view ได้
                     [
-                        'actions' => ['view', 'create', 'update', 'delete'],
-                        'allow' => true,
-                        'roles' => ['@'],
+                        'actions' => ['view'],
+                        'allow'   => true,
+                        'roles'   => ['researcher', 'admin'],
+                    ],
+
+                    // ✅ เฉพาะ admin (position = 4) แก้ไข/ลบ/สร้างได้
+                    [
+                        'actions' => ['create', 'update', 'delete'],
+                        'allow'   => true,
+                        'roles'   => ['admin'],
                     ],
                 ],
             ],
@@ -44,6 +56,7 @@ class ResearchproController extends Controller
             ],
         ];
     }
+
 
     public function actionIndex()
     {

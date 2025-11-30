@@ -31,7 +31,7 @@ class AccountController extends Controller
     /**
      * {@inheritdoc}
      */
- public function behaviors()
+public function behaviors()
 {
     return [
         'access' => [
@@ -40,28 +40,36 @@ class AccountController extends Controller
                 'class' => HanumanRule::class,
             ],
             'rules' => [
-                // 1) ทุกคนเข้าได้ (guest + login)
+
+                /** --------------------------------------
+                 * 1) Public (guest + login)
+                 * -------------------------------------- */
                 [
                     'actions' => ['index', 'regis'],
-                    'allow' => true,
-                    'roles' => ['?', '@'], // 👈 เพิ่มบรรทัดนี้
+                    'allow'   => true,
+                    'roles'   => ['?', '@'],
                 ],
 
-                // 2) นักวิจัย
+                /** --------------------------------------
+                 * 2) Researcher (position = 1)
+                 * -------------------------------------- */
                 [
-                    'actions' => ['index','view', 'update','resetpassword', 'logout'],
-                    'allow' => true,
-                    'roles' => ['researcher'],
+                    'actions' => ['view', 'update', 'resetpassword'],
+                    'allow'   => true,
+                    'roles'   => ['researcher'], // Map ใน HanumanRule
                 ],
 
-                // 3) admin
+                /** --------------------------------------
+                 * 3) Admin (position = 4)
+                 * -------------------------------------- */
                 [
-                    'actions' => ['index','view', 'create', 'update', 'delete', 'resetpassword', 'logout'],
-                    'allow' => true,
-                    'roles' => ['admin'],
+                    'actions' => ['view', 'create', 'update', 'delete', 'resetpassword'],
+                    'allow'   => true,
+                    'roles'   => ['admin'],
                 ],
             ],
         ],
+
         'verbs' => [
             'class' => VerbFilter::class,
             'actions' => [
