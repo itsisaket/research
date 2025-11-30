@@ -132,18 +132,19 @@ public function actionMyProfile()
 {
     Yii::$app->response->format = Response::FORMAT_JSON;
 
-    // ถ้า backend + frontend โดเมนเดียวกันจริง ๆ CORS ตรงนี้จะไม่จำเป็นก็ได้
-    Yii::$app->response->headers->set('Access-Control-Allow-Origin', '*');
-    Yii::$app->response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
+    $session = Yii::$app->session;
 
-    if (Yii::$app->request->isOptions) {
-        Yii::$app->response->headers->set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        Yii::$app->response->statusCode = 204;
-        return;
+    // 0) จำกัดขนาด body กันยิง payload ใหญ่เกินไป
+    $raw = Yii::$app->request->getRawBody();
+    if (strlen($raw) > self::MAX_BODY_BYTES) {
+        $session->setFlash('warning', 'ไม่สามารถ sync ได้: ข้อมูลที่ส่งมามีขนาดใหญ่เกินกำหนด');
+        return [
+            'ok'    => false,
+            'error' => 'payload too large',
+        ];
     }
 
     // 1) รับ JSON / POST จาก browser
-    $raw  = Yii::$app->request->getRawBody();
     $data = json_decode($raw, true);
     if (!is_array($data)) {
         $data = Yii::$app->request->post();
@@ -153,6 +154,7 @@ public function actionMyProfile()
     $profile = $data['profile'] ?? [];
 
     if (!$token) {
+        $session->setFlash('warning', 'ไม่สามารถ sync ได้: ไม่พบ token จาก HRM-SCI');
         return ['ok' => false, 'error' => 'no token'];
     }
 
@@ -177,11 +179,22 @@ public function actionMyProfile()
         }
     } catch (\Throwable $e) {
         Yii::warning('Fetch profile failed: ' . $e->getMessage(), 'sso.sync');
-        // ถ้าเรียก API ไม่สำเร็จ → ใช้ profile เท่าที่ browser ส่งมา
+        // ใช้ profile เท่าที่ browser ส่งมา
+        $session->setFlash('warning', 'ไม่สามารถดึงข้อมูลโปรไฟล์จาก HRM ได้ จะใช้ข้อมูลเท่าที่มีจาก browser');
     }
 
     // 3) แปลง token + profile เป็น user object ชั่วคราวจาก JWT
-    $jwtUser = User::fromToken($token, $profile);
+    try {
+        $jwtUser = User::fromToken($token, $profile);
+    } catch (\Throwable $e) {
+        Yii::error('User::fromToken failed: ' . $e->getMessage(), 'sso.sync');
+        $session->setFlash('danger', 'ไม่สามารถแปลงข้อมูล token เป็นผู้ใช้ได้');
+        return [
+            'ok'      => false,
+            'error'   => 'fromToken error',
+            'message' => $e->getMessage(),
+        ];
+    }
 
     // 3.1 หาค่า username ที่จะใช้ในระบบเรา
     //     - พยายามใช้ username จาก JWT ก่อน
@@ -189,6 +202,7 @@ public function actionMyProfile()
     $username = $jwtUser->username ?? $personalId;
 
     if (!$username) {
+        $session->setFlash('danger', 'โปรไฟล์จาก SSO ไม่มี username/personal_id ไม่สามารถสร้างบัญชีผู้ใช้ได้');
         return ['ok' => false, 'error' => 'profile has no username/personal_id'];
     }
 
@@ -201,9 +215,12 @@ public function actionMyProfile()
         $account = new Account();
         $account->scenario = 'ssoSync';
         $account->username = $username;
+
+        $session->setFlash('info', "กำลังสร้างบัญชีผู้ใช้ใหม่จาก SSO สำหรับผู้ใช้: {$username}");
     } else {
         // เคส "เคยมีอยู่แล้ว" → ปรับปรุงข้อมูลตาม JWT ล่าสุด
         $account->scenario = 'ssoSync';
+        $session->setFlash('info', "กำลังอัปเดตข้อมูลผู้ใช้จาก SSO สำหรับผู้ใช้: {$username}");
     }
 
     // 5) Map ข้อมูลจาก SSO / JWT → tb_user
@@ -221,8 +238,12 @@ public function actionMyProfile()
     // 6) บันทึกข้อมูลลงฐาน
     try {
         if (!$account->save()) {
-            // log เก็บไว้ debug ด้วยจะดีมาก
-            Yii::error('SSO sync validate fail: ' . json_encode($account->getErrors(), JSON_UNESCAPED_UNICODE), 'sso.sync');
+            Yii::error(
+                'SSO sync validate fail: ' . json_encode($account->getErrors(), JSON_UNESCAPED_UNICODE),
+                'sso.sync'
+            );
+
+            $session->setFlash('danger', 'บันทึกข้อมูลผู้ใช้จาก SSO ไม่สำเร็จ เนื่องจากข้อมูลไม่ผ่านการตรวจสอบ');
 
             return [
                 'ok'     => false,
@@ -232,6 +253,9 @@ public function actionMyProfile()
         }
     } catch (\Throwable $e) {
         Yii::error('SSO sync DB error: ' . $e->getMessage(), 'sso.sync');
+
+        $session->setFlash('danger', 'เกิดข้อผิดพลาดในการบันทึกฐานข้อมูลผู้ใช้จาก SSO');
+
         return [
             'ok'      => false,
             'error'   => 'db error',
@@ -239,11 +263,14 @@ public function actionMyProfile()
         ];
     }
 
-    // 7) Login เข้า Yii (8 ชั่วโมง)
+    // 7) Login เข้า Yii (ใช้ SESSION_DURATION ที่ประกาศใน controller)
     try {
-        Yii::$app->user->login($account, 60 * 60 * 8);
+        Yii::$app->user->login($account, self::SESSION_DURATION);
     } catch (\Throwable $e) {
         Yii::error('Login failed: ' . $e->getMessage(), 'sso.sync');
+
+        $session->setFlash('danger', 'เข้าสู่ระบบด้วยบัญชีที่สร้าง/อัปเดตจาก SSO ไม่สำเร็จ');
+
         return [
             'ok'      => false,
             'error'   => 'login error',
@@ -252,14 +279,16 @@ public function actionMyProfile()
     }
 
     // 8) เก็บ token + profile ใน session (เผื่อใช้ที่อื่น)
-    Yii::$app->session->set('hrmToken', $token);
-    Yii::$app->session->set('hrmProfile', $profile);
-    Yii::$app->session->set('ty', $account->org_id);
+    $session->set('hrmToken', $token);
+    $session->set('hrmProfile', $profile);
+    $session->set('ty', $account->org_id);
 
-    // 9) ส่งกลับให้ frontend
+    // 9) Success → flash แจ้ง และส่งกลับให้ frontend
+    $session->setFlash('success', 'เชื่อมต่อบัญชี HRM-SCI กับระบบงานวิจัยสำเร็จแล้ว');
+
     return [
         'ok'     => true,
-        'userId' => $account->uid,   // ✅ ใช้ uid ตาม model นี้
+        'userId' => $account->u_id,   // 🔁 แก้จาก uid → u_id ให้ตรง field
         'user'   => [
             'username'  => $account->username,
             'prefix'    => $account->prefix,
@@ -273,6 +302,7 @@ public function actionMyProfile()
         ],
     ];
 }
+
 
     /** ============================
      * Logout และเคลียร์ session
