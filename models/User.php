@@ -23,18 +23,6 @@ use yii\web\IdentityInterface;
 class User implements IdentityInterface
 {
 
-        /** ---------------- Roles (ตัวเลข) ---------------- */
-    public const researcher     = 1;
-    public const staff          = 2;
-    public const executive      = 3;
-    public const admin          = 4;
-    public static $roleLabels = [
-        self::researcher    => 'ผู้ใช้ทั่วไป',
-        self::staff         => 'เจ้าหน้าที่บันทึกข้อมูล',
-        self::executive     => 'ผู้จัดการระบบ',
-        self::admin         => 'ผู้ดูแลระบบสูงสุด',
-    ];
-
     /** @var string|null personal_id หรือ uname ที่ใช้เป็น PK */
     public $id;
 
