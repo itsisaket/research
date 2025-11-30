@@ -11,6 +11,10 @@ $this->params['isLoginPage'] = true;
   <p>This is the About page. You may modify the following file to customize its content:</p>
   <code><?= __FILE__ ?></code>
 </div>
+<?= Html::a('🔄 Sync บุคลากรจาก HRM', ['/site/up-user-json'], [
+    'class' => 'btn btn-primary',
+    'data-confirm' => 'ต้องการ Sync รายชื่อบุคลากรจาก HRM หรือไม่?',
+]) ?>
 <hr>
 
 <!-- LocalStorage viewer -->
