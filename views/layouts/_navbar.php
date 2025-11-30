@@ -38,6 +38,9 @@ $unameVal    = $unameVal    ?? ($profile['first_name'] ?? ($claims['first_name']
 $lunameVal   = $id ? ($id->luname ?? null)   : null;
 $lunameVal   = $lunameVal   ?? ($profile['last_name']  ?? ($claims['last_name']  ?? null));
 
+$emailVal   = $id ? ($id->email ?? null)   : null;
+$emailVal   = $emailVal   ?? ($profile['email']  ?? ($claims['email']  ?? null));
+
 // ✅ ประกอบ displayName ให้เรียบร้อย (จะปรับทีหลังก็ได้)
 if ($user->isGuest) {
     $displayName = 'Guest';
@@ -149,15 +152,10 @@ $greetIconHtml = Html::tag('i', '', [
                   <?= $greetIconHtml ?>
                   <span class="small text-muted"><b><?= Html::encode($displayName) ?></b> <?= Html::encode($unameVal ?: '-') ?> <?= Html::encode($lunameVal ?: '-') ?></span>
                 </h4>
-
-                <?php if (!empty($displayRole)): ?>
-                  <div class="text-muted small mb-1"><?= Html::encode($displayRole) ?></div>
-                <?php endif; ?>
-
+                  <p class="text-muted mb-2"><?= Html::encode($emailVal ?: '-') ?></p>
                 <hr class="my-2"/>
               </div>
                   <?= $greetIconHtml ?>
-                  <span class="small text-muted"><b><?= Html::encode($displayName) ?></b> <?= Html::encode($pic ?: '-') ?></span>
               <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 280px)">
                 <?= Html::a(
                       '<i class="ti ti-settings"></i><span> ข้อมูลส่วนตัว</span>',

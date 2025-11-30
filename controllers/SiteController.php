@@ -66,62 +66,34 @@ class SiteController extends Controller
 
     public function actionIndex()
     {
-        $user    = Yii::$app->user;
-        $session = Yii::$app->session;
+        $user = Yii::$app->user;
 
-        // 1) identity ปัจจุบัน (Yii user)
-        $identity = $user->identity ?? null;
-
-        // 2) ถ้ายังไม่มี identity → ลองกู้จาก JWT ใน session (hrmToken + hrmProfile)
-        if ($identity === null) {
-            $token   = $session->get('hrmToken');      // เก็บจาก actionMyProfile
-            $profile = $session->get('hrmProfile', []); // โปรไฟล์เต็ม ๆ จาก HRM
-
-            if (!empty($token) && is_array($profile)) {
-                // ดึงรหัสบุคลากร (ใช้เป็น username ใน tb_user)
-                $personalId = $profile['personal_id'] ?? null;
-
-                if (!empty($personalId)) {
-                    // (ออปชัน) จะ validate token เพิ่มเติมก็ได้ เช่นผ่าน ApiAuthService / decode
-                    try {
-                        /** @var ApiAuthService|null $apiAuth */
-                        $apiAuth = Yii::$app->apiAuth ?? null;
-
-                        // ถ้าอยากรีเฟรชโปรไฟล์ทุกครั้งที่เข้า index ก็ทำที่นี่
-                        if ($apiAuth instanceof ApiAuthService) {
-                            $full = $apiAuth->fetchProfileWithPost($token, $personalId);
-                            if (is_array($full) && !empty($full)) {
-                                $profile = $full;
-                                $session->set('hrmProfile', $profile);
-                            }
-                        }
-                    } catch (\Throwable $e) {
-                        Yii::warning('Re-fetch profile on index failed: '.$e->getMessage(), 'sso.sync');
-                    }
-
-                    // หา Account ในระบบเรา
-                    $account = Account::findOne(['username' => $personalId]);
-                    if ($account !== null) {
-                        // login ฝั่ง Yii จาก JWT + profile ใน session
-                        try {
-                            $user->login($account, 60 * 60 * 8); // 8 ชั่วโมง
-                            $identity = $account;
-                        } catch (\Throwable $e) {
-                            Yii::error('Auto login from JWT failed: '.$e->getMessage(), 'sso.sync');
-                        }
-                    }
-                }
-            }
-        }
-
-        // 3) ถึงตรงนี้ ถ้า identity ยังว่าง → ถือว่าเป็น Guest
-        if ($identity === null || $user->isGuest) {
+        // 1) ถ้าล็อกอินแล้ว → ไปหน้า report (ในนาม user ที่ auth แล้ว)
+        if (!$user->isGuest) {
             return $this->redirect(['report/index']);
         }
 
-        // 4) ถ้าล็อกอินแล้ว (มี identity แล้ว) → ไปหน้า report ตามเดิม
+        // 2) ยังไม่ได้ล็อกอิน → ลองเช็ค token จาก request
+        $raw  = Yii::$app->request->getRawBody();
+        $data = json_decode($raw, true);
+
+        if (!is_array($data)) {
+            // เผื่อกรณีส่งแบบ form POST ปกติ
+            $data = Yii::$app->request->post();
+        }
+
+        $token = $data['token'] ?? null;
+
+        // 3) ถ้ามี token → ไปหน้า login เพื่อทำ SSO
+        if ($token) {
+
+            return $this->redirect(['site/login']);
+        }
+
+        // 4) ถ้า "ไม่มี token" → เข้า report ได้ในนาม Guest
         return $this->redirect(['report/index']);
     }
+
 
 
 

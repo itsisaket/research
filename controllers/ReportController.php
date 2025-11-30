@@ -26,6 +26,7 @@ class ReportController extends Controller
                     [
                         'actions' => ['index'],
                         'allow'   => true,
+                        'roles'   => ['@', '?'], // @ = login แล้ว, ? = guest
                     ],
                 ],
             ],
