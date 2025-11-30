@@ -30,45 +30,44 @@ class AccountController extends Controller
  /**
      * {@inheritdoc}
      */
-    public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'ruleConfig' => [
-                    'class' => \app\components\HanumanRule::class, // 👈 ใช้ HanumanRule
+public function behaviors()
+{
+    return [
+        'access' => [
+            'class' => AccessControl::class,
+            // 👇 ไม่ต้องตั้ง ruleConfig เลย ใช้ AccessRule ปกติของ Yii
+            'only' => ['index', 'view', 'create', 'update', 'delete', 'resetpassword'],
+            'rules' => [
+                // ✅ public: เข้าหน้า index (รายชื่อ) ได้ทุกคน (guest + login)
+                [
+                    'actions' => ['index'],
+                    'allow'   => true,
+                    // ไม่ใส่ roles → อนุญาตทุกคน
                 ],
-                'rules' => [
-                    // ✅ public: ดู index, error, ajax ได้ทุกคน
-                    [
-                        'actions' => ['index', 'error'],
-                        'allow'   => true,
-                        'roles'   => ['?', '@'], // guest + login
-                    ],
 
-                    // ✅ เฉพาะ researcher (position = 1) + admin (position = 4) ดู view ได้
-                    [
-                        'actions' => ['view'],
-                        'allow'   => true,
-                        'roles'   => ['researcher', 'admin'],
-                    ],
+                // ✅ ดูรายละเอียด / แก้รหัสผ่าน: ต้องล็อกอินอย่างน้อย
+                [
+                    'actions' => ['view', 'resetpassword'],
+                    'allow'   => true,
+                    'roles'   => ['@'],   // @ = login แล้ว
+                ],
 
-                    // ✅ เฉพาะ admin (position = 4) แก้ไข/ลบ/สร้างได้
-                    [
-                        'actions' => ['create', 'update', 'delete'],
-                        'allow'   => true,
-                        'roles'   => ['admin'],
-                    ],
+                // ✅ create/update/delete: ต้องล็อกอิน (เดี๋ยวไปเช็ก admin ใน action อีกชั้น)
+                [
+                    'actions' => ['create', 'update', 'delete'],
+                    'allow'   => true,
+                    'roles'   => ['@'],
                 ],
             ],
-            'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'delete' => ['POST'],
-                ],
+        ],
+        'verbs' => [
+            'class' => VerbFilter::class,
+            'actions' => [
+                'delete' => ['POST'],
             ],
-        ];
-    }
+        ],
+    ];
+}
 
 
 
