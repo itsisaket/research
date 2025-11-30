@@ -32,18 +32,6 @@ $this->params['breadcrumbs'][] = $this->title;
                     }
                 ],
                 [
-                    'label' => 'อีเมล์',
-                    'value' => function($model){
-                        return $model->email ?: '-';
-                    }
-                ],
-                [
-                    'label' => 'เบอร์ติดต่อ',
-                    'value' => function($model){
-                        return $model->tel ?: '-';
-                    }
-                ],
-                [
                     'label' => 'สังกัด',
                     'value' => function($model){
                         return $model->hasorg ? $model->hasorg->org_name : '-';
