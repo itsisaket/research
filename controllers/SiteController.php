@@ -193,7 +193,7 @@ public function actionIndex()
         $account->prefix = $jwtUser->prefix ?: 0;
         $account->uname  = $jwtUser->uname ?: ($jwtUser->name ?? 'ไม่ระบุชื่อ');
         $account->luname = $jwtUser->luname ?: '';
-        $account->org_id = $jwtUser->org_id ?: 0;
+        $account->org_id = $jwtUser->faculty_id ?: 0;
         $account->email  = $jwtUser->email ?: '';
         $account->tel    = $jwtUser->tel ?? '';
 
@@ -274,6 +274,7 @@ public function actionIndex()
             Yii::$app->session->regenerateID(true);
             
         }
+        Yii::$app->session->setFlash('warning', 'กำลังออกจากระบบ เป็นฐานะ Guest');
         Yii::$app->request->getCsrfToken(true);
         return $this->goHome();
     }
