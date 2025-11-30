@@ -375,18 +375,18 @@ function showCta(msg, type='warning'){
 
     loginCta.classList.remove('d-none');
   }
-
+})();
 /* --------- เคลียร์ storage ตอน "ผู้ใช้" กดออกเองเท่านั้น --------- */
-(function(){
-  var form = document.getElementById('page-logout-form');
-  if (!form) return;
-  form.addEventListener('submit', function(){
-    try {
-      localStorage.removeItem('hrm-sci-token');
-      localStorage.removeItem('userInfo');
-      localStorage.removeItem('accessToken');
-      sessionStorage.clear();
-    } catch(e) {}
-  });
+  (function(){
+    var form = document.getElementById('page-logout-form');
+    if (!form) return;
+    form.addEventListener('submit', function(){
+      try {
+        localStorage.removeItem('hrm-sci-token');
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('accessToken');
+        sessionStorage.clear();
+      } catch(e) {}
+    });
 })();
 </script>
