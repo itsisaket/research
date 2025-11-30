@@ -356,16 +356,16 @@ public function actionIndex()
 
 public function actionUpUserJson($personal_id = null)
 {
-    // ❌ แบบ Flash + Redirect ไม่ต้อง set FORMAT_JSON
     $session = Yii::$app->session;
 
-    // 0) ดึง token จาก identity (ที่คุณใช้ decodeJwtPayload ไว้ก่อนแล้ว)
-    $user = Yii::$app->user;
-    $id   = $user->identity ?? null;
+    // 0) ดึง token จาก Session ที่เก็บไว้ตอน my-profile
+    $token = $session->get('hrm_sci_token');
 
-    $token = $id->access_token ?? null;
     if (empty($token)) {
-        $session->setFlash('danger', 'ไม่พบ Token จาก SSO (access_token ว่าง) ไม่สามารถเรียก list-profiles ได้');
+        $session->setFlash(
+            'danger',
+            'ไม่พบ Token จาก SSO (session hrm_sci_token ว่าง) กรุณา login ผ่าน SSO ใหม่'
+        );
         return $this->redirect(['site/about']);
     }
 
@@ -373,14 +373,12 @@ public function actionUpUserJson($personal_id = null)
         $client = new Client(['transport' => 'yii\httpclient\CurlTransport']);
         $apiUrl = 'https://sci-sskru.com/authen/list-profiles';
 
-        // =========================
-        // 1) ลองเรียกแบบ POST ก่อน
-        // =========================
         $params = [];
         if (!empty($personal_id)) {
             $params['personal_id'] = $personal_id;
         }
 
+        // POST ก่อน
         $response = $client->createRequest()
             ->setMethod('POST')
             ->setUrl($apiUrl)
@@ -392,7 +390,7 @@ public function actionUpUserJson($personal_id = null)
             ->setData($params)
             ->send();
 
-        // ถ้า POST ไม่ ok → ลอง GET ตาม pattern JS
+        // ถ้าไม่ ok → GET
         if (!$response->isOk) {
             $response = $client->createRequest()
                 ->setMethod('GET')
@@ -400,7 +398,7 @@ public function actionUpUserJson($personal_id = null)
                 ->setHeaders([
                     'Authorization' => 'Bearer ' . $token,
                 ])
-                ->setData($params) // จะกลายเป็น query string ?personal_id=...
+                ->setData($params)
                 ->send();
         }
 
@@ -419,9 +417,6 @@ public function actionUpUserJson($personal_id = null)
             return $this->redirect(['site/about']);
         }
 
-        // =========================
-        // 2) LOOP sync ทุกเรคคอร์ด
-        // =========================
         $total   = count($json['data']);
         $success = 0;
         $failed  = 0;
@@ -445,7 +440,6 @@ public function actionUpUserJson($personal_id = null)
                 $account->scenario = 'ssoSync';
             }
 
-            // Map HRM → tb_user
             $account->prefix    = 0;
             $account->uname     = $profile['first_name'] ?? 'ไม่ระบุชื่อ';
             $account->luname    = $profile['last_name']  ?? '';
@@ -477,7 +471,6 @@ public function actionUpUserJson($personal_id = null)
             $success++;
         }
 
-        // Flash ผลลัพธ์
         if ($failed === 0) {
             $session->setFlash('success', "อัปเดตข้อมูลบุคลากรสำเร็จทั้งหมด {$success} รายการ");
         } else {
