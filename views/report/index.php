@@ -90,6 +90,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <div class="col-lg-9 col-12 mb-3 mb-lg-0 text-center">
                     <?= Highcharts::widget([
                         'options' => [
+                            'accessibility' => ['enabled' => false],
                             'chart' => [
                                 'height' => 360,
                                 'backgroundColor' => 'transparent',
@@ -248,6 +249,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <div class="col-12 text-center">
                 <?= Highcharts::widget([
                     'options' => [
+                        'accessibility' => ['enabled' => false],
                         'chart' => [
                             'type' => 'spline',  // ✅ เปลี่ยนจาก column → spline (หรือ line)
                             'height' => 400,
@@ -311,6 +313,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <div class="col-lg-9 col-12 mb-3 mb-lg-0 text-center">
                     <?= Highcharts::widget([
                         'options' => [
+                            'accessibility' => ['enabled' => false],
                             'chart' => [
                                 'type' => 'column',
                                 'height' => 420,
@@ -379,6 +382,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 <div class="col-12 text-center">
                     <?= Highcharts::widget([
                         'options' => [
+                        'accessibility' => ['enabled' => false],
                             'chart' => [
                                 'height' => 420,
                                 'backgroundColor' => 'transparent',

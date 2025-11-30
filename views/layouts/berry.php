@@ -45,7 +45,7 @@ Swal.fire({
     icon: '{$icon}',
     title: {$jsTitle},
     text: {$jsMessage},
-    timer: 3000,            // ⏱ แสดง 3 วินาที
+    timer: 5000,            // ⏱ แสดง 5 วินาที
     timerProgressBar: true, // แถบเวลา
     showConfirmButton: false
 });

@@ -55,7 +55,7 @@ $this->params['breadcrumbs'][] = $this->title;
                   'value' => function($model){
                       $user = Yii::$app->user->identity;
                       if (
-                          $user && ($user->position == 4 || strtolower($user->position) == 'admin' || $user->id == $model->uid)
+                          $user && ($user->position == 4 || $user->id == $model->uid)
                       ) {
                           return
                               Html::a(
