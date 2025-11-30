@@ -1,20 +1,28 @@
 <?php
 /** @var yii\web\View $this */
 use yii\helpers\Html;
+use yii\helpers\Url;
 
 $this->title = 'About';
 $this->params['breadcrumbs'][] = $this->title;
 $this->params['isLoginPage'] = true;
+
+$csrf = Yii::$app->request->getCsrfToken();
+$syncUrl = Url::to(['/site/up-user-json']);
 ?>
 <div class="site-about">
   <h1><?= Html::encode($this->title) ?></h1>
   <p>This is the About page. You may modify the following file to customize its content:</p>
   <code><?= __FILE__ ?></code>
 </div>
-<?= Html::a('🔄 Sync บุคลากรจาก HRM', ['/site/up-user-json'], [
-    'class' => 'btn btn-primary',
-    'data-confirm' => 'ต้องการ Sync รายชื่อบุคลากรจาก HRM หรือไม่?',
-]) ?>
+
+<!-- ปุ่ม Sync -->
+<button type="button"
+        id="btn-sync-hrm"
+        class="btn btn-primary mb-3">
+  🔄 Sync บุคลากรจาก HRM
+</button>
+
 <hr>
 
 <!-- LocalStorage viewer -->
@@ -54,6 +62,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const profileMeta = document.getElementById("profile-meta");
   const listPre     = document.getElementById("list-json");
   const listMeta    = document.getElementById("list-meta");
+  const btnSync     = document.getElementById("btn-sync-hrm");
+
+  const csrfToken   = <?= json_encode($csrf) ?>;
+  const syncUrl     = <?= json_encode($syncUrl) ?>;
 
   // -------- 1) แสดง localStorage --------
   tbody.innerHTML = "";
@@ -92,28 +104,73 @@ document.addEventListener("DOMContentLoaded", async () => {
     preEl.textContent = (typeof data === "string") ? data : JSON.stringify(data, null, 2);
   }
 
-  // -------- 3) ดึง token และ personal_id จาก JWT เท่านั้น --------
+  // -------- 3) ดึง token และ personal_id จาก JWT --------
   const token = localStorage.getItem("hrm-sci-token");
   if (!token){
     jwtPre.textContent     = "ไม่พบ hrm-sci-token ใน localStorage";
     profilePre.textContent = "ไม่พบ hrm-sci-token ใน localStorage";
     listPre.textContent    = "ไม่พบ hrm-sci-token ใน localStorage";
+    // ปุ่ม Sync: disable ถ้าไม่มี token
+    if (btnSync) {
+      btnSync.disabled = true;
+      btnSync.textContent = "ไม่มี token SSO (Sync ใช้งานไม่ได้)";
+    }
     return;
   }
 
-  const payload = parseJwt(token) || {};
+  const payload   = parseJwt(token) || {};
   show(jwtPre, payload);
 
   const personalId = payload.personal_id;
   if (!personalId){
     profilePre.textContent = "ไม่พบ personal_id ใน JWT payload";
     listPre.textContent    = "ไม่พบ personal_id ใน JWT payload";
-    return;
   }
 
-  // -------- 4) เรียก API --------
+  // -------- 4) Event ปุ่ม Sync: ส่ง token + personal_id ไปให้ PHP --------
+  if (btnSync) {
+    btnSync.addEventListener("click", () => {
+      if (!confirm("ต้องการ Sync รายชื่อบุคลากรจาก HRM หรือไม่?")) {
+        return;
+      }
+
+      // สร้างฟอร์มซ่อนแล้ว submit แบบ POST
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = syncUrl;
+
+      // _csrf
+      const inpCsrf = document.createElement("input");
+      inpCsrf.type  = "hidden";
+      inpCsrf.name  = "_csrf";
+      inpCsrf.value = csrfToken;
+      form.appendChild(inpCsrf);
+
+      // token
+      const inpToken = document.createElement("input");
+      inpToken.type  = "hidden";
+      inpToken.name  = "token";
+      inpToken.value = token;
+      form.appendChild(inpToken);
+
+      // personal_id (เผื่อ PHP จะใช้ filter)
+      if (personalId) {
+        const inpPid = document.createElement("input");
+        inpPid.type  = "hidden";
+        inpPid.name  = "personal_id";
+        inpPid.value = personalId;
+        form.appendChild(inpPid);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
+    });
+  }
+
+  // -------- 5) เรียก API profile/list-profiles (แสดงผลบนหน้า) --------
+  // ส่วนนี้เหมือนที่คุณเขียนอยู่แล้ว ผมคงโครงเดิมไว้
+
   try {
-    // /authen/profile (POST)
     const prof = await fetchJson("https://sci-sskru.com/authen/profile", {
       method: "POST",
       headers: {
@@ -125,7 +182,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     profileMeta.textContent = "สำเร็จด้วย: POST https://sci-sskru.com/authen/profile";
     show(profilePre, prof);
   } catch (e1) {
-    // ถ้า route นี้ไม่รับ POST ให้ลอง GET ทันที (บางระบบใช้ GET)
     try {
       const profGet = await fetchJson(
         "https://sci-sskru.com/authen/profile?personal_id=" + encodeURIComponent(personalId),
@@ -139,7 +195,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // list-profiles: service ของคุณก่อนหน้านี้ตอบ 404 POST → ลอง GET ด้วย
   try {
     const list = await fetchJson("https://sci-sskru.com/authen/list-profiles", {
       method: "POST",

@@ -354,20 +354,24 @@ public function actionIndex()
         return $this->render('about');
     }
 
+
 public function actionUpUserJson($personal_id = null)
 {
     $session = Yii::$app->session;
+    $request = Yii::$app->request;
 
-    // 0) ดึง token จาก Session ที่เก็บไว้ตอน my-profile
-    $token = $session->get('hrm_sci_token');
-
+    // 0) ดึง token จาก POST ก่อน แล้ว fallback เป็น session
+    $token = $request->post('token') ?: $session->get('hrm_sci_token');
     if (empty($token)) {
         $session->setFlash(
             'danger',
-            'ไม่พบ Token จาก SSO (session hrm_sci_token ว่าง) กรุณา login ผ่าน SSO ใหม่'
+            'ไม่พบ Token จาก SSO (token ว่าง) กรุณา login ผ่าน SSO หรือส่ง token มาด้วย'
         );
         return $this->redirect(['site/about']);
     }
+
+    // personal_id จาก POST > จากพารามิเตอร์
+    $personal_id = $request->post('personal_id', $personal_id);
 
     try {
         $client = new Client(['transport' => 'yii\httpclient\CurlTransport']);
@@ -378,7 +382,7 @@ public function actionUpUserJson($personal_id = null)
             $params['personal_id'] = $personal_id;
         }
 
-        // POST ก่อน
+        // 1) POST ก่อน
         $response = $client->createRequest()
             ->setMethod('POST')
             ->setUrl($apiUrl)
@@ -390,7 +394,7 @@ public function actionUpUserJson($personal_id = null)
             ->setData($params)
             ->send();
 
-        // ถ้าไม่ ok → GET
+        // 2) ถ้า POST ไม่ ok → GET
         if (!$response->isOk) {
             $response = $client->createRequest()
                 ->setMethod('GET')
@@ -417,6 +421,7 @@ public function actionUpUserJson($personal_id = null)
             return $this->redirect(['site/about']);
         }
 
+        // 3) LOOP sync ทุกเรคคอร์ด
         $total   = count($json['data']);
         $success = 0;
         $failed  = 0;
@@ -440,6 +445,7 @@ public function actionUpUserJson($personal_id = null)
                 $account->scenario = 'ssoSync';
             }
 
+            // Map HRM → tb_user
             $account->prefix    = 0;
             $account->uname     = $profile['first_name'] ?? 'ไม่ระบุชื่อ';
             $account->luname    = $profile['last_name']  ?? '';
@@ -471,6 +477,7 @@ public function actionUpUserJson($personal_id = null)
             $success++;
         }
 
+        // 4) Flash ผลลัพธ์แล้ว redirect
         if ($failed === 0) {
             $session->setFlash('success', "อัปเดตข้อมูลบุคลากรสำเร็จทั้งหมด {$success} รายการ");
         } else {
@@ -488,6 +495,7 @@ public function actionUpUserJson($personal_id = null)
         return $this->redirect(['site/about']);
     }
 }
+
 
 
 
