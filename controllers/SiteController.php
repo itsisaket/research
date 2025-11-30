@@ -27,7 +27,7 @@ class SiteController extends Controller
                 'rules' => [
                     [
                         // ✅ เปิดให้ my-profile ใช้ได้แม้ยังไม่ login (ใช้ตอน sync SSO)
-                        'actions' => ['index', 'login', 'error', 'about', 'my-profile','UpUserJson'],
+                        'actions' => ['index', 'login', 'error', 'about', 'my-profile','up-user-json'],
                         'allow'   => true,
                     ],
                     [
