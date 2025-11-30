@@ -11,7 +11,6 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
-use app\components\HanumanRule;
 use app\models\User;
 
 use yii\helpers\Json;
@@ -37,29 +36,27 @@ class AccountController extends Controller
             'access' => [
                 'class' => AccessControl::class,
                 'ruleConfig' => [
-                    'class' => HanumanRule::class,
+                    'class' => \app\components\HanumanRule::class, // 👈 ใช้ HanumanRule
                 ],
-                // ถ้าอยากจำกัดให้ใช้เฉพาะบาง action ก็ใส่ 'only' ได้ เช่น:
-                // 'only' => ['index', 'view', 'create', 'update', 'delete', 'resetpassword', 'regis'],
                 'rules' => [
 
                     // ✅ public (guest + login)
                     [
                         'actions' => ['index', 'regis'],
                         'allow'   => true,
-                        // ไม่กำหนด roles → ทุกคนเข้าได้
+                        'roles'   => ['?', '@'], // guest + login
                     ],
 
                     // ✅ นักวิจัย (position = 1)
                     [
-                        'actions' => ['index','view', 'update', 'resetpassword'],
+                        'actions' => ['view', 'update', 'resetpassword'],
                         'allow'   => true,
                         'roles'   => ['researcher'], // ตรงกับ $roleMap ใน HanumanRule
                     ],
 
                     // ✅ admin (position = 4)
                     [
-                        'actions' => ['index','view', 'create', 'update', 'delete', 'resetpassword'],
+                        'actions' => ['create', 'update', 'delete', 'resetpassword'],
                         'allow'   => true,
                         'roles'   => ['admin'],
                     ],
