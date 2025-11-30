@@ -56,24 +56,26 @@ $this->params['breadcrumbs'][] = $this->title;
                     }
                 ],
 
-                // ปุ่มเฉพาะ admin จาก JWT
+                // ปุ่มเฉพาะ admin 
                 [
                     'format' => 'raw',
                     'value' => function($model){
                         $identity = Yii::$app->user->identity;
 
-                        // ยังไม่ได้ล็อกอิน หรือ identity ไม่ใช่ User → ไม่โชว์ปุ่ม
-                        if (!$identity instanceof \app\models\User) {
+                        // ยังไม่ได้ล็อกอิน หรือ identity ไม่ใช่ Account → ไม่โชว์ปุ่ม
+                        if (!$identity instanceof \app\models\Account) {
                             return null;
                         }
 
-                        $roles   = is_array($identity->roles) ? $identity->roles : [];
-                        $isAdmin = in_array('admin', $roles, true);
+                        // กำหนดว่า admin = position = 4 (ตามที่คุณใช้ใน HanumanRule)
+                        $isAdmin = ((int)$identity->position === 4);
 
                         if (!$isAdmin) {
+                            // ไม่ใช่ admin → ดูได้อย่างเดียว ไม่ให้แก้ไข/ลบ
                             return null;
                         }
 
+                        // ✅ เฉพาะ admin แสดงปุ่มแก้ไข/ลบ
                         return
                             Html::a(
                                 '<i class="fa fa-edit"></i> แก้ไข',
@@ -88,7 +90,7 @@ $this->params['breadcrumbs'][] = $this->title;
                                     'class' => 'btn btn-danger btn-sm',
                                     'data' => [
                                         'confirm' => 'Are you sure you want to delete this item?',
-                                        'method' => 'post',
+                                        'method'  => 'post',
                                     ],
                                 ]
                             );
