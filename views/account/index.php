@@ -55,24 +55,19 @@ $this->params['breadcrumbs'][] = $this->title;
                   'value' => function($model){
                       $identity = Yii::$app->user->identity;
 
-                      // ถ้ายังไม่ได้ล็อกอิน → ไม่โชว์ปุ่ม
+                      // ยังไม่ได้ล็อกอิน หรือ identity ไม่ใช่ User ของเรา → ไม่โชว์ปุ่ม
                       if (!$identity instanceof \app\models\User) {
                           return null;
                       }
 
-                      // ดึง roles จาก JWT (array ของ string)
+                      // ดึง roles จาก JWT
                       $roles = is_array($identity->roles) ? $identity->roles : [];
 
-                      // เป็น admin ถ้า:
-                      // 1) มี 'admin' อยู่ใน $roles
-                      // 2) หรือ position เป็นรหัส admin ตาม constant
-                      $isAdmin =
-                          in_array('admin', $roles, true) ||
-                          (is_numeric($identity->position ?? null)
-                          && (int)$identity->position === \app\models\User::admin);
+                      // เช็กว่าเป็น admin หรือไม่ จาก JWT
+                      $isAdmin = in_array('admin', $roles, true);
 
                       if (!$isAdmin) {
-                          // researcher / คนอื่น → ดูได้อย่างเดียว ไม่แก้/ลบ
+                          // ไม่ใช่ admin → ดูได้อย่างเดียว ไม่ให้แก้ไข/ลบ
                           return null;
                       }
 
@@ -97,6 +92,7 @@ $this->params['breadcrumbs'][] = $this->title;
                           );
                   }
               ],
+
 
 
               
