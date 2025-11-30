@@ -32,13 +32,13 @@ $this->title = 'หน้าหลัก';
 document.addEventListener('DOMContentLoaded', function () {
     const token = localStorage.getItem('hrm-sci-token');
 
-    // 1) ถ้าไม่มี token → ไปหน้า site/login ทันที
+    // 1) ถ้าไม่มี token → ไปหน้า report/index ทันที (ในฐานะ Guest)
     if (!token) {
-        window.location.href = '<?= Url::to(['report/index']) ?>';
+        window.location.href = '<?= Url::to(['/report/index']) ?>';
         return;
     }
 
-    // 2) ถ้ามี token → ส่งไปให้ server เพื่อให้ PHP ตรวจสอบ JWT
+    // 2) ถ้ามี token → ส่งไปให้ server เพื่อให้ PHP ตรวจสอบ JWT ผ่าน site/index
     // กัน loop: ส่งครั้งเดียวพอ ไม่วนซ้ำ
     if (sessionStorage.getItem('sent-token') === '1') {
         return;
@@ -47,15 +47,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = '<?= Url::to(['/site/index']) ?>';
+    form.action = '<?= Url::to(['/site/index']) ?>'; // ❗ เปลี่ยนจาก /site/login มาเป็น /site/index
 
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'token';
-    input.value = token;
+    // token จาก HRM-SCI
+    const inputToken = document.createElement('input');
+    inputToken.type  = 'hidden';
+    inputToken.name  = 'token';
+    inputToken.value = token;
+    form.appendChild(inputToken);
 
-    form.appendChild(input);
+    // ⭐ ใส่ CSRF ไปด้วย (ถ้าระบบเปิดใช้งานอยู่)
+    const csrfParam = '<?= Yii::$app->request->csrfParam ?>';
+    const csrfToken = '<?= Yii::$app->request->getCsrfToken() ?>';
+
+    const inputCsrf = document.createElement('input');
+    inputCsrf.type  = 'hidden';
+    inputCsrf.name  = csrfParam;
+    inputCsrf.value = csrfToken;
+    form.appendChild(inputCsrf);
+
     document.body.appendChild(form);
     form.submit();
 });
 </script>
+
