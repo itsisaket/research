@@ -50,6 +50,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     return $model->hasposition->positionname;
                   }
               ],
+              /*
               [
                   'format' => 'raw',
                   'value' => function($model){
@@ -92,7 +93,7 @@ $this->params['breadcrumbs'][] = $this->title;
                           );
                   }
               ],
-
+*/
 
 
               
