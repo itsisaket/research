@@ -228,9 +228,9 @@ public function actionIndex()
 
             $account->org_id    = (int)$facultyId;
             $account->dept_code = (int)$deptCode;
-
-            $account->email = $jwtUser->email ?: '';
-            $account->tel   = $jwtUser->tel ?? '';
+            
+            $account->email = $profile['email']  ?? '';
+            $account->tel   = $profile['mobile']  ?? '';
 
             // 5.1 ตั้งค่าพื้นฐานกรณี SSO (position, authKey, status, password_hash ฯลฯ)
             try {
@@ -451,6 +451,9 @@ public function actionUpUserJson($personal_id = null)
             $account->luname    = $profile['last_name']  ?? '';
             $account->org_id    = (int)($profile['faculty_id'] ?? 0);
             $account->dept_code = (int)($profile['dept_code']  ?? 0);
+            $account->email    = $profile['email']  ?? '';
+            $account->tel    = $profile['mobile']  ?? '';
+
             try {
                 $account->initDefaultsForSso();
             } catch (\Throwable $e) {
