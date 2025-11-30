@@ -116,11 +116,7 @@ class SiteController extends Controller
 
         // 3) ถึงตรงนี้ ถ้า identity ยังว่าง → ถือว่าเป็น Guest
         if ($identity === null || $user->isGuest) {
-            // คุณจะให้ Guest เห็นหน้า index แบบ public ก็ได้
-            // return $this->render('index-guest');
-
-            // หรือยังใช้พฤติกรรมเดิม: ให้ redirect ไปหน้า login
-            return $this->redirect(['site/login']);
+            return $this->redirect(['report/index']);
         }
 
         // 4) ถ้าล็อกอินแล้ว (มี identity แล้ว) → ไปหน้า report ตามเดิม
