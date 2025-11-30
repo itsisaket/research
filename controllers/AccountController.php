@@ -48,14 +48,14 @@ class AccountController extends Controller
 
                 // 2) นักวิจัยเข้าได้เฉพาะ view
                 [
-                    'actions' => ['view', 'update','resetpassword', 'logout'],
+                    'actions' => ['index','view', 'update','resetpassword', 'logout'],
                     'allow' => true,
                     'roles' => ['researcher'], // position = 1
                 ],
 
                 // 3) admin ทำได้ทุกอย่างที่ระบุ
                 [
-                    'actions' => ['view', 'create', 'update', 'delete', 'resetpassword', 'logout'],
+                    'actions' => ['index','view', 'create', 'update', 'delete', 'resetpassword', 'logout'],
                     'allow' => true,
                     'roles' => ['admin'], // position = 4
                 ],
