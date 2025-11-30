@@ -4,103 +4,76 @@ namespace app\models;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use app\models\Account;
 
-
-/**
- * AccountSearch represents the model behind the search form of `app\models\Account`.
- */
 class AccountSearch extends Account
 {
+    /** ค้นหารวม */
     public $q;
-    /**
-     * {@inheritdoc}
-     */
+
     public function rules()
     {
         return [
-            [['uid', 'prefix', 'org_id', 'tel'], 'integer'],
-            [['username', 'password', 'password_reset_token', 'authKey', 'uname', 'luname', 'email','q', 'dayup'], 'safe'],
+            // ตัวเลข
+            [['uid', 'prefix', 'org_id', 'position', 'dept_code'], 'integer'],
+
+            // string/safe
+            [['username', 'uname', 'luname', 'email', 'tel', 'dayup', 'q'], 'safe'],
         ];
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function scenarios()
     {
-        // bypass scenarios() implementation in the parent class
         return Model::scenarios();
     }
 
-    /**
-     * Creates data provider instance with search query applied
-     *
-     * @param array $params
-     *
-     * @return ActiveDataProvider
-     */
-
     public function search($params)
     {
-        $query = Account::find();
-  
-        $dataProvider = new ActiveDataProvider([
-            'query' => $query,
-        ]);
-  
-        $this->load($params);
-  
-        if (!$this->validate()) {
-            // uncomment the following line if you do not want to return any records when validation fails
-            // $query->where('0=1');
-            return $dataProvider;
-        }
-
-
-        $query->orFilterWhere(['like', 'uname', $this->q])
-        ->orFilterWhere(['like', 'luname', $this->q]);
-  
-        return $dataProvider;
-    }
-/*
-    public function search($params)
-    {
-        $query = Account::find();
-
-        // add conditions that should always apply here
+        $query = Account::find()
+            ->alias('a')
+            ->with(['hasprefix', 'hasorg', 'hasposition']); // preload relations
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => ['pageSize' => 20],
+            'sort' => [
+                'defaultOrder' => ['dayup' => SORT_DESC],
+            ],
         ]);
 
         $this->load($params);
 
         if (!$this->validate()) {
-            // uncomment the following line if you do not want to return any records when validation fails
-            // $query->where('0=1');
             return $dataProvider;
         }
 
-        // grid filtering conditions
+        // filter exact
         $query->andFilterWhere([
-            'uid' => $this->uid,
-            'prefix' => $this->prefix,
-            'org_id' => $this->org_id,
-            'tel' => $this->tel,
-            'academic' => $this->academic,
-            'dayup' => $this->dayup,
+            'a.uid'       => $this->uid,
+            'a.prefix'    => $this->prefix,
+            'a.org_id'    => $this->org_id,
+            'a.position'  => $this->position,
+            'a.dept_code' => $this->dept_code,
         ]);
 
-        $query->andFilterWhere(['like', 'username', $this->username])
-            ->andFilterWhere(['like', 'password', $this->password])
-            ->andFilterWhere(['like', 'password_reset_token', $this->password_reset_token])
-            ->andFilterWhere(['like', 'authKey', $this->authKey])
-            ->andFilterWhere(['like', 'uname', $this->uname])
-            ->andFilterWhere(['like', 'luname', $this->luname])
-            ->andFilterWhere(['like', 'email', $this->email]);
+        // filter แยกราย field
+        $query->andFilterWhere(['like', 'a.username', $this->username])
+              ->andFilterWhere(['like', 'a.uname',    $this->uname])
+              ->andFilterWhere(['like', 'a.luname',   $this->luname])
+              ->andFilterWhere(['like', 'a.email',    $this->email])
+              ->andFilterWhere(['like', 'a.tel',      $this->tel]);
+
+        // filter รวม q
+        if ($this->q) {
+            $query->andFilterWhere([
+                'or',
+                ['like', 'a.username', $this->q],
+                ['like', 'a.uname',    $this->q],
+                ['like', 'a.luname',   $this->q],
+                ['like', 'a.email',    $this->q],
+                ['like', 'a.tel',      $this->q],
+            ]);
+        }
 
         return $dataProvider;
     }
-    */
 }
