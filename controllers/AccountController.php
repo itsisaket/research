@@ -54,7 +54,7 @@ public function behaviors()
                  * 2) Researcher (position = 1)
                  * -------------------------------------- */
                 [
-                    'actions' => ['view', 'update', 'resetpassword'],
+                    'actions' => ['index','view', 'update', 'resetpassword'],
                     'allow'   => true,
                     'roles'   => ['researcher'], // Map ใน HanumanRule
                 ],
@@ -63,7 +63,7 @@ public function behaviors()
                  * 3) Admin (position = 4)
                  * -------------------------------------- */
                 [
-                    'actions' => ['view', 'create', 'update', 'delete', 'resetpassword'],
+                    'actions' => ['index','view', 'create', 'update', 'delete', 'resetpassword'],
                     'allow'   => true,
                     'roles'   => ['admin'],
                 ],
