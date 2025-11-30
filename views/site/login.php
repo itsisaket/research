@@ -276,35 +276,105 @@ function showCta(msg, type='warning'){
  
   try {
     const res = await fetch(SYNC_URL, {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
         'X-CSRF-Token': CSRF_TOKEN
       },
       body: JSON.stringify({ token, profile })
     });
-    const data = await res.json().catch(()=>({}));
 
+    const text = await res.text();   // อ่าน raw text มาก่อน
+    let data = {};
+
+    try {
+      data = JSON.parse(text);       // พยายาม parse JSON
+    } catch (e) {
+      console.error('❌ SYNC: JSON parse error. Raw response:', text);
+
+      statusEl.className = 'alert alert-danger mb-4';
+      statusEl.textContent = 'เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON (อาจเป็นหน้า error / CSRF / 500)';
+
+      loginCta.classList.remove('d-none');
+      return;
+    }
+
+    console.log('🔍 SYNC /site/my-profile → status:', res.status, 'data:', data);
+
+    // ✅ กรณีสำเร็จ
     if (res.ok && data && data.ok) {
-      // ถ้า backend รับแล้ว → ไปหน้าที่ตั้งใจ
       statusEl.className = 'alert alert-success mb-4';
       statusEl.textContent = 'เข้าสู่ระบบสำเร็จ กำลังเปลี่ยนหน้า...';
       window.location.href = redirectTo;
       return;
     }
 
-    // ถ้า backend ไม่ ok → แค่บอกว่า sync ไม่สำเร็จ แต่ยังไม่ต้องลบ token
+    // ❌ กรณี backend ตอบ ok=false หรือ res.ok=false
+    let msg = 'ไม่สามารถ sync ข้อมูลเข้าสู่ระบบได้ (token ยังอยู่ใน browser)';
+
+    if (data && typeof data === 'object') {
+
+      switch (data.error) {
+        case 'no token':
+          msg = 'ระบบไม่ได้รับ token จาก browser (no token) กรุณาลองเข้าสู่ระบบใหม่อีกครั้ง';
+          break;
+
+        case 'payload too large':
+          msg = 'ข้อมูลที่ส่งไปยังเซิร์ฟเวอร์มีขนาดใหญ่เกินกำหนด (payload too large)';
+          break;
+
+        case 'profile has no username/personal_id':
+          msg = 'ข้อมูลโปรไฟล์จาก SSO ไม่มี username หรือ personal_id ไม่สามารถสร้างบัญชีได้';
+          break;
+
+        case 'fromToken error':
+          msg = 'ไม่สามารถแปลง token เป็นผู้ใช้ได้ (fromToken error)'
+                + (data.message ? '\n' + data.message : '');
+          break;
+
+        case 'validate fail':
+          msg = 'ข้อมูลผู้ใช้จาก SSO ไม่ผ่านการตรวจสอบ (validate fail)';
+          if (data.detail) {
+            try {
+              msg += '\nรายละเอียด: ' + JSON.stringify(data.detail);
+            } catch (e) {}
+          }
+          break;
+
+        case 'db error':
+          msg = 'เกิดข้อผิดพลาดในการบันทึกข้อมูลผู้ใช้ลงฐานข้อมูล (db error)';
+          if (data.message) {
+            msg += '\n' + data.message;
+          }
+          break;
+
+        case 'login error':
+          msg = 'สร้าง/อัปเดตข้อมูลผู้ใช้ได้แล้ว แต่เข้าสู่ระบบไม่สำเร็จ (login error)';
+          if (data.message) {
+            msg += '\n' + data.message;
+          }
+          break;
+
+        default:
+          if (data.error) {
+            msg = data.error;
+          }
+          break;
+      }
+    }
+
     statusEl.className = 'alert alert-warning mb-4';
-    statusEl.textContent = data?.error || 'ไม่สามารถ sync ข้อมูลเข้าสู่ระบบได้ (token ยังอยู่ใน browser)';
+    statusEl.textContent = msg;
     loginCta.classList.remove('d-none');
 
-  } catch(e){
-    // เซิร์ฟเวอร์ล่ม → ยังไม่ต้องลบ token
-    statusEl.className = 'alert alert-warning mb-4';
-    statusEl.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ขอลองใหม่หรือติดต่อผู้ดูแลระบบ';
+  } catch (e) {
+    console.error('❌ SYNC /site/my-profile network/JS error:', e);
+
+    statusEl.className = 'alert alert-danger mb-4';
+    statusEl.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ (network หรือ JavaScript error) กรุณาลองใหม่หรือติดต่อผู้ดูแล';
+
     loginCta.classList.remove('d-none');
   }
-})();
 
 /* --------- เคลียร์ storage ตอน "ผู้ใช้" กดออกเองเท่านั้น --------- */
 (function(){
