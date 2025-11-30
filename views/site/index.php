@@ -36,38 +36,37 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!token) {
         window.location.href = '<?= Url::to(['/report/index']) ?>';
         return;
+    }else {
+
+      if (sessionStorage.getItem('sent-token') === '1') {
+          return;
+      }
+      sessionStorage.setItem('sent-token', '1');
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '<?= Url::to(['/site/index']) ?>'; 
+
+      // token จาก HRM-SCI
+      const inputToken = document.createElement('input');
+      inputToken.type  = 'hidden';
+      inputToken.name  = 'token';
+      inputToken.value = token;
+      form.appendChild(inputToken);
+
+      // ⭐ ใส่ CSRF ไปด้วย (ถ้าระบบเปิดใช้งานอยู่)
+      const csrfParam = '<?= Yii::$app->request->csrfParam ?>';
+      const csrfToken = '<?= Yii::$app->request->getCsrfToken() ?>';
+
+      const inputCsrf = document.createElement('input');
+      inputCsrf.type  = 'hidden';
+      inputCsrf.name  = csrfParam;
+      inputCsrf.value = csrfToken;
+      form.appendChild(inputCsrf);
+
+      document.body.appendChild(form);
+      form.submit();
     }
-
-    // 2) ถ้ามี token → ส่งไปให้ server เพื่อให้ PHP ตรวจสอบ JWT ผ่าน site/index
-    // กัน loop: ส่งครั้งเดียวพอ ไม่วนซ้ำ
-    if (sessionStorage.getItem('sent-token') === '1') {
-        return;
-    }
-    sessionStorage.setItem('sent-token', '1');
-
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '<?= Url::to(['/site/index']) ?>'; // ❗ เปลี่ยนจาก /site/login มาเป็น /site/index
-
-    // token จาก HRM-SCI
-    const inputToken = document.createElement('input');
-    inputToken.type  = 'hidden';
-    inputToken.name  = 'token';
-    inputToken.value = token;
-    form.appendChild(inputToken);
-
-    // ⭐ ใส่ CSRF ไปด้วย (ถ้าระบบเปิดใช้งานอยู่)
-    const csrfParam = '<?= Yii::$app->request->csrfParam ?>';
-    const csrfToken = '<?= Yii::$app->request->getCsrfToken() ?>';
-
-    const inputCsrf = document.createElement('input');
-    inputCsrf.type  = 'hidden';
-    inputCsrf.name  = csrfParam;
-    inputCsrf.value = csrfToken;
-    form.appendChild(inputCsrf);
-
-    document.body.appendChild(form);
-    form.submit();
 });
 </script>
 

@@ -81,8 +81,6 @@ public function actionIndex()
         $token = $request->post('token');
 
         if ($token) {
-            // TODO: ตรงนี้คุณจะเช็ค JWT payload เพิ่มก็ได้
-            Yii::$app->session->set('sso_token', $token);
             Yii::$app->session->setFlash('info', 'พบ token → กำลังนำไปยืนยันตัวตนที่หน้า Login');
             return $this->redirect(['site/login']);
         }

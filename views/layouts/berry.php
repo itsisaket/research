@@ -16,6 +16,13 @@ $this->beginPage();
   <?= Html::csrfMetaTags() ?>
   <title>ระบบจัดการวิจัย LASC SSKRU</title>
   <?php $this->head() ?>
+      <?php
+  // SweetAlert2 CDN
+  $this->registerJsFile(
+      'https://cdn.jsdelivr.net/npm/sweetalert2@11',
+      ['position' => \yii\web\View::POS_HEAD]
+  );
+  ?>
 </head>
 <body data-pc-preset="preset-1">
 <?php $this->beginBody() ?>
