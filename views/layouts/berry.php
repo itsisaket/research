@@ -27,6 +27,31 @@ $this->beginPage();
 <body data-pc-preset="preset-1">
 <?php $this->beginBody() ?>
 
+<?php
+// ===== SweetAlert2 Flash Messages =====
+$flashes = Yii::$app->session->getAllFlashes(true); // true = clear หลังอ่าน
+foreach ($flashes as $type => $message) {
+    // map icon ให้ตรง SweetAlert2
+    $icon = in_array($type, ['success', 'error', 'warning', 'info', 'question'], true)
+        ? $type
+        : 'info';
+
+    // กัน text พัง JS โดยใช้ Json::encode
+    $jsMessage = \yii\helpers\Json::encode($message);
+    $jsTitle   = \yii\helpers\Json::encode('แจ้งเตือน');
+
+    $js = <<<JS
+Swal.fire({
+  icon: '{$icon}',
+  title: {$jsTitle},
+  text: {$jsMessage},
+  confirmButtonText: 'ตกลง'
+});
+JS;
+    $this->registerJs($js);
+}
+?>
+
 <!-- ✅ Sidebar & Navbar -->
 <?= $this->render('_sidebar') ?>
 <?= $this->render('_navbar') ?>
