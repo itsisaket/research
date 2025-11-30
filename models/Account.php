@@ -61,7 +61,6 @@ public function scenarios()
         'email',
         'tel',
         'position',
-        // ถ้าคุณต้องการ validate/จำกัด length ให้ field พวกนี้ด้วยก็ใส่ไว้ได้
         'password_reset_token',
         'authKey',
         'dayup',

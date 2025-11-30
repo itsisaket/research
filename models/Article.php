@@ -11,7 +11,7 @@ use yii\helpers\ArrayHelper;
  * @property int $article_id รหัสบทความ
  * @property string $article_th ชื่อบทความ(ไทย)
  * @property string $article_eng ชื่อบทความ(Eng)
- * @property int $uid นักวิจัย
+ * @property int $username นักวิจัย
  * @property int $org_id หน่วยงาน
  * @property int $publication_type ประเภทฐาน
  * @property string $article_publish วันที่เผยแพร่
@@ -38,8 +38,8 @@ class Article extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['article_th', 'article_eng', 'uid', 'org_id', 'publication_type', 'article_publish', 'journal','status_ec','branch'], 'required'],
-            [['uid', 'org_id', 'publication_type','research_id','status_ec','branch'], 'integer'],
+            [['article_th', 'article_eng', 'username', 'org_id', 'publication_type', 'article_publish', 'journal','status_ec','branch'], 'required'],
+            [['username', 'org_id', 'publication_type','research_id','status_ec','branch'], 'integer'],
             [['article_publish','refer','documentid'], 'string'],
             [['article_th', 'article_eng', 'journal'], 'string', 'max' => 200],
         ];
@@ -54,7 +54,7 @@ class Article extends \yii\db\ActiveRecord
             'article_id' => 'รหัสบทความ',
             'article_th' => 'ชื่อบทความ(ไทย)',
             'article_eng' => 'ชื่อบทความ(Eng)',
-            'uid' => 'นักวิจัย',
+            'username' => 'นักวิจัย',
             'org_id' => 'หน่วยงาน',
             'publication_type' => 'ประเภทฐาน',
             'article_publish' => 'วันที่เผยแพร่',
@@ -73,8 +73,8 @@ class Article extends \yii\db\ActiveRecord
         $ty=$session['ty'];
         
         if (!Yii::$app->user->isGuest){
-           //$users = Account::find()->where(['uid'=>Yii::$app->user->identity->uid])->all();
-            $users = Account::find()->where(['uid'=>Yii::$app->user->identity->uid])->all();
+           //$users = Account::find()->where(['username'=>Yii::$app->user->identity->username])->all();
+            $users = Account::find()->where(['username'=>Yii::$app->user->identity->username])->all();
             if (Yii::$app->user->identity->position !=1) {
                 $users = Account::find()->where(['org_id'=>$ty])->orderBy('uname')->all();
             }
@@ -83,7 +83,7 @@ class Article extends \yii\db\ActiveRecord
             }
         }
         $userList  = [];
-        $userList = ArrayHelper::map($users, 'uid', function ($user) {
+        $userList = ArrayHelper::map($users, 'username', function ($user) {
             return $user->uname.' '.$user->luname;
          }); 
          return $userList;
@@ -109,7 +109,7 @@ class Article extends \yii\db\ActiveRecord
 
     public function getUser()
     {
-        return $this->hasOne(Account::className(), ['uid' => 'uid']);
+        return $this->hasOne(Account::className(), ['username' => 'username']);
     }
     public function getHasorg()
     {

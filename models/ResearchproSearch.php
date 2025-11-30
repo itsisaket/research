@@ -17,7 +17,7 @@ class ResearchproSearch extends Researchpro
     public function rules()
     {
         return [
-            [['projectID', 'uid', 'org_id', 'projectYearsubmit', 'budgets', 'fundingAgencyID', 'researchFundID', 'researchTypeID', 'jobStatusID', 'sub_district', 'district', 'province'], 'integer'],
+            [['projectID', 'username', 'org_id', 'projectYearsubmit', 'budgets', 'fundingAgencyID', 'researchFundID', 'researchTypeID', 'jobStatusID', 'sub_district', 'district', 'province'], 'integer'],
             [['projectNameTH', 'projectNameEN', 'projectStartDate', 'projectEndDate', 'researchArea'], 'safe'],
         ];
     }
@@ -59,7 +59,7 @@ class ResearchproSearch extends Researchpro
         // grid filtering conditions
         $query->andFilterWhere([
             'projectID' => $this->projectID,
-            'uid' => $this->uid,
+            'username' => $this->username,
             'org_id' => $this->org_id,
             'projectYearsubmit' => $this->projectYearsubmit,
             'budgets' => $this->budgets,

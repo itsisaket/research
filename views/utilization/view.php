@@ -31,7 +31,7 @@ $this->params['breadcrumbs'][] = $this->title;
         'attributes' => [
             'project_name',
             [
-                'attribute' => 'uid',
+                'attribute' => 'username',
                 'value'=>function($model){
                   return $model->user->uname.' '.$model->user->luname;
                 }

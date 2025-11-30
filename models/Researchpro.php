@@ -12,7 +12,7 @@ use app\models\Province;
  * @property int $projectID รหัสโครงการ
  * @property string $projectNameTH ชื่อโครงการภาษาไทย
  * @property string $projectNameEN ชื่อโครงการภาษาอังกฤษ
- * @property int $uid หัวหน้าโครงการ
+ * @property int $username หัวหน้าโครงการ
  * @property int $org_id หน่วยงาน
  * @property int $projectYearsubmit ปีงบประมาณ
  * @property int $budgets งบประมาณ
@@ -45,8 +45,8 @@ class Researchpro extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['projectNameTH', 'projectNameEN', 'uid', 'org_id', 'projectYearsubmit', 'budgets', 'fundingAgencyID', 'researchFundID', 'researchTypeID', 'projectStartDate', 'projectEndDate', 'jobStatusID', 'researchArea', 'sub_district', 'district', 'province','branch'], 'required'],
-            [['uid', 'org_id', 'projectYearsubmit', 'budgets', 'fundingAgencyID', 'researchFundID', 'researchTypeID', 'jobStatusID', 'sub_district', 'district', 'province','branch'], 'integer'],
+            [['projectNameTH', 'projectNameEN', 'username', 'org_id', 'projectYearsubmit', 'budgets', 'fundingAgencyID', 'researchFundID', 'researchTypeID', 'projectStartDate', 'projectEndDate', 'jobStatusID', 'researchArea', 'sub_district', 'district', 'province','branch'], 'required'],
+            [['username', 'org_id', 'projectYearsubmit', 'budgets', 'fundingAgencyID', 'researchFundID', 'researchTypeID', 'jobStatusID', 'sub_district', 'district', 'province','branch'], 'integer'],
             [['projectStartDate', 'projectEndDate'], 'safe'],
             [['projectNameTH', 'projectNameEN'], 'string', 'max' => 100],
             [['researchArea','documentid'], 'string'],
@@ -62,7 +62,7 @@ class Researchpro extends \yii\db\ActiveRecord
             'projectID' => 'รหัสโครงการ',
             'projectNameTH' => 'ชื่อโครงการภาษาไทย',
             'projectNameEN' => 'ชื่อโครงการภาษาอังกฤษ',
-            'uid' => 'หัวหน้าโครงการ',
+            'username' => 'หัวหน้าโครงการ',
             'org_id' => 'หน่วยงาน',
             'projectYearsubmit' => 'ปีงบประมาณ',
             'budgets' => 'งบประมาณ',
@@ -87,7 +87,7 @@ class Researchpro extends \yii\db\ActiveRecord
         $ty=$session['ty'];
         
         if (!Yii::$app->user->isGuest){
-            $users = Account::find()->where(['uid'=>Yii::$app->user->identity->uid])->all();
+            $users = Account::find()->where(['username'=>Yii::$app->user->identity->username])->all();
             if (Yii::$app->user->identity->position !=1) {
                 $users = Account::find()->where(['org_id'=>$ty])->orderBy('uname')->all();
             }
@@ -96,7 +96,7 @@ class Researchpro extends \yii\db\ActiveRecord
             }
         }
         $userList  = [];
-        $userList = ArrayHelper::map($users, 'uid', function ($user) {
+        $userList = ArrayHelper::map($users, 'username', function ($user) {
             return $user->uname.' '.$user->luname;
          }); 
          return $userList;
@@ -131,7 +131,7 @@ class Researchpro extends \yii\db\ActiveRecord
 
     public function getUser()
     {
-        return $this->hasOne(Account::className(), ['uid' => 'uid']);
+        return $this->hasOne(Account::className(), ['username' => 'username']);
     }
     public function getHasorg()
     {

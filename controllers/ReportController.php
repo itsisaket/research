@@ -73,7 +73,7 @@ class ReportController extends Controller
 
             // กรองสิทธิ์
             if ($isSelfRole) {
-                $q->andWhere(['uid' => $user->uid]);
+                $q->andWhere(['username' => $user->username]);
             } else {
                 // ไม่ใช่ admin แล้วมี org → กรองตาม org
                 if ($user && $user->position != 4) {
@@ -111,7 +111,7 @@ class ReportController extends Controller
         foreach ($orgs as $org) {
             $oq = Researchpro::find()->where(['org_id' => $org->org_id]);
             if ($isSelfRole) {
-                $oq->andWhere(['uid' => $user->uid]);
+                $oq->andWhere(['username' => $user->username]);
             }
             $seriesO[]     = (int) $oq->count();
             $categoriesO[] = $org->org_name;
@@ -121,12 +121,12 @@ class ReportController extends Controller
          * 3. นับกล่องบน (วิจัย/บทความ/แผนงาน/บริการ)
          * ========================================================= */
         if ($isSelfRole) {
-            $uid = $user->uid;
+            $username = $user->username;
 
-            $counttype1 = Researchpro::find()->where(['uid' => $uid, 'researchTypeID' => 1])->count();
-            $counttype2 = Researchpro::find()->where(['uid' => $uid, 'researchTypeID' => 2])->count();
-            $counttype3 = Researchpro::find()->where(['uid' => $uid, 'researchTypeID' => 3])->count();
-            $counttype4 = Researchpro::find()->where(['uid' => $uid, 'researchTypeID' => 4])->count();
+            $counttype1 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 1])->count();
+            $counttype2 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 2])->count();
+            $counttype3 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 3])->count();
+            $counttype4 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 4])->count();
 
             // บนสุดโชว์ชื่อคน login
             $countuser  = trim($user->uname . ' ' . $user->luname);
@@ -150,7 +150,7 @@ class ReportController extends Controller
          * ========================================================= */
         $baseQuery = Researchpro::find();
         if ($isSelfRole) {
-            $baseQuery->andWhere(['uid' => $user->uid]);
+            $baseQuery->andWhere(['username' => $user->username]);
         } else {
             if ($user && $user->position != 4) {
                 if (!empty($sessionOrg)) {
@@ -243,7 +243,7 @@ class ReportController extends Controller
 
                 // กรองสิทธิ์
                 if ($isSelfRole) {
-                    $aq->andWhere(['uid' => $user->uid]);
+                    $aq->andWhere(['username' => $user->username]);
                 } else {
                     if ($user && $user->position != 4) {
                         if (!empty($sessionOrg)) {

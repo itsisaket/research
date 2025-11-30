@@ -47,7 +47,7 @@ $subDistrict = $sub_district ?? [];
             ]) ?>
         </div>
         <div class="col-sm-4">
-            <?= $form->field($model, 'uid')->dropDownList($model->userid ?? [], [
+            <?= $form->field($model, 'username')->dropDownList($model->userid ?? [], [
                 'prompt' => 'เลือกนักวิจัย..'
             ]) ?>
         </div>

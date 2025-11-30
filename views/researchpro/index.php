@@ -64,7 +64,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 },
             ],
             [
-                'attribute' => 'uid',
+                'attribute' => 'username',
                 'label' => 'นักวิจัย',
                 'value' => function ($model) {
                     if ($model->user) {

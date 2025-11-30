@@ -35,7 +35,7 @@ $sub_district = $sub_district ?? [];
             <?= $form->field($model, 'org_id')->dropDownList($model->orgid, ['prompt' => 'เลือกหน่วยงาน..']) ?>
         </div>
         <div class="col-sm-4">
-            <?= $form->field($model, 'uid')->dropDownList($model->userid, ['prompt' => 'เลือกนักวิจัย..']) ?>
+            <?= $form->field($model, 'username')->dropDownList($model->userid, ['prompt' => 'เลือกนักวิจัย..']) ?>
         </div>
         <div class="col-sm-2">
             <?= $form->field($model, 'utilization_type')->dropDownList($model->utilizationtype, ['prompt' => 'เลือกการใช้ประโยชน์..']) ?>

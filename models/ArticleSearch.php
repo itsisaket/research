@@ -17,7 +17,7 @@ class ArticleSearch extends Article
     public function rules()
     {
         return [
-            [['article_id', 'uid', 'org_id', 'publication_type'], 'integer'],
+            [['article_id', 'username', 'org_id', 'publication_type'], 'integer'],
             [['article_th', 'article_eng', 'article_publish', 'journal', 'refer'], 'safe'],
         ];
     }
@@ -59,7 +59,7 @@ class ArticleSearch extends Article
         // grid filtering conditions
         $query->andFilterWhere([
             'article_id' => $this->article_id,
-            'uid' => $this->uid,
+            'username' => $this->username,
             'org_id' => $this->org_id,
             'publication_type' => $this->publication_type,
             'article_publish' => $this->article_publish,

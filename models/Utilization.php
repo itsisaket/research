@@ -24,7 +24,7 @@ class Utilization extends \yii\db\ActiveRecord
             [
                 [
                     'project_name',
-                    'uid',
+                    'username',
                     'org_id',
                     'utilization_type',
                     'utilization_add',
@@ -35,7 +35,7 @@ class Utilization extends \yii\db\ActiveRecord
                 ],
                 'required'
             ],
-            [['uid', 'org_id', 'utilization_type', 'sub_district', 'district', 'province', 'research_id'], 'integer'],
+            [['username', 'org_id', 'utilization_type', 'sub_district', 'district', 'province', 'research_id'], 'integer'],
             [['utilization_detail', 'utilization_refer', 'documentid'], 'string'],
             [['utilization_date'], 'safe'],
             [['utilization_add'], 'string', 'max' => 100],
@@ -47,7 +47,7 @@ class Utilization extends \yii\db\ActiveRecord
         return [
             'utilization_id'   => 'รหัส',
             'project_name'     => 'โครงการวิจัย/งานสร้างสรรค์',
-            'uid'              => 'นักวิจัย',
+            'username'              => 'นักวิจัย',
             'org_id'           => 'หน่วยงาน',
             'utilization_type' => 'ลักษณะของการใช้ประโยชน์',
             'utilization_add'  => 'หน่วยงานใช้ประโยชน์',
@@ -90,7 +90,7 @@ class Utilization extends \yii\db\ActiveRecord
             $identity = Yii::$app->user->identity;
 
             // เริ่มจาก user ตัวเอง
-            $users = Account::find()->where(['uid' => $identity->uid])->all();
+            $users = Account::find()->where(['username' => $identity->username])->all();
 
             // ถ้าไม่ใช่สิทธิ์พื้นฐาน → ให้เห็นเฉพาะ org
             if ($identity->position != 1) {
@@ -108,7 +108,7 @@ class Utilization extends \yii\db\ActiveRecord
             }
         }
 
-        return ArrayHelper::map($users, 'uid', function ($user) {
+        return ArrayHelper::map($users, 'username', function ($user) {
             return trim($user->uname . ' ' . $user->luname);
         });
     }
@@ -142,7 +142,7 @@ class Utilization extends \yii\db\ActiveRecord
 
     public function getUser()
     {
-        return $this->hasOne(Account::class, ['uid' => 'uid']);
+        return $this->hasOne(Account::class, ['username' => 'username']);
     }
 
     public function getHasorg()

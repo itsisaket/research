@@ -21,7 +21,7 @@ use yii\widgets\ActiveForm;
 
     <?php // echo $form->field($model, 'article_eng') ?>
 
-    <?php // echo $form->field($model, 'uid') ?>
+    <?php // echo $form->field($model, 'username') ?>
 
     <?php // echo $form->field($model, 'org_id') ?>
 

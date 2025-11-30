@@ -40,7 +40,7 @@ $this->title = 'การนำไปใช้ประโยชน์';
                 }
               ],
               [
-                'attribute' => 'uid',
+                'attribute' => 'username',
                 'value'=>function($model){
                   return $model->user->uname.' '.$model->user->luname;
                 }

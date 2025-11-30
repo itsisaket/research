@@ -17,7 +17,7 @@ class UtilizationSearch extends Utilization
     public function rules()
     {
         return [
-            [['utilization_id', 'uid', 'org_id', 'utilization_type', 'sub_district', 'district', 'province'], 'integer'],
+            [['utilization_id', 'username', 'org_id', 'utilization_type', 'sub_district', 'district', 'province'], 'integer'],
             [['utilization_add', 'utilization_date', 'utilization_detail', 'utilization_refer'], 'safe'],
         ];
     }
@@ -60,7 +60,7 @@ class UtilizationSearch extends Utilization
         $query->andFilterWhere([
             'utilization_id' => $this->utilization_id,
             'project_name' => $this->project_name,
-            'uid' => $this->uid,
+            'username' => $this->username,
             'org_id' => $this->org_id,
             'utilization_type' => $this->utilization_type,
             'sub_district' => $this->sub_district,
