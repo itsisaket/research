@@ -29,62 +29,80 @@ class Account extends \yii\db\ActiveRecord implements IdentityInterface
         ];
     }
 
-    public function scenarios()
-    {
-        $sc = parent::scenarios();
+public function scenarios()
+{
+    $sc = parent::scenarios();
 
-        // ฟอร์มปกติ ใช้ตอนกรอกเองในระบบ
-        $sc['default'] = [
-            'username','password','prefix','uname','luname','org_id','dept_code','email','tel',
-            'position','password_reset_token','authKey','dayup'
-        ];
+    // ฟอร์มปกติ ใช้ตอนกรอกเองในระบบ
+    $sc['default'] = [
+        'username',
+        'password',
+        'prefix',
+        'uname',
+        'luname',
+        'org_id',
+        'dept_code',
+        'email',
+        'tel',
+        'position',
+        'password_reset_token',
+        'authKey',
+        'dayup',
+    ];
 
-        // ซิงก์จาก SSO/JWT → เบากว่า ไม่บังคับทุกช่อง
-        // ให้บังคับแค่ตัวที่เรามั่นใจว่ามี (username = personal_id)
-        $sc['ssoSync'] = [
-            'username','prefix','uname','luname','org_id','dept_code','email','tel','position',
-            'password_reset_token','authKey','dayup'
-        ];
+    // ซิงก์จาก SSO/JWT → ใช้เฉพาะ field ที่ map จาก HRM
+    $sc['ssoSync'] = [
+        'username',
+        'prefix',
+        'uname',
+        'luname',
+        'org_id',
+        'dept_code',
+        'email',
+        'tel',
+        'position',
+        // ถ้าคุณต้องการ validate/จำกัด length ให้ field พวกนี้ด้วยก็ใส่ไว้ได้
+        'password_reset_token',
+        'authKey',
+        'dayup',
+    ];
 
-        return $sc;
-    }
+    return $sc;
+}
 
-    public function rules()
-    {
-        return [
-            /*
-             * ชุดบังคับหลัก
-             * - กรณีใช้งานปกติให้ใช้ 'default'
-             * - กรณี SSO เราจะไม่บังคับทุกช่อง เพราะบางที HRM ส่งมาไม่ครบ
-             */
-            [['username'], 'required', 'on' => ['default','ssoSync']],
 
-            // ถ้าเป็นฟอร์มปกติ → บังคับเพิ่ม
-            [['prefix', 'uname', 'luname', 'org_id','dept_code', 'email', 'tel'], 'required', 'on' => ['default']],
+public function rules()
+{
+    return [
+        // 1) required หลัก
+        [['username'], 'required', 'on' => ['default', 'ssoSync']],
 
-            // อนุญาต password ว่างได้ -> แปลง '' เป็น NULL
-            ['password', 'filter', 'filter' => function($v){ return $v === '' ? null : $v; }],
+        [['prefix', 'uname', 'luname', 'org_id','dept_code', 'email', 'tel'], 'required', 'on' => ['default']],
 
-            [['prefix', 'org_id', 'position'], 'integer'],
-            [['dayup'], 'safe'],
-            [['username', 'password', 'password_reset_token', 'authKey', 'email'], 'string', 'max' => 50],
-            [['uname', 'luname'], 'string', 'max' => 100],
-            [['username'], 'match','pattern' => '/^[a-zA-Z0-9]*$/i','message' => 'Invalid characters in username.'],
+        ['password', 'filter', 'filter' => function($v){ return $v === '' ? null : $v; }],
 
-            // กัน username ซ้ำทุกกรณี
-            [['username'], 'unique'],
+        // 👉 ใช้ integer ให้ตรงกับ DB
+        [['prefix', 'org_id', 'position', 'dept_code'], 'integer'],
 
-            /*
-             * เรื่อง email:
-             * - ใน SSO บางทีได้เมลว่าง หรือเมลซ้ำ → ถ้าใส่ unique ตรง ๆ จะชน
-             * - เราเลยให้ unique เฉพาะกรณีที่ email ไม่ว่าง
-             */
-            ['email', 'unique', 'filter' => ['not in', 'email', [null, '']]],
+        // 👉 กรณี SSO ไม่ส่ง dept_code มาเลย → ให้ default เป็น 0
+        ['dept_code', 'default', 'value' => 0],
 
-            // tel เอาเป็น string แทน int เพราะจาก SSO บางทีเป็น '' หรือมีขีด
-            ['tel', 'string', 'max' => 20],
-        ];
-    }
+        [['dayup'], 'safe'],
+        [['username', 'password', 'password_reset_token', 'authKey', 'email'], 'string', 'max' => 50],
+        [['uname', 'luname'], 'string', 'max' => 100],
+        [['username'], 'match','pattern' => '/^[a-zA-Z0-9]*$/i','message' => 'Invalid characters in username.'],
+
+        [['username'], 'unique'],
+
+        // email unique เฉพาะ default (กัน SSO ซ้ำ)
+        ['email', 'unique', 'filter' => ['not in', 'email', [null, '']], 'on' => ['default']],
+        ['email', 'email', 'skipOnEmpty' => true],
+
+        ['tel', 'string', 'max' => 20],
+    ];
+}
+
+
 
     public function attributeLabels()
     {
