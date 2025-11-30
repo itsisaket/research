@@ -65,41 +65,29 @@ class SiteController extends Controller
         }
     }
 
-public function actionIndex()
-{
-    $user = Yii::$app->user;
+    public function actionIndex()
+    {
+        $user    = Yii::$app->user;
+        $request = Yii::$app->request;
 
-    // 1) ถ้าล็อกอินแล้ว → ไปหน้า report
-    if (!$user->isGuest) {
-        return $this->redirect(['report/index']);
-    }
-
-    $request = Yii::$app->request;
-
-    // 2) ยังไม่ล็อกอิน + ถ้ามาแบบ POST แสดงว่ามาจาก JS ส่ง token มาให้
-    if ($request->isPost) {
-        $token = $request->post('token');
-
-        if ($token) {
-            Yii::$app->session->setFlash('info', 'พบ token → กำลังนำไปยืนยันตัวตนที่หน้า Login');
-            return $this->redirect(['site/login']);
+        // 1) ถ้าล็อกอินแล้ว → ไปหน้า report/index ทันที
+        if (!$user->isGuest) {
+            return $this->redirect(['report/index']);
         }
-
-        // ถ้า POST มาแต่ไม่มี token → ปล่อยเป็น Guest ไป report
-        Yii::$app->session->setFlash('warning', 'ไม่พบ token → เข้าหน้า report ในฐานะ Guest');
-        return $this->redirect(['report/index']);
+        // 2) ยังไม่ล็อกอิน + ถ้ามาแบบ POST แสดงว่ามาจาก JS ส่ง token มาให้
+        if ($request->isPost) {
+            $token = trim((string)$request->post('token', ''));
+            if ($token !== '') {
+                return $this->redirect(['site/login']);
+            }
+            return $this->redirect(['report/index']);
+        }
+        // 3) ยังเป็น Guest + เป็น GET ธรรมดา → ให้ render view
+        return $this->render('index', [
+            'isGuest' => $user->isGuest,
+            'u'       => $user->identity, 
+        ]);
     }
-
-    // 3) ยังเป็น Guest + เป็น GET ธรรมดา → ให้ render view (JS จะไปเช็ค localStorage เอง)
-    return $this->render('index', [
-        'isGuest' => $user->isGuest,
-        'u'       => $user->identity,
-    ]);
-}
-
-
-
-
 
 
 
@@ -138,7 +126,7 @@ public function actionIndex()
             // 0) จำกัดขนาด body ป้องกัน payload ใหญ่เกิน
             $raw = Yii::$app->request->getRawBody();
             if (strlen($raw) > self::MAX_BODY_BYTES) {
-                $session->setFlash('warning', 'ไม่สามารถ sync ได้: ข้อมูลที่ส่งมามีขนาดใหญ่เกินกำหนด');
+            //    $session->setFlash('warning', 'ไม่สามารถ sync ได้: ข้อมูลที่ส่งมามีขนาดใหญ่เกินกำหนด');
                 return [
                     'ok'    => false,
                     'error' => 'payload too large',
@@ -155,7 +143,7 @@ public function actionIndex()
             $profile = is_array($data['profile'] ?? null) ? $data['profile'] : [];
 
             if (!$token) {
-                $session->setFlash('warning', 'ไม่สามารถ sync ได้: ไม่พบ token จาก HRM-SCI');
+            //    $session->setFlash('warning', 'ไม่สามารถ sync ได้: ไม่พบ token จาก HRM-SCI');
                 return ['ok' => false, 'error' => 'no token'];
             }
 
@@ -180,7 +168,7 @@ public function actionIndex()
                 }
             } catch (\Throwable $e) {
                 Yii::warning('Fetch profile failed: ' . $e->getMessage(), 'sso.sync');
-                $session->setFlash('warning', 'ไม่สามารถดึงข้อมูลโปรไฟล์จาก HRM ได้ จะใช้ข้อมูลเท่าที่มีจาก browser');
+            //    $session->setFlash('warning', 'ไม่สามารถดึงข้อมูลโปรไฟล์จาก HRM ได้ จะใช้ข้อมูลเท่าที่มีจาก browser');
             }
 
             // 3) แปลง token + profile เป็น user object ชั่วคราวจาก JWT
@@ -188,7 +176,7 @@ public function actionIndex()
                 $jwtUser = User::fromToken($token, $profile);
             } catch (\Throwable $e) {
                 Yii::error('User::fromToken failed: ' . $e->getMessage(), 'sso.sync');
-                $session->setFlash('danger', 'ไม่สามารถแปลงข้อมูล token เป็นผู้ใช้ได้');
+            //    $session->setFlash('danger', 'ไม่สามารถแปลงข้อมูล token เป็นผู้ใช้ได้');
                 return [
                     'ok'      => false,
                     'error'   => 'fromToken error',
@@ -199,7 +187,7 @@ public function actionIndex()
             // 3.1 หาค่า username ที่จะใช้ในระบบเรา
             $username = $jwtUser->username ?? $personalId;
             if (!$username) {
-                $session->setFlash('danger', 'โปรไฟล์จาก SSO ไม่มี username/personal_id ไม่สามารถสร้างบัญชีผู้ใช้ได้');
+            //    $session->setFlash('danger', 'โปรไฟล์จาก SSO ไม่มี username/personal_id ไม่สามารถสร้างบัญชีผู้ใช้ได้');
                 return ['ok' => false, 'error' => 'profile has no username/personal_id'];
             }
 
@@ -210,11 +198,11 @@ public function actionIndex()
                 $account = new Account();
                 $account->scenario = 'ssoSync';
                 $account->username = $username;
-                $session->setFlash('info', "กำลังสร้างบัญชีผู้ใช้ใหม่จาก SSO สำหรับผู้ใช้: {$username}");
+            //    $session->setFlash('info', "กำลังสร้างบัญชีผู้ใช้ใหม่จาก SSO สำหรับผู้ใช้: {$username}");
             } else {
                 // เคยมี → อัปเดต
                 $account->scenario = 'ssoSync';
-                $session->setFlash('info', "กำลังอัปเดตข้อมูลผู้ใช้จาก SSO สำหรับผู้ใช้: {$username}");
+            //    $session->setFlash('info', "กำลังอัปเดตข้อมูลผู้ใช้จาก SSO สำหรับผู้ใช้: {$username}");
             }
 
             // 5) Map ข้อมูลจาก SSO / JWT → tb_user
@@ -254,7 +242,7 @@ public function actionIndex()
                         'sso.sync'
                     );
 
-                    $session->setFlash('danger', 'บันทึกข้อมูลผู้ใช้จาก SSO ไม่สำเร็จ เนื่องจากข้อมูลไม่ผ่านการตรวจสอบ');
+            //        $session->setFlash('danger', 'บันทึกข้อมูลผู้ใช้จาก SSO ไม่สำเร็จ เนื่องจากข้อมูลไม่ผ่านการตรวจสอบ');
 
                     return [
                         'ok'     => false,
@@ -264,7 +252,7 @@ public function actionIndex()
                 }
             } catch (\Throwable $e) {
                 Yii::error('SSO sync DB error: ' . $e->getMessage(), 'sso.sync');
-                $session->setFlash('danger', 'เกิดข้อผิดพลาดในการบันทึกฐานข้อมูลผู้ใช้จาก SSO');
+            //    $session->setFlash('danger', 'เกิดข้อผิดพลาดในการบันทึกฐานข้อมูลผู้ใช้จาก SSO');
 
                 return [
                     'ok'      => false,
@@ -278,7 +266,7 @@ public function actionIndex()
                 Yii::$app->user->login($account, self::SESSION_DURATION);
             } catch (\Throwable $e) {
                 Yii::error('Login failed: ' . $e->getMessage(), 'sso.sync');
-                $session->setFlash('danger', 'เข้าสู่ระบบด้วยบัญชีที่สร้าง/อัปเดตจาก SSO ไม่สำเร็จ');
+             //   $session->setFlash('danger', 'เข้าสู่ระบบด้วยบัญชีที่สร้าง/อัปเดตจาก SSO ไม่สำเร็จ');
 
                 return [
                     'ok'      => false,

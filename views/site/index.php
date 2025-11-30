@@ -31,42 +31,38 @@ $this->title = 'หน้าหลัก';
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const token = localStorage.getItem('hrm-sci-token');
-
     // 1) ถ้าไม่มี token → ไปหน้า report/index ทันที (ในฐานะ Guest)
     if (!token) {
         window.location.href = '<?= Url::to(['/report/index']) ?>';
         return;
-    }else {
-
-      if (sessionStorage.getItem('sent-token') === '1') {
-          return;
-      }
-      sessionStorage.setItem('sent-token', '1');
-
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = '<?= Url::to(['/site/index']) ?>'; 
-
-      // token จาก HRM-SCI
-      const inputToken = document.createElement('input');
-      inputToken.type  = 'hidden';
-      inputToken.name  = 'token';
-      inputToken.value = token;
-      form.appendChild(inputToken);
-
-      // ⭐ ใส่ CSRF ไปด้วย (ถ้าระบบเปิดใช้งานอยู่)
-      const csrfParam = '<?= Yii::$app->request->csrfParam ?>';
-      const csrfToken = '<?= Yii::$app->request->getCsrfToken() ?>';
-
-      const inputCsrf = document.createElement('input');
-      inputCsrf.type  = 'hidden';
-      inputCsrf.name  = csrfParam;
-      inputCsrf.value = csrfToken;
-      form.appendChild(inputCsrf);
-
-      document.body.appendChild(form);
-      form.submit();
     }
+    // 2) กันส่ง token ซ้ำ (ป้องกัน loop)
+    const SENT_FLAG = 'hrm-sci-sent-token';
+    if (sessionStorage.getItem(SENT_FLAG) === '1') {
+        return;
+    }
+    sessionStorage.setItem(SENT_FLAG, '1');
+    // 3) มี token → สร้างฟอร์ม POST ส่งไปให้ /site/index
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '<?= Url::to(['/site/index']) ?>';
+    // token จาก HRM-SCI
+    const inputToken = document.createElement('input');
+    inputToken.type  = 'hidden';
+    inputToken.name  = 'token';
+    inputToken.value = token;
+    form.appendChild(inputToken);
+    // ⭐ ใส่ CSRF ไปด้วย (ถ้าระบบเปิดใช้งานอยู่)
+    const csrfParam = '<?= Yii::$app->request->csrfParam ?>';
+    const csrfToken = '<?= Yii::$app->request->getCsrfToken() ?>';
+    const inputCsrf = document.createElement('input');
+    inputCsrf.type  = 'hidden';
+    inputCsrf.name  = csrfParam;
+    inputCsrf.value = csrfToken;
+    form.appendChild(inputCsrf);
+    document.body.appendChild(form);
+    form.submit();
 });
 </script>
+
 
