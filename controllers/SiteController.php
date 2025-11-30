@@ -128,140 +128,140 @@ public function actionIndex()
     /** =====================================================
      * ✅ Action รับข้อมูลจากหน้า login.js เพื่อ sync token + profile
      * ===================================================== */
-public function actionMyProfile()
-{
-    Yii::$app->response->format = Response::FORMAT_JSON;
+    public function actionMyProfile()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
 
-    Yii::$app->response->headers->set('Access-Control-Allow-Origin', '*');
-    Yii::$app->response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
+        // สำหรับระบบที่ frontend อยู่คนละโดเมน → เปิด CORS
+        Yii::$app->response->headers->set('Access-Control-Allow-Origin', '*');
+        Yii::$app->response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
 
-    // 1) รับ JSON จาก browser
-    $raw  = Yii::$app->request->getRawBody();
-    $data = json_decode($raw, true);
-    if (!is_array($data)) {
-        $data = Yii::$app->request->post();
-    }
+        // 1) รับ JSON จาก browser
+        $raw  = Yii::$app->request->getRawBody();
+        $data = json_decode($raw, true);
+        if (!is_array($data)) {
+            $data = Yii::$app->request->post();
+        }
 
-    $token   = $data['token']   ?? null;
-    $profile = $data['profile'] ?? [];
+        $token   = $data['token']   ?? null;
+        $profile = $data['profile'] ?? [];
 
-    if (!$token) {
-        return ['ok' => false, 'error' => 'no token'];
-    }
+        if (!$token) {
+            return ['ok' => false, 'error' => 'no token'];
+        }
 
-    // 2) ถ้า profile ยังไม่ครบ → ขอข้อมูลเต็มจาก API
-    $personalId = $profile['personal_id'] ?? null;
-    try {
-        /** @var ApiAuthService|null $apiAuth */
-        $apiAuth = Yii::$app->apiAuth ?? null;
+        // 2) ถ้า profile ยังไม่ครบ → ขอข้อมูลเต็มจาก API
+        $personalId = $profile['personal_id'] ?? null;
+        try {
+            /** @var ApiAuthService|null $apiAuth */
+            $apiAuth = Yii::$app->apiAuth ?? null;
 
-        if ($apiAuth instanceof ApiAuthService) {
-            $full = $personalId
-                ? $apiAuth->fetchProfileWithPost($token, $personalId)
-                : $apiAuth->fetchProfileByToken($token);
+            if ($apiAuth instanceof ApiAuthService) {
+                $full = $personalId
+                    ? $apiAuth->fetchProfileWithPost($token, $personalId)
+                    : $apiAuth->fetchProfileByToken($token);
+            } else {
+                $full = ApiAuthService::fetchProfileByToken($token);
+            }
+
+            if (is_array($full) && !empty($full)) {
+                $profile    = $full;
+                $personalId = $profile['personal_id'] ?? $personalId;
+            }
+        } catch (\Throwable $e) {
+            Yii::warning('Fetch profile failed: ' . $e->getMessage(), 'sso.sync');
+            // ใช้ข้อมูลเท่าที่ browser ส่งมา
+        }
+
+        if (!$personalId) {
+            return ['ok' => false, 'error' => 'profile has no personal_id'];
+        }
+
+        // 3) แปลง token + profile เป็น user object ชั่วคราว
+        $jwtUser = User::fromToken($token, $profile);
+
+        // 4) หา user เดิมจาก DB
+        $account = Account::findOne(['username' => $personalId]);
+        if ($account === null) {
+            $account = new Account(['scenario' => 'ssoSync']);
+            $account->username = $personalId;
         } else {
-            $full = ApiAuthService::fetchProfileByToken($token);
+            $account->scenario = 'ssoSync';
         }
 
-        if (is_array($full) && !empty($full)) {
-            $profile    = $full;
-            $personalId = $profile['personal_id'] ?? $personalId;
-        }
-    } catch (\Throwable $e) {
-        Yii::warning('Fetch profile failed: ' . $e->getMessage(), 'sso.sync');
-        // ใช้เฉพาะข้อมูลที่ browser ส่งมา ถ้าเรียก API ไม่สำเร็จ
-    }
+        // 5) Map ข้อมูลจาก SSO → ตาราง tb_user
+        $account->prefix = $jwtUser->prefix ?: 0;
+        $account->uname  = $jwtUser->uname ?: ($jwtUser->name ?? 'ไม่ระบุชื่อ');
+        $account->luname = $jwtUser->luname ?: '';
+        $account->org_id = $jwtUser->faculty_id ?: 0;
+        $account->dept_code = $jwtUser->dept_code ?: 0;
+        $account->email  = $jwtUser->email ?: '';
+        $account->tel    = $jwtUser->tel ?? '';
 
-    // 3) แปลง token + profile เป็น user object ชั่วคราว
-    $jwtUser = User::fromToken($token, $profile);
-
-    // 3.1 กำหนด username ที่จะใช้ในระบบเรา
-    //    - พยายามใช้ username จาก JWT ก่อน
-    //    - ถ้าไม่มี → ใช้ personal_id แทน
-    $username = $jwtUser->username ?? $personalId;
-
-    if (!$username) {
-        return ['ok' => false, 'error' => 'profile has no username / personal_id'];
-    }
-
-    // 4) หา user เดิมจาก DB ด้วย username
-    $account = Account::findOne(['username' => $username]);
-    if ($account === null) {
-        // ❗ เคส "ไม่มี username" → เพิ่มใหม่
-        $account = new Account(['scenario' => 'ssoSync']);
-        $account->username = $username;
-        // กำหนดค่า default บางอย่างตอนสร้างใหม่ (ถ้าต้องการ)
-        $account->position = 1; // สิทธิ์พื้นฐานเริ่มต้น
-    } else {
-        // ❗ เคส "มี username แล้ว" → ปรับปรุงข้อมูลจาก JWT
-        $account->scenario = 'ssoSync';
-
-        // กันกรณีฐานเดิมไม่มี position
-        if ($account->position === null) {
+        // position logic
+        if ($account->isNewRecord) {
+            // เพิ่มใหม่ → สิทธิ์พื้นฐาน
             $account->position = 1;
+        } else {
+            // มีใน DB แล้ว → ใช้ค่าที่มีอยู่
+            // ถ้าจะไม่แตะเลยก็ไม่ต้องเซ็ตซ้ำ
+            // ถ้าจะกัน null กรณีฐานข้อมูลเก่าให้ทำแบบนี้
+            if ($account->position === null) {
+                $account->position = 1;
+            }
         }
-    }
 
-    // 5) Map ข้อมูลจาก SSO → ตาราง tb_user (อัปเดตทุกครั้งที่ login)
-    $account->prefix    = $jwtUser->prefix ?: 0;  // ถ้า prefix เป็นรหัสตัวเลข
-    $account->uname     = $jwtUser->uname ?: ($jwtUser->name ?? 'ไม่ระบุชื่อ');
-    $account->luname    = $jwtUser->luname ?: '';
-    $account->org_id    = $jwtUser->faculty_id ?: 0;
-    $account->dept_code = $jwtUser->dept_code ?: 0;  
-    $account->email     = $jwtUser->email ?: '';
-    $account->tel       = $jwtUser->tel ?? '';
 
-    // 6) บันทึกข้อมูล
-    try {
-        if (!$account->save()) {
+        // 6) พยายามบันทึกข้อมูล
+        try {
+            if (!$account->save()) {
+                return [
+                    'ok'     => false,
+                    'error'  => 'validate fail',
+                    'detail' => $account->getErrors(),
+                ];
+            }
+        } catch (\Throwable $e) {
+            Yii::error($e->getMessage(), 'sso.sync');
             return [
-                'ok'     => false,
-                'error'  => 'validate fail',
-                'detail' => $account->getErrors(),
+                'ok'      => false,
+                'error'   => 'db error',
+                'message' => $e->getMessage(),
             ];
         }
-    } catch (\Throwable $e) {
-        Yii::$app->errorHandler->logException($e);
+
+        // 7) Login เข้า Yii (8 ชั่วโมง)
+        try {
+            Yii::$app->user->login($account, 60 * 60 * 8);
+        } catch (\Throwable $e) {
+            Yii::error('Login failed: ' . $e->getMessage(), 'sso.sync');
+            return [
+                'ok' => false,
+                'error' => 'login error',
+                'message' => $e->getMessage(),
+            ];
+        }
+
+        // 8) เก็บ token + profile ใน session
+        Yii::$app->session->set('hrmToken', $token);
+        Yii::$app->session->set('hrmProfile', $profile);
+        Yii::$app->session->set('ty', $account->org_id);
+
+        // 9) ส่งกลับให้ frontend
         return [
-            'ok'      => false,
-            'error'   => 'db error',
-            'message' => $e->getMessage(),
+            'ok'     => true,
+            'userId' => $account->uid,
+            'user'   => [
+                'username'  => $account->username,
+                'prefix'    => $account->prefix,
+                'uname'     => $account->uname,
+                'luname'    => $account->luname,
+                'org_id'    => $account->org_id,
+                'email'     => $account->email,
+                'position'  => $account->position,
+            ],
         ];
     }
-
-    // 7) Login เข้า Yii (8 ชั่วโมง)
-    try {
-        Yii::$app->user->login($account, 60 * 60 * 8);
-    } catch (\Throwable $e) {
-        Yii::error('Login failed: ' . $e->getMessage(), 'sso.sync');
-        return [
-            'ok'      => false,
-            'error'   => 'login error',
-            'message' => $e->getMessage(),
-        ];
-    }
-
-    // 8) เก็บ token + profile ใน session
-    Yii::$app->session->set('hrmToken', $token);
-    Yii::$app->session->set('hrmProfile', $profile);
-    Yii::$app->session->set('ty', $account->org_id);
-
-    // 9) ส่งกลับให้ frontend
-    return [
-        'ok'     => true,
-        'userId' => $account->u_id ?? null,   // แก้ให้ตรงกับชื่อ PK ในตารางจริง
-        'user'   => [
-            'username'  => $account->username,
-            'prefix'    => $account->prefix,
-            'uname'     => $account->uname,
-            'luname'    => $account->luname,
-            'org_id'    => $account->org_id,
-            'email'     => $account->email,
-            'position'  => $account->position,
-        ],
-    ];
-}
-
 
     /** ============================
      * Logout และเคลียร์ session
