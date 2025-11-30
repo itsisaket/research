@@ -451,9 +451,9 @@ public function actionUpUserJson($personal_id = null)
             $account->luname    = $profile['last_name']  ?? '';
             $account->org_id    = (int)($profile['faculty_id'] ?? 0);
             $account->dept_code = (int)($profile['dept_code']  ?? 0);
+            $account->email = $profile['email']  ?? '';
+            $account->tel   = $profile['tel']  ?? '';
 
-            if ($account->email === null) $account->email = '';
-            if ($account->tel   === null) $account->tel   = '';
 
             try {
                 $account->initDefaultsForSso();
