@@ -48,12 +48,24 @@ if ($user->isGuest) {
 // ✅ รูปโปรไฟล์: ใช้จาก hrmProfile เป็นหลัก
 $pic = $profile['img']
     ?? ($claims['img']
-    ?? ($id->img ?? '-'));
+    ?? ($id->img ?? null));
 
+$fallback   = Url::to('@web/template/berry/images/user/avatar-2.jpg');
+$authenBase = 'https://sci-sskru.com/authen';   // base ของระบบ HRM
+$avatarUrl  = $fallback;
 
-$fallback = Url::to('@web/template/berry/images/user/avatar-2.jpg');
-$authenBase = Yii::$app->params['authenBase'] ?? ''; // เช่น 'https://sci-sskru.com/hrm/uploads/'
-$avatarUrl = $fallback;
+// ------------------------------
+//  สร้าง URL รูปโปรไฟล์อย่างถูกต้อง
+// ------------------------------
+if (!empty($pic)) {
+    // ถ้าเป็น URL เต็มอยู่แล้ว
+    if (preg_match('~^https?://~i', $pic)) {
+        $avatarUrl = $pic;
+    } else {
+        // เป็น path เช่น "/uploads/5.jpg"
+        $avatarUrl = rtrim($authenBase, '/') . '/' . ltrim($pic, '/');
+    }
+}
 
 
 $ssoLoginUrl  = Yii::$app->params['ssoLoginUrl'] ?? 'https://sci-sskru.com/hrm/login';

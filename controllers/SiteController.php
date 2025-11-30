@@ -66,17 +66,65 @@ class SiteController extends Controller
 
     public function actionIndex()
     {
-
+        $user    = Yii::$app->user;
         $session = Yii::$app->session;
-        if (!$session->get('first_check_done', false)) {
-            $session->set('first_check_done', true);
+
+        // 1) identity ปัจจุบัน (Yii user)
+        $identity = $user->identity ?? null;
+
+        // 2) ถ้ายังไม่มี identity → ลองกู้จาก JWT ใน session (hrmToken + hrmProfile)
+        if ($identity === null) {
+            $token   = $session->get('hrmToken');      // เก็บจาก actionMyProfile
+            $profile = $session->get('hrmProfile', []); // โปรไฟล์เต็ม ๆ จาก HRM
+
+            if (!empty($token) && is_array($profile)) {
+                // ดึงรหัสบุคลากร (ใช้เป็น username ใน tb_user)
+                $personalId = $profile['personal_id'] ?? null;
+
+                if (!empty($personalId)) {
+                    // (ออปชัน) จะ validate token เพิ่มเติมก็ได้ เช่นผ่าน ApiAuthService / decode
+                    try {
+                        /** @var ApiAuthService|null $apiAuth */
+                        $apiAuth = Yii::$app->apiAuth ?? null;
+
+                        // ถ้าอยากรีเฟรชโปรไฟล์ทุกครั้งที่เข้า index ก็ทำที่นี่
+                        if ($apiAuth instanceof ApiAuthService) {
+                            $full = $apiAuth->fetchProfileWithPost($token, $personalId);
+                            if (is_array($full) && !empty($full)) {
+                                $profile = $full;
+                                $session->set('hrmProfile', $profile);
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        Yii::warning('Re-fetch profile on index failed: '.$e->getMessage(), 'sso.sync');
+                    }
+
+                    // หา Account ในระบบเรา
+                    $account = Account::findOne(['username' => $personalId]);
+                    if ($account !== null) {
+                        // login ฝั่ง Yii จาก JWT + profile ใน session
+                        try {
+                            $user->login($account, 60 * 60 * 8); // 8 ชั่วโมง
+                            $identity = $account;
+                        } catch (\Throwable $e) {
+                            Yii::error('Auto login from JWT failed: '.$e->getMessage(), 'sso.sync');
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3) ถึงตรงนี้ ถ้า identity ยังว่าง → ถือว่าเป็น Guest
+        if ($identity === null || $user->isGuest) {
+            // คุณจะให้ Guest เห็นหน้า index แบบ public ก็ได้
+            // return $this->render('index-guest');
+
+            // หรือยังใช้พฤติกรรมเดิม: ให้ redirect ไปหน้า login
             return $this->redirect(['site/login']);
         }
-        // ถ้า login แล้ว → เข้าหน้ารายงาน
+
+        // 4) ถ้าล็อกอินแล้ว (มี identity แล้ว) → ไปหน้า report ตามเดิม
         return $this->redirect(['report/index']);
-        
-
-
     }
 
 
