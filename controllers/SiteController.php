@@ -227,8 +227,8 @@ public function actionMyProfile()
     $account->prefix    = $jwtUser->prefix ?: 0; // ถ้า prefix เป็นรหัสตัวเลข
     $account->uname     = $jwtUser->uname ?: ($jwtUser->name ?? 'ไม่ระบุชื่อ');
     $account->luname    = $jwtUser->luname ?: '';
-    $account->org_id    = $jwtUser->faculty_id ?: 0;
-    $account->dept_code = $jwtUser->dept_code ?: 0;
+    $account->org_id    = (int)($jwtUser->faculty_id ?? 0);
+    $account->dept_code = (int)($jwtUser->dept_code ?? 0);
     $account->email     = $jwtUser->email ?: '';
     $account->tel       = $jwtUser->tel ?? '';
 
