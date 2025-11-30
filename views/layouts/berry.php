@@ -28,26 +28,29 @@ $this->beginPage();
 <?php $this->beginBody() ?>
 
 <?php
-// ===== SweetAlert2 Flash Messages =====
-$flashes = Yii::$app->session->getAllFlashes(true); // true = clear หลังอ่าน
+// ===== SweetAlert2 Flash Messages (show 3 seconds) =====
+$flashes = Yii::$app->session->getAllFlashes(true);
+
 foreach ($flashes as $type => $message) {
-    // map icon ให้ตรง SweetAlert2
-    $icon = in_array($type, ['success', 'error', 'warning', 'info', 'question'], true)
+
+    $icon = in_array($type, ['success','error','warning','info','question'], true)
         ? $type
         : 'info';
 
-    // กัน text พัง JS โดยใช้ Json::encode
     $jsMessage = \yii\helpers\Json::encode($message);
     $jsTitle   = \yii\helpers\Json::encode('แจ้งเตือน');
 
     $js = <<<JS
 Swal.fire({
-  icon: '{$icon}',
-  title: {$jsTitle},
-  text: {$jsMessage},
-  confirmButtonText: 'ตกลง'
+    icon: '{$icon}',
+    title: {$jsTitle},
+    text: {$jsMessage},
+    timer: 3000,            // ⏱ แสดง 3 วินาที
+    timerProgressBar: true, // แถบเวลา
+    showConfirmButton: false
 });
 JS;
+
     $this->registerJs($js);
 }
 ?>

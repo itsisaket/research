@@ -70,7 +70,6 @@ public function actionIndex()
 
     // 1) ถ้าล็อกอินแล้ว → ไปหน้า report
     if (!$user->isGuest) {
-        Yii::$app->session->setFlash('success', 'สวัสดีผู้ใช้ที่ผ่านการยืนยันตัวตนแล้ว');
         return $this->redirect(['report/index']);
     }
 
