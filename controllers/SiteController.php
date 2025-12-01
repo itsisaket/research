@@ -11,6 +11,7 @@ use app\models\User;
 use app\models\Account;
 use app\components\ApiAuthService;
 use yii\httpclient\Client;
+use yii\helpers\Url;  
 
 class SiteController extends Controller
 {
