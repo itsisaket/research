@@ -65,43 +65,40 @@ class SiteController extends Controller
         }
     }
 
+use yii\helpers\Url;
+
 public function actionIndex()
 {
     $user    = Yii::$app->user;
     $request = Yii::$app->request;
 
-    // 1) ล็อกอินแล้ว → ไป report
+    // 1) ถ้าล็อกอินแล้ว → ไปหน้า report/index เสมอ
     if (!$user->isGuest) {
         return $this->redirect(['report/index']);
     }
 
-    // 2) ยังไม่ล็อกอิน + มี POST token → ตรวจ token เพื่อ login
+    // 2) ยังเป็น Guest แต่มี POST token (มาจาก JS หน้า site/index เก่า)
+    //    เราไม่ต้อง login เอง → แค่ส่งต่อไปหน้า login ให้มันจัดการ token
     if ($request->isPost) {
         $token = trim((string)$request->post('token', ''));
 
         if ($token !== '') {
-            try {
-                $account = \app\models\Account::fromToken($token, true);
-
-                if ($account && Yii::$app->user->login($account, 0)) {
-                    return $this->redirect(['report/index']);
-                }
-
-            } catch (\Throwable $e) {
-                Yii::error($e->getMessage(), 'sso.auto-login');
-            }
-
-            // token ผิด หรือ login fail → guest → ไป report
-            return $this->redirect(['report/index']);
+            // JS ฝั่ง browser เก็บ token ไว้ใน localStorage แล้ว
+            // เราแค่ส่งผู้ใช้ไปหน้า login พร้อม redirect กลับ report/index หลัง login เสร็จ
+            return $this->redirect([
+                'site/login',
+                'redirect' => Url::to(['/report/index'], true),
+            ]);
         }
 
-        // POST แต่ไม่มี token → guest → report
+        // POST แต่ไม่มี token → ปล่อยเป็น guest ไปหน้า report
         return $this->redirect(['report/index']);
     }
 
-    // 3) GET ปกติ + guest → ไป report
+    // 3) GET ปกติ + ยังเป็น Guest → ไม่ต้องค้างอยู่ที่ index → ส่งไปหน้า report เลย
     return $this->redirect(['report/index']);
 }
+
 
 
 
