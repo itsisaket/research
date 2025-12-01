@@ -98,14 +98,14 @@ class SiteController extends Controller
     {
         // ถ้าล็อกอินอยู่แล้ว → กลับหน้าแรก
         if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
+            return $this->redirect(['report/index']);
         }
 
         // ลอง auto-login จาก cookie ของ SSO ถ้ามี
         try {
             Yii::$app->sso->tryAutoLoginFromCookie();
             if (!Yii::$app->user->isGuest) {
-                return $this->goHome();
+                return $this->redirect(['report/index']);
             }
         } catch (\Throwable $e) {
             Yii::warning('SSO auto-login failed: ' . $e->getMessage(), 'sso.sync');

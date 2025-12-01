@@ -103,8 +103,9 @@ $index  = Url::to(['/site/index']);
 
 <script>
 const CSRF_TOKEN = <?= json_encode($csrf) ?>;
-const SYNC_URL   = <?= json_encode($sync) ?>;   // ← controller ที่จะสร้าง/อัปเดต tb_user และตั้ง position=1 ถ้าเป็น user ใหม่
+const SYNC_URL   = <?= json_encode($sync) ?>;   
 const INDEX_URL  = <?= json_encode($index) ?>;
+const REPORT_URL = <?= json_encode(Url::to(['/report/index'], true)) ?>;
 const API_PROFILE_URL = 'https://sci-sskru.com/authen/profile';
 
 const $ = (id)=>document.getElementById(id);
@@ -193,6 +194,7 @@ function showCta(msg, type='warning'){
 
   if (Number.isFinite(payload.exp) && (payload.exp + leeway) < now) {
     showCta('โทเคนหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง');
+    window.location.href = REPORT_URL;
     return;
   }
   if (!personalId){
