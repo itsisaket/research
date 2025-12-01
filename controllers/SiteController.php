@@ -66,8 +66,6 @@ class SiteController extends Controller
         }
     }
 
-use yii\helpers\Url;
-
 public function actionIndex()
 {
     $user    = Yii::$app->user;
