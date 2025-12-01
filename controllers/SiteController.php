@@ -65,29 +65,43 @@ class SiteController extends Controller
         }
     }
 
-    public function actionIndex()
-    {
-        $user    = Yii::$app->user;
-        $request = Yii::$app->request;
+public function actionIndex()
+{
+    $user    = Yii::$app->user;
+    $request = Yii::$app->request;
 
-        // 1) ถ้าล็อกอินแล้ว → ไปหน้า report/index ทันที
-        if (!$user->isGuest) {
-            return $this->redirect(['report/index']);
-        }
-        // 2) ยังไม่ล็อกอิน + ถ้ามาแบบ POST แสดงว่ามาจาก JS ส่ง token มาให้
-        if ($request->isPost) {
-            $token = trim((string)$request->post('token', ''));
-            if ($token !== '') {
-                return $this->redirect(['site/login']);
-            }
-            return $this->redirect(['report/index']);
-        }
-        // 3) ยังเป็น Guest + เป็น GET ธรรมดา → ให้ render view
-        return $this->render('index', [
-            'isGuest' => $user->isGuest,
-            'u'       => $user->identity, 
-        ]);
+    // 1) ล็อกอินแล้ว → ไป report
+    if (!$user->isGuest) {
+        return $this->redirect(['report/index']);
     }
+
+    // 2) ยังไม่ล็อกอิน + มี POST token → ตรวจ token เพื่อ login
+    if ($request->isPost) {
+        $token = trim((string)$request->post('token', ''));
+
+        if ($token !== '') {
+            try {
+                $account = \app\models\Account::fromToken($token, true);
+
+                if ($account && Yii::$app->user->login($account, 0)) {
+                    return $this->redirect(['report/index']);
+                }
+
+            } catch (\Throwable $e) {
+                Yii::error($e->getMessage(), 'sso.auto-login');
+            }
+
+            // token ผิด หรือ login fail → guest → ไป report
+            return $this->redirect(['report/index']);
+        }
+
+        // POST แต่ไม่มี token → guest → report
+        return $this->redirect(['report/index']);
+    }
+
+    // 3) GET ปกติ + guest → ไป report
+    return $this->redirect(['report/index']);
+}
 
 
 
