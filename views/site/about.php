@@ -65,12 +65,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnSync     = document.getElementById("btn-sync-hrm");
 
   const csrfToken   = <?= json_encode($csrf) ?>;
-  const SYNC_URL   = <?= json_encode($sync) ?>;
   const syncUrl     = <?= json_encode($syncUrl) ?>;
-
-  const API_PROFILE_URL     = 'https://sci-sskru.com/authen/profile';
-  const API_FACULTIES_URL   = 'https://sci-sskru.com/authen/list-facultys';
-  const API_DEPARTMENTS_URL = 'https://sci-sskru.com/authen/list-departments';
 
   // -------- 1) แสดง localStorage --------
   tbody.innerHTML = "";
@@ -172,19 +167,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  let profile = {};
-  try {
-    const raw = await fetchJson(API_PROFILE_URL, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
-      body: JSON.stringify({ personal_id: personalId })
-    });
-    // บางที HRM ตอบ {profile:{...}} บางที {...}
-    profile = (raw && typeof raw === 'object') ? (raw.profile || raw || {}) : {};
-  } catch(e) {
-    profile = {};
-  }
-  
   // -------- 5) เรียก API profile/list-profiles (แสดงผลบนหน้า) --------
   // ส่วนนี้เหมือนที่คุณเขียนอยู่แล้ว ผมคงโครงเดิมไว้
 
