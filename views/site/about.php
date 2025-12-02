@@ -39,14 +39,24 @@ $syncUrl = Url::to(['/site/up-user-json']);
   <h5>JWT Payload (จาก <code>hrm-sci-token</code>)</h5>
   <pre id="jwt-json" style="background:#fff7e6; padding:1rem; border:1px solid #ddd;">ยังไม่มีข้อมูล</pre>
 </div>
-
 <!-- Profile result -->
 <div class="container py-4">
   <h5>ข้อมูลผู้ใช้ (JSON จาก API <code>/authen/profile</code>)</h5>
   <div class="small text-muted mb-2" id="profile-meta"></div>
   <pre id="profile-json" style="background:#f8f9fa; padding:1rem; border:1px solid #ddd;">ยังไม่มีข้อมูล</pre>
 </div>
-
+<!-- List facultys result (ใหม่) -->
+<div class="container py-4">
+  <h5>ข้อมูลรายชื่อคณะ (JSON จาก API <code>/authen/list-facultys</code>)</h5>
+  <div class="small text-muted mb-2" id="fac-meta"></div>
+  <pre id="fac-json" style="background:#e8f5e9; padding:1rem; border:1px solid #ddd;">ยังไม่มีข้อมูล</pre>
+</div>
+<!-- List departments result (ใหม่) -->
+<div class="container py-4">
+  <h5>ข้อมูลรายชื่อภาควิชา (JSON จาก API <code>/authen/list-departments</code>)</h5>
+  <div class="small text-muted mb-2" id="dept-meta"></div>
+  <pre id="dept-json" style="background:#fff3e0; padding:1rem; border:1px solid #ddd;">ยังไม่มีข้อมูล</pre>
+</div>
 <!-- List profiles result -->
 <div class="container py-4">
   <h5>ข้อมูลรายชื่อ (JSON จาก API <code>/authen/list-profiles</code>)</h5>
@@ -54,12 +64,6 @@ $syncUrl = Url::to(['/site/up-user-json']);
   <pre id="list-json" style="background:#f1f8ff; padding:1rem; border:1px solid #ddd;">ยังไม่มีข้อมูล</pre>
 </div>
 
-<!-- List facultys result (ใหม่) -->
-<div class="container py-4">
-  <h5>ข้อมูลรายชื่อคณะ (JSON จาก API <code>/authen/list-facultys</code>)</h5>
-  <div class="small text-muted mb-2" id="fac-meta"></div>
-  <pre id="fac-json" style="background:#e8f5e9; padding:1rem; border:1px solid #ddd;">ยังไม่มีข้อมูล</pre>
-</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
@@ -71,6 +75,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const listMeta    = document.getElementById("list-meta");
   const facPre      = document.getElementById("fac-json");
   const facMeta     = document.getElementById("fac-meta");
+  const deptPre     = document.getElementById("dept-json");
+  const deptMeta    = document.getElementById("dept-meta");
   const btnSync     = document.getElementById("btn-sync-hrm");
 
   const csrfToken   = <?= json_encode($csrf) ?>;
@@ -124,6 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     profilePre.textContent = "ไม่พบ hrm-sci-token ใน localStorage";
     listPre.textContent    = "ไม่พบ hrm-sci-token ใน localStorage";
     facPre.textContent     = "ไม่พบ hrm-sci-token ใน localStorage";
+    deptPre.textContent    = "ไม่พบ hrm-sci-token ใน localStorage";
 
     if (btnSync) {
       btnSync.disabled = true;
@@ -255,6 +262,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (e6) {
       facMeta.textContent = "เรียก list-facultys ไม่สำเร็จ";
       facPre.textContent  = e6.message || String(e6);
+    }
+  }
+
+  // 5.4 list-departments (ใหม่)
+  try {
+    const dept = await fetchJson("https://sci-sskru.com/authen/list-departments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      // ถ้า API รองรับ filter เช่น faculty_id ค่อยมาเติมภายหลัง
+      body: JSON.stringify({})
+    });
+    deptMeta.textContent = "สำเร็จด้วย: POST https://sci-sskru.com/authen/list-departments";
+    show(deptPre, dept);
+  } catch (e7) {
+    try {
+      const deptGet = await fetchJson(
+        "https://sci-sskru.com/authen/list-departments",
+        { method: "GET", headers: { "Authorization": "Bearer " + token } }
+      );
+      deptMeta.textContent = "สำเร็จด้วย: GET https://sci-sskru.com/authen/list-departments";
+      show(deptPre, deptGet);
+    } catch (e8) {
+      deptMeta.textContent = "เรียก list-departments ไม่สำเร็จ";
+      deptPre.textContent  = e8.message || String(e8);
     }
   }
 });
