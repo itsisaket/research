@@ -83,16 +83,6 @@ public function behaviors()
             ],
         ];
     }
-    public function actionError()
-    {
-        $exception = Yii::$app->errorHandler->exception;
-        if ($exception !== null) {
-            return $this->render('error', [
-                'name' => $exception->getName(),
-                'message' => Yii::$app->params['showErrorDetail'] ? $exception->getMessage() : 'เกิดข้อผิดพลาดในระบบ',
-            ]);
-        }
-    }
 
     public function actionIndex()
     {

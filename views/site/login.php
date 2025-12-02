@@ -10,10 +10,10 @@ $this->params['breadcrumbs'][] = $this->title;
 $this->params['isLoginPage'] = true;
 
 $csrf   = Yii::$app->request->getCsrfToken();
-$sync   = Url::to(['/site/my-profile']); 
-$logout = Url::to(['/site/logout']);
-$index  = Url::to(['/site/index']);
-$report = Url::to(['/report/index']);
+$sync   = Url::to(['/site/my-profile'], true);
+$logout = Url::to(['/site/logout'], true);
+$index  = Url::to(['/site/index'], true);
+$report = Url::to(['/report/index'], true);
 ?>
 <div class="d-flex justify-content-center align-items-center min-vh-100 bg-light">
   <div class="container text-center" style="max-width:720px;">
@@ -188,11 +188,24 @@ function stopPlaceholders(){
   const now = Math.floor(Date.now()/1000);
 
   if (Number.isFinite(payload.exp) && (payload.exp + leeway) < now) {
+    // 👉 เคลียร์ token ทันที
+    try {
+      localStorage.removeItem('hrm-sci-token');
+      sessionStorage.clear();
+    } catch (e) {}
+
     swalAuto('warning', 'โทเคนหมดอายุ',
       'โทเคนหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง', 2000, true);
     return;
   }
+
   if (!personalId){
+    // 👉 เคลียร์ token กรณี payload ไม่สมบูรณ์
+    try {
+      localStorage.removeItem('hrm-sci-token');
+      sessionStorage.clear();
+    } catch (e) {}
+
     swalAuto('error', 'ข้อมูลโทเคนไม่ถูกต้อง',
       'พบโทเคน แต่ไม่มี personal_id หรือ uname ใน payload', 2500, true);
     return;
@@ -351,6 +364,12 @@ function stopPlaceholders(){
           break;
       }
     }
+
+        // ก่อน swalAuto ในส่วน error case
+    try {
+      localStorage.removeItem('hrm-sci-token');
+      sessionStorage.clear();
+    } catch (e) {}
 
     swalAuto('warning', 'แจ้งเตือน', msg, 3000, true);
 

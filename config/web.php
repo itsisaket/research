@@ -126,6 +126,7 @@ $config = [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'enableStrictParsing' => false,
+            'hostInfo' => 'https://sci-sskru.com',
             'rules' => [
             ],
         ],
