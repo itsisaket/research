@@ -15,6 +15,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <p>
         <?= Html::a('เพิ่มข้อมูล', ['create'], ['class' => 'btn btn-success']) ?>
+        <?= Html::a('นำเข้าจาก Excel', ['import'], ['class' => 'btn btn-info']) ?>
     </p>
 
     <?= $this->render('_search', ['model' => $searchModel]); ?>
