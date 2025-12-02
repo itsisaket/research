@@ -133,7 +133,6 @@ class SiteController extends Controller
             $profile = is_array($data['profile'] ?? null) ? $data['profile'] : [];
 
             if (!$token) {
-            //    $session->setFlash('warning', 'ไม่สามารถ sync ได้: ไม่พบ token จาก HRM-SCI');
                 return ['ok' => false, 'error' => 'no token'];
             }
 
@@ -158,7 +157,6 @@ class SiteController extends Controller
                 }
             } catch (\Throwable $e) {
                 Yii::warning('Fetch profile failed: ' . $e->getMessage(), 'sso.sync');
-            //    $session->setFlash('warning', 'ไม่สามารถดึงข้อมูลโปรไฟล์จาก HRM ได้ จะใช้ข้อมูลเท่าที่มีจาก browser');
             }
 
             // 3) แปลง token + profile เป็น user object ชั่วคราวจาก JWT
@@ -166,7 +164,6 @@ class SiteController extends Controller
                 $jwtUser = User::fromToken($token, $profile);
             } catch (\Throwable $e) {
                 Yii::error('User::fromToken failed: ' . $e->getMessage(), 'sso.sync');
-            //    $session->setFlash('danger', 'ไม่สามารถแปลงข้อมูล token เป็นผู้ใช้ได้');
                 return [
                     'ok'      => false,
                     'error'   => 'fromToken error',
@@ -271,7 +268,7 @@ class SiteController extends Controller
             $session->set('ty', $account->org_id);
 
             // 9) สำเร็จ
-            $session->setFlash('success', 'เชื่อมต่อบัญชี HRM-SCI กับระบบงานวิจัยสำเร็จแล้ว');
+            //$session->setFlash('success', 'เชื่อมต่อบัญชี HRM-SCI กับระบบงานวิจัยสำเร็จแล้ว');
 
             return [
                 'ok'     => true,
@@ -396,7 +393,7 @@ public function actionUpUserJson($personal_id = null)
 
         if (!isset($json['data']) || !is_array($json['data']) || count($json['data']) === 0) {
             $session->setFlash('warning', 'ไม่พบข้อมูลบุคลากรจากระบบ HRM');
-            return $this->redirect(['site/about']);
+            return $this->redirect(['site/index']);
         }
 
         // 3) LOOP sync ทุกเรคคอร์ด
