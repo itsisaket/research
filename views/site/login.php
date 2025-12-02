@@ -175,16 +175,9 @@ function stopPlaceholders(){
 
   const token = localStorage.getItem('hrm-sci-token');
 
-  // 1) ไม่มี token → แจ้งเตือน + redirect ไปหน้า report
+  // 1) ไม่มี token → redirect ไปหน้า report
   if (!token) {
-
-      // เก็บ DOM ให้โล่ง ๆ ไว้
-      statusEl.className = 'alert alert-warning mb-4';
-      statusEl.textContent = 'ยังไม่มี token ในระบบ...';
-      loginCta.classList.add('d-none');
-      card.classList.add('d-none');
-      actions.classList.add('d-none');
-
+      window.location.href = REPORT_URL;
       return;
   }
 
