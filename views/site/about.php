@@ -79,8 +79,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const facMeta     = document.getElementById("fac-meta");
   const deptPre     = document.getElementById("dept-json");
   const deptMeta    = document.getElementById("dept-meta");
-  const btnSync     = document.getElementById("btn-sync-hrm");
-  
+
+  const btnSyncUser = document.getElementById("btn-sync-hrm");
+  const btnSyncFac  = document.getElementById("btn-sync-fac");
+  const btnSyncDept = document.getElementById("btn-sync-dept");
 
   const csrfToken   = <?= json_encode($csrf) ?>;
   const syncUrl     = <?= json_encode($syncUrl) ?>;
@@ -128,6 +130,36 @@ document.addEventListener("DOMContentLoaded", async () => {
       : JSON.stringify(data, null, 2);
   }
 
+  // helper ส่งฟอร์ม sync ไป PHP
+  function postSync(url, token, extra = {}) {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = url;
+
+    const inpCsrf = document.createElement("input");
+    inpCsrf.type  = "hidden";
+    inpCsrf.name  = "_csrf";
+    inpCsrf.value = csrfToken;
+    form.appendChild(inpCsrf);
+
+    const inpToken = document.createElement("input");
+    inpToken.type  = "hidden";
+    inpToken.name  = "token";
+    inpToken.value = token;
+    form.appendChild(inpToken);
+
+    Object.keys(extra).forEach(k => {
+      const inp = document.createElement("input");
+      inp.type  = "hidden";
+      inp.name  = k;
+      inp.value = extra[k];
+      form.appendChild(inp);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  }
+
   // -------- 3) ดึง token และ personal_id จาก JWT --------
   const token = localStorage.getItem("hrm-sci-token");
   if (!token){
@@ -137,10 +169,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     facPre.textContent     = "ไม่พบ hrm-sci-token ใน localStorage";
     deptPre.textContent    = "ไม่พบ hrm-sci-token ใน localStorage";
 
-    if (btnSync) {
-      btnSync.disabled = true;
-      btnSync.textContent = "ไม่มี token SSO (Sync ใช้งานไม่ได้)";
-    }
+    // disable ปุ่มทั้งหมด
+    [btnSyncUser, btnSyncFac, btnSyncDept].forEach(btn => {
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent += " (ไม่มี token)";
+      }
+    });
+
     return;
   }
 
@@ -151,46 +187,36 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!personalId){
     profilePre.textContent = "ไม่พบ personal_id ใน JWT payload";
     listPre.textContent    = "ไม่พบ personal_id ใน JWT payload";
-    // list-facultys ส่วนใหญ่ไม่ต้องใช้ personal_id เลยยังไม่ block ไว้
   }
 
-  // -------- 4) Event ปุ่ม Sync: ส่ง token + personal_id ไปให้ PHP --------
-  if (btnSync) {
-    btnSync.addEventListener("click", () => {
-      if (!confirm("ต้องการ Sync รายชื่อบุคลากรจาก HRM หรือไม่?")) {
-        return;
-      }
+  // -------- 4) Events ปุ่ม Sync ส่ง token → PHP --------
 
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = syncUrl;
-
-      const inpCsrf = document.createElement("input");
-      inpCsrf.type  = "hidden";
-      inpCsrf.name  = "_csrf";
-      inpCsrf.value = csrfToken;
-      form.appendChild(inpCsrf);
-
-      const inpToken = document.createElement("input");
-      inpToken.type  = "hidden";
-      inpToken.name  = "token";
-      inpToken.value = token;
-      form.appendChild(inpToken);
-
-      if (personalId) {
-        const inpPid = document.createElement("input");
-        inpPid.type  = "hidden";
-        inpPid.name  = "personal_id";
-        inpPid.value = personalId;
-        form.appendChild(inpPid);
-      }
-
-      document.body.appendChild(form);
-      form.submit();
+  // 4.1 บุคลากร (tb_user)
+  if (btnSyncUser) {
+    btnSyncUser.addEventListener("click", () => {
+      if (!confirm("ต้องการ Sync รายชื่อบุคลากรจาก API หรือไม่?")) return;
+      const extra = personalId ? { personal_id: personalId } : {};
+      postSync(syncUrl, token, extra);
     });
   }
 
-  // -------- 5) เรียก API profile/list-profiles (แสดงผลบนหน้า) --------
+  // 4.2 คณะ (tb_organize)
+  if (btnSyncFac) {
+    btnSyncFac.addEventListener("click", () => {
+      if (!confirm("ต้องการ Sync ข้อมูลคณะจาก API หรือไม่?")) return;
+      postSync(syncFacUrl, token);
+    });
+  }
+
+  // 4.3 ภาควิชา (tb_department)
+  if (btnSyncDept) {
+    btnSyncDept.addEventListener("click", () => {
+      if (!confirm("ต้องการ Sync ข้อมูลภาควิชาจาก API หรือไม่?")) return;
+      postSync(syncDeptUrl, token);
+    });
+  }
+
+  // -------- 5) เรียก API profile/list-* (แสดงผลบนหน้า) --------
 
   // 5.1 profile
   try {
@@ -244,7 +270,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // 5.3 list-facultys (ใหม่)
+  // 5.3 list-facultys
   try {
     const fac = await fetchJson("https://sci-sskru.com/authen/list-facultys", {
       method: "POST",
@@ -252,7 +278,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + token
       },
-      body: JSON.stringify({})  // ถ้า API รองรับ filter อื่น ๆ ค่อยเติมทีหลัง
+      body: JSON.stringify({})
     });
     facMeta.textContent = "สำเร็จด้วย: POST https://sci-sskru.com/authen/list-facultys";
     show(facPre, fac);
@@ -270,7 +296,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // 5.4 list-departments (ใหม่)
+  // 5.4 list-departments
   try {
     const dept = await fetchJson("https://sci-sskru.com/authen/list-departments", {
       method: "POST",
@@ -278,7 +304,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + token
       },
-      // ถ้า API รองรับ filter เช่น faculty_id ค่อยมาเติมภายหลัง
       body: JSON.stringify({})
     });
     deptMeta.textContent = "สำเร็จด้วย: POST https://sci-sskru.com/authen/list-departments";
@@ -298,3 +323,4 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 </script>
+
