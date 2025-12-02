@@ -16,42 +16,56 @@ $this->beginPage();
   <?= Html::csrfMetaTags() ?>
   <title>ระบบจัดการวิจัย LASC SSKRU</title>
   <?php $this->head() ?>
-      <?php
-  // SweetAlert2 CDN
+
+  <?php
+  // โหลด SweetAlert2 แค่ครั้งเดียว
   $this->registerJsFile(
       'https://cdn.jsdelivr.net/npm/sweetalert2@11',
       ['position' => \yii\web\View::POS_HEAD]
   );
   ?>
 </head>
+
 <body data-pc-preset="preset-1">
 <?php $this->beginBody() ?>
 
 <?php
-// ===== SweetAlert2 Flash Messages (show 3 seconds) =====
-$flashes = Yii::$app->session->getAllFlashes(true);
+// =============================================
+// SWEETALERT FLASH MESSAGE
+// =============================================
+$flashes = Yii::$app->session->getAllFlashes(true);  // true = เคลียร์อัตโนมัติ
 
-foreach ($flashes as $type => $message) {
+if (!empty($flashes)) {
+    $delay = 0;
 
-    $icon = in_array($type, ['success','error','warning','info','question'], true)
-        ? $type
-        : 'info';
+    foreach ($flashes as $type => $message) {
 
-    $jsMessage = \yii\helpers\Json::encode($message);
-    $jsTitle   = \yii\helpers\Json::encode('แจ้งเตือน');
+        // map icon ของ SweetAlert
+        $icon = in_array($type, ['success','error','warning','info','question'])
+                ? $type
+                : 'info';
 
-    $js = <<<JS
-Swal.fire({
-    icon: '{$icon}',
-    title: {$jsTitle},
-    text: {$jsMessage},
-    timer: 5000,            // ⏱ แสดง 5 วินาที
-    timerProgressBar: true, // แถบเวลา
-    showConfirmButton: false
-});
+        $msg = Json::encode($message);
+        $title = Json::encode('แจ้งเตือน');
+
+        // ถ้ามีหลาย flash → ให้แสดงทีละอันโดยเว้นช่วง 500ms เพื่อป้องกันทับกัน
+        $js = <<<JS
+setTimeout(function() {
+    Swal.fire({
+        icon: '{$icon}',
+        title: {$title},
+        text: {$msg},
+        timer: 5000,
+        timerProgressBar: true,
+        showConfirmButton: false
+    });
+}, {$delay});
 JS;
 
-    $this->registerJs($js);
+        $this->registerJs($js);
+
+        $delay += 5500; // 5 วินาที + buffer 0.5 วินาที
+    }
 }
 ?>
 

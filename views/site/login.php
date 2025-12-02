@@ -21,7 +21,7 @@ $report = Url::to(['/report/index']);
 
     <div id="status" class="alert alert-info mb-4">กำลังตรวจสอบ...</div>
 
-    <!-- เมื่อยังไม่มี token ให้กดไป login HRM -->
+    <!-- เมื่อยังไม่มี token ให้กดไป login HRM (ตอนนี้แทบไม่ได้ใช้แล้วเพราะ redirect ทุกเคส) -->
     <div id="login-cta" class="d-none">
       <a id="btn-login" href="https://sci-sskru.com/hrm/login" class="btn btn-success">คลิ๊กเข้าสู่ระบบ</a>
       <a href="<?= $report ?>" class="btn btn-outline-secondary ms-2" data-pjax="0">กลับหน้ารายงาน</a>
@@ -118,6 +118,22 @@ function redirectToReport(delayMs = 1500) {
   }, delayMs);
 }
 
+/* --------- helper SweetAlert --------- */
+function swalAuto(icon, title, text, delay = 1500, doRedirect = true) {
+  Swal.fire({
+    icon: icon,
+    title: title,
+    text: text,
+    timer: delay,
+    timerProgressBar: true,
+    showConfirmButton: false
+  }).then(() => {
+    if (doRedirect) {
+      redirectToReport(0);
+    }
+  });
+}
+
 /* --------- JWT utils --------- */
 function parseJwt(token){
   if (!token) return null;
@@ -150,20 +166,6 @@ function stopPlaceholders(){
   $('avatar').classList.remove('bg-light');
 }
 
-/* --------- แสดงปุ่ม login แต่ "ไม่ลบ" token --------- */
-function showCta(msg, type='warning'){
-  const statusEl = $('status');
-  const loginCta = $('login-cta');
-  const card     = $('profile-card');
-  const actions  = $('actions-logout');
-
-  statusEl.className = 'alert alert-' + type + ' mb-4';
-  statusEl.textContent = msg;
-  loginCta.classList.remove('d-none');
-  card.classList.add('d-none');
-  actions.classList.add('d-none');
-}
-
 /* --------- main flow --------- */
 (async function render(){
   const statusEl  = $('status');
@@ -173,19 +175,18 @@ function showCta(msg, type='warning'){
 
   const token = localStorage.getItem('hrm-sci-token');
 
-  // 1) ไม่มีโทเคนเลย → ให้ผู้ใช้กดไป login HRM (ยังไม่ redirect อัตโนมัติ)
+  // 1) ไม่มี token → แจ้งเตือน + redirect ไปหน้า report
   if (!token) {
-      const statusEl = $('status');
+      swalAuto('warning', 'แจ้งเตือน',
+        'ยังไม่มี token ในระบบ ขอเปลี่ยนเส้นทางไปหน้ารายงาน...', 1500, true);
+
+      // เก็บ DOM ให้โล่ง ๆ ไว้
       statusEl.className = 'alert alert-warning mb-4';
-      statusEl.textContent = 'ยังไม่มี token ในระบบ ขอเปลี่ยนเส้นทางไปหน้ารายงาน...';
+      statusEl.textContent = 'ยังไม่มี token ในระบบ...';
+      loginCta.classList.add('d-none');
+      card.classList.add('d-none');
+      actions.classList.add('d-none');
 
-      // ไม่แสดงปุ่ม login HRM
-      $('login-cta').classList.add('d-none');
-      $('profile-card').classList.add('d-none');
-      $('actions-logout').classList.add('d-none');
-
-      // redirect อัตโนมัติ 1.5 วินาที
-      redirectToReport(1500);
       return;
   }
 
@@ -196,18 +197,17 @@ function showCta(msg, type='warning'){
   const now = Math.floor(Date.now()/1000);
 
   if (Number.isFinite(payload.exp) && (payload.exp + leeway) < now) {
-    showCta('โทเคนหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง');
-    // ✅ แสดงข้อความสักครู่ แล้วไปหน้า report/index
-    redirectToReport(2000);
+    swalAuto('warning', 'โทเคนหมดอายุ',
+      'โทเคนหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง', 2000, true);
     return;
   }
   if (!personalId){
-    showCta('พบโทเคน แต่ไม่มี personal_id/uname ใน payload', 'danger');
-    redirectToReport(2500);
+    swalAuto('error', 'ข้อมูลโทเคนไม่ถูกต้อง',
+      'พบโทเคน แต่ไม่มี personal_id หรือ uname ใน payload', 2500, true);
     return;
   }
 
-  // 3) แสดง UI ว่า token ใช้ได้
+  // 3) แสดง UI ว่า token ใช้ได้ (แสดงในหน้า login ชั่วครู่)
   statusEl.className = 'alert alert-success mb-4';
   statusEl.textContent = 'ยืนยันโทเคนแล้ว (ID: ' + personalId + ')';
   loginCta.classList.add('d-none');
@@ -293,10 +293,8 @@ function showCta(msg, type='warning'){
     } catch (e) {
       console.error('❌ SYNC: JSON parse error. Raw response:', text);
 
-      statusEl.className = 'alert alert-danger mb-4';
-      statusEl.textContent = 'เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON (อาจเป็นหน้า error / CSRF / 500)';
-      // ✅ แสดง error แล้วกลับหน้า report
-      redirectToReport(3000);
+      swalAuto('error', 'เกิดข้อผิดพลาด',
+        'เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON (อาจเป็นหน้า error / CSRF / 500)', 3000, true);
       return;
     }
 
@@ -304,9 +302,8 @@ function showCta(msg, type='warning'){
 
     // ✅ กรณีสำเร็จ
     if (res.ok && data && data.ok) {
-      statusEl.className = 'alert alert-success mb-4';
-      statusEl.textContent = 'เข้าสู่ระบบสำเร็จ กำลังเปลี่ยนไปยังหน้ารายงาน...';
-      redirectToReport(1000);
+      swalAuto('success', 'เข้าสู่ระบบสำเร็จ',
+        'กำลังเปลี่ยนไปยังหน้ารายงาน...', 1000, true);
       return;
     }
 
@@ -364,21 +361,18 @@ function showCta(msg, type='warning'){
       }
     }
 
-    statusEl.className = 'alert alert-warning mb-4';
-    statusEl.textContent = msg;
-    loginCta.classList.remove('d-none');
-    // ✅ แสดง warning สักพัก แล้วกลับหน้า report
-    redirectToReport(3000);
+    swalAuto('warning', 'แจ้งเตือน', msg, 3000, true);
 
   } catch (e) {
     console.error('❌ SYNC /site/my-profile network/JS error:', e);
 
-    statusEl.className = 'alert alert-danger mb-4';
-    statusEl.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ (network หรือ JavaScript error) กรุณาลองใหม่หรือติดต่อผู้ดูแล';
-
-    loginCta.classList.remove('d-none');
-    // ✅ แสดง error แล้วกลับหน้า report
-    redirectToReport(3000);
+    swalAuto(
+      'error',
+      'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้',
+      'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ (network หรือ JavaScript error) กรุณาลองใหม่หรือติดต่อผู้ดูแล',
+      3000,
+      true
+    );
   }
 })();
 
