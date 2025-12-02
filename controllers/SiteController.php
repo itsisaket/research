@@ -69,40 +69,13 @@ class SiteController extends Controller
     public function actionIndex()
     {
         $user    = Yii::$app->user;
-        $request = Yii::$app->request;
 
         // 1) ถ้าล็อกอินแล้ว → ไปหน้า report/index เสมอ
         if (!$user->isGuest) {
             return $this->redirect(['report/index']);
+        }else{
+            return $this->redirect(['site/login']);
         }
-
-        // 2) ยังเป็น Guest แต่มี POST token (มาจาก JS หน้า site/index)
-        //    เราไม่ต้อง login เอง → แค่ส่งต่อไปหน้า login ให้มันจัดการ token
-        if ($request->isPost) {
-            $token = trim((string)$request->post('token', ''));
-
-            if ($token !== '') {
-                // จะเก็บ token ใน session ด้วยก็ได้ เผื่อใช้ต่อ
-                // Yii::$app->session->set('hrm_sci_token', $token);
-
-                return $this->redirect([
-                    'site/login',
-                    'redirect' => Url::to(['/report/index'], true),
-                ]);
-            }
-
-            // POST แต่ไม่มี token → ปล่อยเป็น guest ไปหน้า report
-            return $this->redirect(['report/index']);
-        }
-
-        // 3) GET ปกติ + ยังเป็น Guest
-        //    → ให้ render view 'index' เพื่อให้ JS เช็ค localStorage:
-        //       - ถ้าไม่มี token → redirect ไป report/index (Guest)
-        //       - ถ้ามี token → สร้าง form POST กลับมาที่ /site/index (โค้ดข้อ 2 จะทำงาน)
-        return $this->render('index', [
-            'isGuest' => $user->isGuest,
-            'u'       => $user->identity,
-        ]);
     }
 
 
