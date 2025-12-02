@@ -38,12 +38,26 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    // 2) มี token แล้ว → ให้ไปหน้า site/login
-    //    โดยแนบ redirect=report/index ไปด้วย
-    const redirectUrl = encodeURIComponent('<?= Url::to(['/report/index'], true) ?>');
-    const loginUrl    = '<?= Url::to(['/site/login']) ?>' + '?redirect=' + redirectUrl;
+    // 2) กันส่ง token ซ้ำ (ป้องกัน loop)
+    const SENT_FLAG = 'hrm-sci-sent-token';
+    if (sessionStorage.getItem(SENT_FLAG) === '1') {
+        return;
+    }
+    sessionStorage.setItem(SENT_FLAG, '1');
 
-    window.location.href = loginUrl;
+    // 3) มี token → สร้างฟอร์ม POST ส่งไปให้ /site/index
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '<?= Url::to(['/site/index']) ?>';
+
+    const inputToken = document.createElement('input');
+    inputToken.type  = 'hidden';
+    inputToken.name  = 'token';
+    inputToken.value = token;
+    form.appendChild(inputToken);
+
+    document.body.appendChild(form);
+    form.submit();
 });
 </script>
 
