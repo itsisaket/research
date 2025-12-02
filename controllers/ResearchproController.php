@@ -17,9 +17,8 @@ use app\models\District;
 
 use yii\web\UploadedFile;
 use app\models\ResearchImportForm;
-
-// เพิ่ม use ของ PhpSpreadsheet
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class ResearchproController extends Controller
 {
@@ -48,7 +47,7 @@ class ResearchproController extends Controller
 
                     // ✅ เฉพาะ admin (position = 4) แก้ไข/ลบ/สร้างได้
                     [
-                        'actions' => ['create', 'update', 'delete'],
+                        'actions' => ['create', 'update', 'delete','import'],
                         'allow'   => true,
                         'roles'   => ['admin'],
                     ],
@@ -63,7 +62,6 @@ class ResearchproController extends Controller
         ];
     }
 
-
     public function actionIndex()
     {
         $session = Yii::$app->session;
@@ -76,9 +74,12 @@ class ResearchproController extends Controller
             $dataProvider->query->andWhere(['org_id' => $ty]);
         }
 
+        $importModel = new ResearchImportForm();
+
         return $this->render('index', [
             'searchModel'  => $searchModel,
             'dataProvider' => $dataProvider,
+            'importModel'  => $importModel,   // ✅ ส่งไปใช้ใน Modal
         ]);
     }
 
@@ -213,129 +214,135 @@ class ResearchproController extends Controller
         }
         return $obj;
     }
-    
+        
     public function actionImport()
     {
         $model = new ResearchImportForm();
 
-        if (Yii::$app->request->isPost) {
-            $model->file = UploadedFile::getInstance($model, 'file');
-
-            if ($model->validate()) {
-                // เก็บไฟล์ชั่วคราว
-                $tempPath = Yii::getAlias('@runtime') . '/import_researchpro_' . time() . '.' . $model->file->extension;
-                $model->file->saveAs($tempPath);
-
-                $transaction = Yii::$app->db->beginTransaction();
-                $rowsImported = 0;
-                $errors = [];
-
-                try {
-                    $spreadsheet = IOFactory::load($tempPath);
-                    $sheet = $spreadsheet->getActiveSheet();
-                    $highestRow = $sheet->getHighestRow();
-                    $highestColumn = $sheet->getHighestColumn();
-
-                    /**
-                     * สมมติให้โครง Excel เป็นแบบนี้ (แถวที่ 1 คือหัวตาราง)
-                     * A: projectNameTH
-                     * B: projectNameEN
-                     * C: username
-                     * D: org_id
-                     * E: projectYearsubmit
-                     * F: budgets
-                     * G: fundingAgencyID
-                     * H: researchFundID
-                     * I: researchTypeID
-                     * J: projectStartDate (รูปแบบ Y-m-d หรือ d/m/Y)
-                     * K: projectEndDate
-                     * L: jobStatusID
-                     * M: researchArea
-                     * N: sub_district
-                     * O: district
-                     * P: province
-                     * Q: branch
-                     * R: documentid (ถ้ามี)
-                     */
-
-                    // เริ่มอ่านตั้งแต่แถวที่ 2 (ข้ามหัวตาราง)
-                    for ($row = 2; $row <= $highestRow; $row++) {
-                        // ถ้าทั้งแถวว่าง ให้ข้าม
-                        $projectNameTH = trim((string)$sheet->getCell('A' . $row)->getValue());
-                        if ($projectNameTH === '') {
-                            continue;
-                        }
-
-                        $modelRow = new Researchpro();
-                        $modelRow->projectNameTH      = $projectNameTH;
-                        $modelRow->projectNameEN      = trim((string)$sheet->getCell('B' . $row)->getValue());
-                        $modelRow->username           = (int)$sheet->getCell('C' . $row)->getValue();
-                        $modelRow->org_id             = (int)$sheet->getCell('D' . $row)->getValue();
-                        $modelRow->projectYearsubmit  = (int)$sheet->getCell('E' . $row)->getValue();
-                        $modelRow->budgets            = (int)$sheet->getCell('F' . $row)->getValue();
-                        $modelRow->fundingAgencyID    = (int)$sheet->getCell('G' . $row)->getValue();
-                        $modelRow->researchFundID     = (int)$sheet->getCell('H' . $row)->getValue();
-                        $modelRow->researchTypeID     = (int)$sheet->getCell('I' . $row)->getValue();
-
-                        // แปลงวันที่ ถ้าจำเป็น
-                        $startDateRaw = $sheet->getCell('J' . $row)->getValue();
-                        $endDateRaw   = $sheet->getCell('K' . $row)->getValue();
-
-                        $modelRow->projectStartDate = $this->convertExcelDate($startDateRaw);
-                        $modelRow->projectEndDate   = $this->convertExcelDate($endDateRaw);
-
-                        $modelRow->jobStatusID      = (int)$sheet->getCell('L' . $row)->getValue();
-                        $modelRow->researchArea     = trim((string)$sheet->getCell('M' . $row)->getValue());
-                        $modelRow->sub_district     = (int)$sheet->getCell('N' . $row)->getValue();
-                        $modelRow->district         = (int)$sheet->getCell('O' . $row)->getValue();
-                        $modelRow->province         = (int)$sheet->getCell('P' . $row)->getValue();
-                        $modelRow->branch           = (int)$sheet->getCell('Q' . $row)->getValue();
-                        $modelRow->documentid       = trim((string)$sheet->getCell('R' . $row)->getValue());
-
-                        if (!$modelRow->save()) {
-                            $errors[$row] = $modelRow->getFirstErrors();
-                        } else {
-                            $rowsImported++;
-                        }
-                    }
-
-                    if (!empty($errors)) {
-                        // ถ้ามี error บางแถว จะ rollback ทั้งหมด หรือจะ commit เฉพาะที่ผ่านก็ได้
-                        // ตัวอย่างนี้ rollback ทั้งชุด
-                        $transaction->rollBack();
-
-                        Yii::$app->session->setFlash('error',
-                            'นำเข้าล้มเหลว มีข้อผิดพลาดในบางแถว: ' . print_r($errors, true)
-                        );
-                    } else {
-                        $transaction->commit();
-                        Yii::$app->session->setFlash('success', "นำเข้าข้อมูลสำเร็จ จำนวน {$rowsImported} แถว");
-                    }
-
-                } catch (\Throwable $e) {
-                    $transaction->rollBack();
-                    Yii::$app->session->setFlash('error',
-                        'เกิดข้อผิดพลาดระหว่างนำเข้า: ' . $e->getMessage()
-                    );
-                }
-
-                // ลบไฟล์ชั่วคราว
-                if (file_exists($tempPath)) {
-                    @unlink($tempPath);
-                }
-
-                return $this->redirect(['index']); // กลับหน้า list
-            }
+        if (!Yii::$app->request->isPost) {
+            return $this->redirect(['index']);
         }
 
-        return $this->render('import', [
-            'model' => $model,
-        ]);
+        $model->file = UploadedFile::getInstance($model, 'file');
+
+        if (!$model->validate()) {
+            Yii::$app->session->setFlash('error', 'กรุณาเลือกไฟล์ Excel ให้ถูกต้อง');
+            return $this->redirect(['index']);
+        }
+
+        // บันทึกไฟล์ชั่วคราว
+        $tempPath = Yii::getAlias('@runtime') . '/import_researchpro_' . time() . '.' . $model->file->extension;
+        $model->file->saveAs($tempPath);
+
+        $rowsToSave = [];
+        $rowErrors  = [];
+        $rowsImported = 0;
+
+        try {
+            $spreadsheet = IOFactory::load($tempPath);
+            $sheet       = $spreadsheet->getActiveSheet();
+            $highestRow  = $sheet->getHighestRow();
+
+            /**
+             * สมมติโครงคอลัมน์ Excel: แถวที่ 1 เป็นหัวตาราง
+             * A: projectNameTH
+             * B: projectNameEN
+             * C: username
+             * D: org_id
+             * E: projectYearsubmit
+             * F: budgets
+             * G: fundingAgencyID
+             * H: researchFundID
+             * I: researchTypeID
+             * J: projectStartDate
+             * K: projectEndDate
+             * L: jobStatusID
+             * M: researchArea
+             * N: sub_district
+             * O: district
+             * P: province
+             * Q: branch
+             * R: documentid (ถ้ามี)
+             */
+
+            // 1) loop ตรวจสอบก่อน ยังไม่ save
+            for ($row = 2; $row <= $highestRow; $row++) {
+
+                // เช็คว่าแถวนี้มีข้อมูลหรือเปล่า (ถ้าคอลัมน์แรกว่าง ข้าม)
+                $projectNameTH = trim((string)$sheet->getCell('A' . $row)->getValue());
+                if ($projectNameTH === '') {
+                    continue;
+                }
+
+                $modelRow = new Researchpro();
+                $modelRow->projectNameTH      = $projectNameTH;
+                $modelRow->projectNameEN      = trim((string)$sheet->getCell('B' . $row)->getValue());
+                $modelRow->username           = (int)$sheet->getCell('C' . $row)->getValue();
+                $modelRow->org_id             = (int)$sheet->getCell('D' . $row)->getValue();
+                $modelRow->projectYearsubmit  = (int)$sheet->getCell('E' . $row)->getValue();
+                $modelRow->budgets            = (int)$sheet->getCell('F' . $row)->getValue();
+                $modelRow->fundingAgencyID    = (int)$sheet->getCell('G' . $row)->getValue();
+                $modelRow->researchFundID     = (int)$sheet->getCell('H' . $row)->getValue();
+                $modelRow->researchTypeID     = (int)$sheet->getCell('I' . $row)->getValue();
+
+                // แปลงวันที่
+                $startDateRaw                 = $sheet->getCell('J' . $row)->getValue();
+                $endDateRaw                   = $sheet->getCell('K' . $row)->getValue();
+                $modelRow->projectStartDate   = $this->convertExcelDate($startDateRaw);
+                $modelRow->projectEndDate     = $this->convertExcelDate($endDateRaw);
+
+                $modelRow->jobStatusID        = (int)$sheet->getCell('L' . $row)->getValue();
+                $modelRow->researchArea       = trim((string)$sheet->getCell('M' . $row)->getValue());
+                $modelRow->sub_district       = (int)$sheet->getCell('N' . $row)->getValue();
+                $modelRow->district           = (int)$sheet->getCell('O' . $row)->getValue();
+                $modelRow->province           = (int)$sheet->getCell('P' . $row)->getValue();
+                $modelRow->branch             = (int)$sheet->getCell('Q' . $row)->getValue();
+                $modelRow->documentid         = trim((string)$sheet->getCell('R' . $row)->getValue());
+
+                // ตรวจสอบตาม rules() ใน Researchpro
+                if (!$modelRow->validate()) {
+                    $rowErrors[$row] = $modelRow->getFirstErrors();
+                } else {
+                    $rowsToSave[] = $modelRow;
+                }
+            }
+
+            // ถ้ามี error → ไม่บันทึกข้อมูล แจ้งแถวที่ผิด
+            if (!empty($rowErrors)) {
+                Yii::$app->session->setFlash('error', 'นำเข้าข้อมูลไม่สำเร็จ: พบข้อผิดพลาดในบางแถว');
+                Yii::$app->session->setFlash('importErrors', $rowErrors);
+            } else {
+                // 2) ถ้าไม่มี error แถวไหนเลย → save ทั้งหมดใน transaction
+                $transaction = Yii::$app->db->beginTransaction();
+                try {
+                    foreach ($rowsToSave as $modelRow) {
+                        if (!$modelRow->save(false)) {
+                            throw new \Exception('บันทึกข้อมูลล้มเหลวในบางแถว');
+                        }
+                        $rowsImported++;
+                    }
+                    $transaction->commit();
+                    Yii::$app->session->setFlash('success', "นำเข้าข้อมูลสำเร็จ จำนวน {$rowsImported} แถว");
+                } catch (\Throwable $e) {
+                    $transaction->rollBack();
+                    Yii::$app->session->setFlash('error', 'เกิดข้อผิดพลาดระหว่างบันทึกข้อมูล: ' . $e->getMessage());
+                }
+            }
+
+        } catch (\Throwable $e) {
+            Yii::$app->session->setFlash('error', 'เกิดข้อผิดพลาดระหว่างอ่านไฟล์: ' . $e->getMessage());
+        }
+
+        // ลบไฟล์ชั่วคราว
+        if (file_exists($tempPath)) {
+            @unlink($tempPath);
+        }
+
+        return $this->redirect(['index']);
     }
 
     /**
-     * แปลงค่าจากเซลล์ Excel มาเป็นวันที่รูปแบบ Y-m-d
-     * รองรับทั้งตัวเลข serial date และ string เช่น d/m/Y
+     * แปลงค่า date จาก Excel → 'Y-m-d'
      */
     protected function convertExcelDate($value)
     {
@@ -343,28 +350,30 @@ class ResearchproController extends Controller
             return null;
         }
 
-        // ถ้าเป็นตัวเลข (Serial date ของ Excel)
+        // ถ้าเป็นเลข serial ของ Excel
         if (is_numeric($value)) {
-            // PhpSpreadsheet มี helper แปลงวันที่ serial
-            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)->format('Y-m-d');
+            try {
+                return ExcelDate::excelToDateTimeObject($value)->format('Y-m-d');
+            } catch (\Throwable $e) {
+                return null;
+            }
         }
 
-        // ถ้าเป็น string เช่น 1/10/2025
         $value = trim((string)$value);
 
-        // ลอง parse แบบ d/m/Y
+        // ลอง d/m/Y
         $dt = \DateTime::createFromFormat('d/m/Y', $value);
         if ($dt !== false) {
             return $dt->format('Y-m-d');
         }
 
-        // ถ้าเป็น Y-m-d อยู่แล้ว
+        // ลอง Y-m-d
         $dt = \DateTime::createFromFormat('Y-m-d', $value);
         if ($dt !== false) {
             return $dt->format('Y-m-d');
         }
 
-        // ถ้าดูไม่ออกจริง ๆ ก็ส่งกลับเดิม (หรือ return null ก็ได้)
-        return $value;
+        return null;
     }
+
 }

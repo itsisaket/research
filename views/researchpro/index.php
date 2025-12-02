@@ -3,10 +3,12 @@
 use yii\helpers\Html;
 use yii\grid\GridView;
 use yii\widgets\Pjax;
+use yii\widgets\ActiveForm;   // ✅ เพิ่มใช้ ActiveForm สำหรับฟอร์มใน Modal
 
 /* @var $this yii\web\View */
 /* @var $searchModel app\models\ResearchproSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
+/* @var $importModel app\models\ResearchImportForm */
 
 $this->title = 'โครงการวิจัย';
 $this->params['breadcrumbs'][] = $this->title;
@@ -15,8 +17,46 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <p>
         <?= Html::a('เพิ่มข้อมูล', ['create'], ['class' => 'btn btn-success']) ?>
-        <?= Html::a('นำเข้าจาก Excel', ['import'], ['class' => 'btn btn-info']) ?>
+
+        <!-- 🔵 ปุ่มเปิด Modal อัปโหลดไฟล์ Excel -->
+        <button type="button"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#uploadModal">
+            <i class="fas fa-file-upload"></i> อัปโหลดไฟล์ Excel
+        </button>
     </p>
+
+    <!-- 🔶 แสดง Flash message ทั่วไป -->
+    <?php if (Yii::$app->session->hasFlash('success')): ?>
+        <div class="alert alert-success">
+            <?= Yii::$app->session->getFlash('success') ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (Yii::$app->session->hasFlash('error')): ?>
+        <div class="alert alert-danger">
+            <?= Yii::$app->session->getFlash('error') ?>
+        </div>
+    <?php endif; ?>
+
+    <!-- 🔶 แสดงรายละเอียด error รายแถวจากการ import (ถ้ามี) -->
+    <?php $importErrors = Yii::$app->session->getFlash('importErrors', []); ?>
+    <?php if (!empty($importErrors)): ?>
+        <div class="alert alert-warning">
+            <strong>รายละเอียดข้อผิดพลาดจากไฟล์ Excel:</strong>
+            <ul>
+                <?php foreach ($importErrors as $row => $errors): ?>
+                    <li>
+                        แถวที่ <?= Html::encode($row) ?>:
+                        <?php foreach ($errors as $attr => $msg): ?>
+                            <div>- <?= Html::encode($msg) ?></div>
+                        <?php endforeach; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
 
     <?= $this->render('_search', ['model' => $searchModel]); ?>
 
@@ -81,4 +121,35 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?php Pjax::end(); ?>
 
+</div>
+
+<!-- 🔵 Modal สำหรับอัปโหลดไฟล์ Excel -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="uploadModalLabel">อัปโหลดไฟล์ Excel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+
+        <?php $form = ActiveForm::begin([
+            'action'  => ['import'],                         // 🔁 ส่งไป actionImport
+            'options' => ['enctype' => 'multipart/form-data']
+        ]); ?>
+
+        <?= $form->field($importModel, 'file')->fileInput([
+            'accept' => '.xls,.xlsx'
+        ]) ?>
+
+        <div class="form-group mt-3">
+            <?= Html::submitButton('นำเข้าข้อมูล', ['class' => 'btn btn-success']) ?>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        </div>
+
+        <?php ActiveForm::end(); ?>
+
+      </div>
+    </div>
+  </div>
 </div>
