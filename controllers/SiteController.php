@@ -21,33 +21,59 @@ class SiteController extends Controller
     private const CLOCK_SKEW       = 120;               // ยอม clock-skew 120s
     private const MAX_BODY_BYTES   = 1048576;           // 1MB
 
-    public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'rules' => [
-                    [
-                        // ✅ เปิดให้ my-profile ใช้ได้แม้ยังไม่ login (ใช้ตอน sync SSO)
-                        'actions' => ['index', 'login', 'error', 'about', 'my-profile','up-user-json'],
-                        'allow'   => true,
+public function behaviors()
+{
+    return [
+        'access' => [
+            'class' => AccessControl::class,
+            'ruleConfig' => [
+                'class' => \app\components\HanumanRule::class,
+            ],
+            // จำกัดเฉพาะ action ที่อยากคุมสิทธิ์
+            'only' => [
+                'index', 'login', 'error', 'about',
+                'my-profile',
+                'up-user-json', 'up-faculty-json', 'up-dept-json',
+            ],
+            'rules' => [
+
+                // ✅ public: guest + login → index, login, error
+                [
+                    'actions' => ['index', 'login', 'error'],
+                    'allow'   => true,
+                    'roles'   => ['?', '@'],
+                ],
+
+                // ✅ researcher + admin: ดู about ได้
+                [
+                    'actions' => ['about'],
+                    'allow'   => true,
+                    'roles'   => ['researcher', 'admin'],
+                ],
+
+                // ✅ admin เท่านั้น: profile + sync APIs
+                [
+                    'actions' => [
+                        'my-profile',
+                        'up-user-json',
+                        'up-faculty-json',
+                        'up-dept-json',
                     ],
-                    [
-                        'actions' => ['logout'],
-                        'allow'   => true,
-                        'roles'   => ['@'],
-                    ],
+                    'allow' => true,
+                    'roles' => ['admin'],
                 ],
             ],
-            'verbs' => [
-                'class'   => VerbFilter::class,
-                'actions' => [
-                    'my-profile' => ['POST'],
-                    'logout'     => ['POST'],
-                ],
+        ],
+
+        'verbs' => [
+            'class' => VerbFilter::class,
+            'actions' => [
+                'delete' => ['POST'],
             ],
-        ];
-    }
+        ],
+    ];
+}
+
 
     public function actions()
     {
