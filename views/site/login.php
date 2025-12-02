@@ -13,6 +13,7 @@ $csrf   = Yii::$app->request->getCsrfToken();
 $sync   = Url::to(['/site/my-profile']); 
 $logout = Url::to(['/site/logout']);
 $index  = Url::to(['/site/index']);
+$report = Url::to(['/report/index']);
 ?>
 <div class="d-flex justify-content-center align-items-center min-vh-100 bg-light">
   <div class="container text-center" style="max-width:720px;">
@@ -23,7 +24,7 @@ $index  = Url::to(['/site/index']);
     <!-- เมื่อยังไม่มี token ให้กดไป login HRM -->
     <div id="login-cta" class="d-none">
       <a id="btn-login" href="https://sci-sskru.com/hrm/login" class="btn btn-success">คลิ๊กเข้าสู่ระบบ</a>
-      <a href="<?= $index ?>" class="btn btn-outline-secondary ms-2" data-pjax="0">กลับหน้าแรก</a>
+      <a href="<?= $report ?>" class="btn btn-outline-secondary ms-2" data-pjax="0">กลับหน้ารายงาน</a>
     </div>
 
     <!-- การ์ดโปรไฟล์ -->
@@ -94,8 +95,8 @@ $index  = Url::to(['/site/index']);
         </button>
       <?php echo Html::endForm(); ?>
 
-      <a href="<?= $index ?>" class="btn btn-outline-secondary ms-2" data-pjax="0">
-        กลับหน้าแรก
+      <a href="<?= $report ?>" class="btn btn-outline-secondary ms-2" data-pjax="0">
+        กลับหน้ารายงาน
       </a>
     </div>
   </div>
@@ -105,10 +106,17 @@ $index  = Url::to(['/site/index']);
 const CSRF_TOKEN = <?= json_encode($csrf) ?>;
 const SYNC_URL   = <?= json_encode($sync) ?>;   
 const INDEX_URL  = <?= json_encode($index) ?>;
-const REPORT_URL = <?= json_encode(Url::to(['/report/index'], true)) ?>;
+const REPORT_URL = <?= json_encode($report) ?>;
 const API_PROFILE_URL = 'https://sci-sskru.com/authen/profile';
 
 const $ = (id)=>document.getElementById(id);
+
+/* --------- helper redirect ไปหน้า report --------- */
+function redirectToReport(delayMs = 1500) {
+  setTimeout(function () {
+    window.location.href = REPORT_URL;
+  }, delayMs);
+}
 
 /* --------- JWT utils --------- */
 function parseJwt(token){
@@ -164,23 +172,8 @@ function showCta(msg, type='warning'){
   const actions   = $('actions-logout');
 
   const token = localStorage.getItem('hrm-sci-token');
-  const urlParams = new URLSearchParams(location.search);
-  let redirectTo = urlParams.get('redirect') || INDEX_URL;
 
-  // ✅ ป้องกัน open redirect: ให้ใช้ origin เดียวกันเท่านั้น
-  try {
-    const tmpUrl = new URL(redirectTo, location.origin);
-    if (tmpUrl.origin !== location.origin) {
-      redirectTo = INDEX_URL;
-    } else {
-      redirectTo = tmpUrl.href;
-    }
-  } catch (e) {
-    redirectTo = INDEX_URL;
-  }
-
-
-  // 1) ไม่มีโทเคนเลย → ให้ไป login ที่ HRM
+  // ✅ 1) ไม่มีโทเคนเลย → ให้ผู้ใช้กดไป login HRM (ยังไม่ redirect อัตโนมัติ)
   if (!token) {
     showCta('ยังไม่มีข้อมูลโทเคน (ไม่พบ hrm-sci-token)');
     return;
@@ -194,11 +187,13 @@ function showCta(msg, type='warning'){
 
   if (Number.isFinite(payload.exp) && (payload.exp + leeway) < now) {
     showCta('โทเคนหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง');
-    window.location.href = REPORT_URL;
+    // ✅ แสดงข้อความสักครู่ แล้วไปหน้า report/index
+    redirectToReport(2000);
     return;
   }
   if (!personalId){
     showCta('พบโทเคน แต่ไม่มี personal_id/uname ใน payload', 'danger');
+    redirectToReport(2500);
     return;
   }
 
@@ -218,7 +213,6 @@ function showCta(msg, type='warning'){
       headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
       body: JSON.stringify({ personal_id: personalId })
     });
-    // บางที HRM ตอบ {profile:{...}} บางที {...}
     profile = (raw && typeof raw === 'object') ? (raw.profile || raw || {}) : {};
   } catch(e) {
     profile = {};
@@ -226,7 +220,6 @@ function showCta(msg, type='warning'){
 
   // 5) อัปเดต DOM ให้ดูสวย
   try {
-    // fallback จาก payload ถ้า HRM ไม่ให้มา
     const titleName = profile.title_name ?? '';
     const firstName = profile.first_name ?? payload.first_name ?? '';
     const lastName  = profile.last_name  ?? payload.last_name  ?? '';
@@ -239,20 +232,16 @@ function showCta(msg, type='warning'){
     const category  = profile.category_type_name ?? '-';
     const employee  = profile.employee_type_name ?? '-';
     const academic  = profile.academic_type_name ?? '-';
+
     const HRM_BASE = 'https://sci-sskru.com/authen';
-      function buildImgUrl(path) {
-        if (!path) return '';
-        // ถ้าเป็น URL เต็มอยู่แล้ว ไม่ต้อง prefix
-        if (/^https?:\/\//i.test(path)) {
-          return path;
-        }
-        return HRM_BASE + (path.startsWith('/') ? '' : '/') + path;
+    function buildImgUrl(path) {
+      if (!path) return '';
+      if (/^https?:\/\//i.test(path)) {
+        return path;
       }
-
-      // ...
-
-      const imgUrl = buildImgUrl(profile.img);
-
+      return HRM_BASE + (path.startsWith('/') ? '' : '/') + path;
+    }
+    const imgUrl = buildImgUrl(profile.img);
 
     $('fullName').textContent = (`${titleName}${firstName} ${lastName}`).trim() || '-';
     $('email').textContent    = email;
@@ -275,7 +264,7 @@ function showCta(msg, type='warning'){
     stopPlaceholders();
   }
 
- 
+  // 6) SYNC เข้า /site/my-profile
   try {
     const res = await fetch(SYNC_URL, {
       method: 'POST',
@@ -286,18 +275,18 @@ function showCta(msg, type='warning'){
       body: JSON.stringify({ token, profile })
     });
 
-    const text = await res.text();   // อ่าน raw text มาก่อน
+    const text = await res.text();
     let data = {};
 
     try {
-      data = JSON.parse(text);       // พยายาม parse JSON
+      data = JSON.parse(text);
     } catch (e) {
       console.error('❌ SYNC: JSON parse error. Raw response:', text);
 
       statusEl.className = 'alert alert-danger mb-4';
       statusEl.textContent = 'เซิร์ฟเวอร์ตอบกลับไม่ใช่ JSON (อาจเป็นหน้า error / CSRF / 500)';
-
-      loginCta.classList.remove('d-none');
+      // ✅ แสดง error แล้วกลับหน้า report
+      redirectToReport(3000);
       return;
     }
 
@@ -306,8 +295,8 @@ function showCta(msg, type='warning'){
     // ✅ กรณีสำเร็จ
     if (res.ok && data && data.ok) {
       statusEl.className = 'alert alert-success mb-4';
-      statusEl.textContent = 'เข้าสู่ระบบสำเร็จ กำลังเปลี่ยนหน้า...';
-      window.location.href = redirectTo;
+      statusEl.textContent = 'เข้าสู่ระบบสำเร็จ กำลังเปลี่ยนไปยังหน้ารายงาน...';
+      redirectToReport(1000);
       return;
     }
 
@@ -368,6 +357,8 @@ function showCta(msg, type='warning'){
     statusEl.className = 'alert alert-warning mb-4';
     statusEl.textContent = msg;
     loginCta.classList.remove('d-none');
+    // ✅ แสดง warning สักพัก แล้วกลับหน้า report
+    redirectToReport(3000);
 
   } catch (e) {
     console.error('❌ SYNC /site/my-profile network/JS error:', e);
@@ -376,19 +367,22 @@ function showCta(msg, type='warning'){
     statusEl.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ (network หรือ JavaScript error) กรุณาลองใหม่หรือติดต่อผู้ดูแล';
 
     loginCta.classList.remove('d-none');
+    // ✅ แสดง error แล้วกลับหน้า report
+    redirectToReport(3000);
   }
 })();
+
 /* --------- เคลียร์ storage ตอน "ผู้ใช้" กดออกเองเท่านั้น --------- */
-  (function(){
-    var form = document.getElementById('page-logout-form');
-    if (!form) return;
-    form.addEventListener('submit', function(){
-      try {
-        localStorage.removeItem('hrm-sci-token');
-        localStorage.removeItem('userInfo');
-        localStorage.removeItem('accessToken');
-        sessionStorage.clear();
-      } catch(e) {}
-    });
+(function(){
+  var form = document.getElementById('page-logout-form');
+  if (!form) return;
+  form.addEventListener('submit', function(){
+    try {
+      localStorage.removeItem('hrm-sci-token');
+      localStorage.removeItem('userInfo');
+      localStorage.removeItem('accessToken');
+      sessionStorage.clear();
+    } catch(e) {}
+  });
 })();
 </script>
