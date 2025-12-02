@@ -7,7 +7,7 @@ $this->title = 'About';
 $this->params['breadcrumbs'][] = $this->title;
 $this->params['isLoginPage'] = true;
 
-$csrf = Yii::$app->request->getCsrfToken();
+$csrf    = Yii::$app->request->getCsrfToken();
 $syncUrl = Url::to(['/site/up-user-json']);
 ?>
 <div class="site-about">
@@ -54,6 +54,13 @@ $syncUrl = Url::to(['/site/up-user-json']);
   <pre id="list-json" style="background:#f1f8ff; padding:1rem; border:1px solid #ddd;">ยังไม่มีข้อมูล</pre>
 </div>
 
+<!-- List facultys result (ใหม่) -->
+<div class="container py-4">
+  <h5>ข้อมูลรายชื่อคณะ (JSON จาก API <code>/authen/list-facultys</code>)</h5>
+  <div class="small text-muted mb-2" id="fac-meta"></div>
+  <pre id="fac-json" style="background:#e8f5e9; padding:1rem; border:1px solid #ddd;">ยังไม่มีข้อมูล</pre>
+</div>
+
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
   const tbody       = document.getElementById("ls-table");
@@ -62,6 +69,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const profileMeta = document.getElementById("profile-meta");
   const listPre     = document.getElementById("list-json");
   const listMeta    = document.getElementById("list-meta");
+  const facPre      = document.getElementById("fac-json");
+  const facMeta     = document.getElementById("fac-meta");
   const btnSync     = document.getElementById("btn-sync-hrm");
 
   const csrfToken   = <?= json_encode($csrf) ?>;
@@ -86,7 +95,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       const pad = str.length % 4; if (pad) str += '='.repeat(4 - pad);
       const bin = atob(str);
       try {
-        return decodeURIComponent(Array.from(bin).map(c => '%' + c.charCodeAt(0).toString(16).padStart(2,'0')).join(''));
+        return decodeURIComponent(Array.from(bin)
+          .map(c => '%' + c.charCodeAt(0).toString(16).padStart(2,'0'))
+          .join(''));
       } catch { return bin; }
     } catch { return ""; }
   }
@@ -101,7 +112,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     try { return JSON.parse(text); } catch { return text; }
   }
   function show(preEl, data){
-    preEl.textContent = (typeof data === "string") ? data : JSON.stringify(data, null, 2);
+    preEl.textContent = (typeof data === "string")
+      ? data
+      : JSON.stringify(data, null, 2);
   }
 
   // -------- 3) ดึง token และ personal_id จาก JWT --------
@@ -110,7 +123,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     jwtPre.textContent     = "ไม่พบ hrm-sci-token ใน localStorage";
     profilePre.textContent = "ไม่พบ hrm-sci-token ใน localStorage";
     listPre.textContent    = "ไม่พบ hrm-sci-token ใน localStorage";
-    // ปุ่ม Sync: disable ถ้าไม่มี token
+    facPre.textContent     = "ไม่พบ hrm-sci-token ใน localStorage";
+
     if (btnSync) {
       btnSync.disabled = true;
       btnSync.textContent = "ไม่มี token SSO (Sync ใช้งานไม่ได้)";
@@ -125,6 +139,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!personalId){
     profilePre.textContent = "ไม่พบ personal_id ใน JWT payload";
     listPre.textContent    = "ไม่พบ personal_id ใน JWT payload";
+    // list-facultys ส่วนใหญ่ไม่ต้องใช้ personal_id เลยยังไม่ block ไว้
   }
 
   // -------- 4) Event ปุ่ม Sync: ส่ง token + personal_id ไปให้ PHP --------
@@ -134,26 +149,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      // สร้างฟอร์มซ่อนแล้ว submit แบบ POST
       const form = document.createElement("form");
       form.method = "POST";
       form.action = syncUrl;
 
-      // _csrf
       const inpCsrf = document.createElement("input");
       inpCsrf.type  = "hidden";
       inpCsrf.name  = "_csrf";
       inpCsrf.value = csrfToken;
       form.appendChild(inpCsrf);
 
-      // token
       const inpToken = document.createElement("input");
       inpToken.type  = "hidden";
       inpToken.name  = "token";
       inpToken.value = token;
       form.appendChild(inpToken);
 
-      // personal_id (เผื่อ PHP จะใช้ filter)
       if (personalId) {
         const inpPid = document.createElement("input");
         inpPid.type  = "hidden";
@@ -168,8 +179,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // -------- 5) เรียก API profile/list-profiles (แสดงผลบนหน้า) --------
-  // ส่วนนี้เหมือนที่คุณเขียนอยู่แล้ว ผมคงโครงเดิมไว้
 
+  // 5.1 profile
   try {
     const prof = await fetchJson("https://sci-sskru.com/authen/profile", {
       method: "POST",
@@ -184,7 +195,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   } catch (e1) {
     try {
       const profGet = await fetchJson(
-        "https://sci-sskru.com/authen/profile?personal_id=" + encodeURIComponent(personalId),
+        "https://sci-sskru.com/authen/profile?personal_id=" + encodeURIComponent(personalId || ""),
         { method: "GET", headers: { "Authorization": "Bearer " + token } }
       );
       profileMeta.textContent = "สำเร็จด้วย: GET https://sci-sskru.com/authen/profile?personal_id=...";
@@ -195,6 +206,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // 5.2 list-profiles
   try {
     const list = await fetchJson("https://sci-sskru.com/authen/list-profiles", {
       method: "POST",
@@ -209,7 +221,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   } catch (e3) {
     try {
       const listGet = await fetchJson(
-        "https://sci-sskru.com/authen/list-profiles?personal_id=" + encodeURIComponent(personalId),
+        "https://sci-sskru.com/authen/list-profiles?personal_id=" + encodeURIComponent(personalId || ""),
         { method: "GET", headers: { "Authorization": "Bearer " + token } }
       );
       listMeta.textContent = "สำเร็จด้วย: GET https://sci-sskru.com/authen/list-profiles?personal_id=...";
@@ -217,6 +229,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (e4) {
       listMeta.textContent = "เรียก list-profiles ไม่สำเร็จ";
       listPre.textContent  = e4.message || String(e4);
+    }
+  }
+
+  // 5.3 list-facultys (ใหม่)
+  try {
+    const fac = await fetchJson("https://sci-sskru.com/authen/list-facultys", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({})  // ถ้า API รองรับ filter อื่น ๆ ค่อยเติมทีหลัง
+    });
+    facMeta.textContent = "สำเร็จด้วย: POST https://sci-sskru.com/authen/list-facultys";
+    show(facPre, fac);
+  } catch (e5) {
+    try {
+      const facGet = await fetchJson(
+        "https://sci-sskru.com/authen/list-facultys",
+        { method: "GET", headers: { "Authorization": "Bearer " + token } }
+      );
+      facMeta.textContent = "สำเร็จด้วย: GET https://sci-sskru.com/authen/list-facultys";
+      show(facPre, facGet);
+    } catch (e6) {
+      facMeta.textContent = "เรียก list-facultys ไม่สำเร็จ";
+      facPre.textContent  = e6.message || String(e6);
     }
   }
 });
