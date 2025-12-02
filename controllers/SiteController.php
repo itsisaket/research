@@ -12,6 +12,8 @@ use app\models\Account;
 use app\components\ApiAuthService;
 use yii\httpclient\Client;
 use yii\helpers\Url;  
+use app\models\Organize;
+use app\models\Department;
 
 class SiteController extends Controller
 {
@@ -470,6 +472,234 @@ public function actionUpUserJson($personal_id = null)
     }
 }
 
+    public function actionUpFacultyJson()
+    {
+        $session = Yii::$app->session;
+        $request = Yii::$app->request;
+
+        // 0) ดึง token จาก POST ก่อน แล้ว fallback เป็น session
+        $token = $request->post('token') ?: $session->get('hrm_sci_token');
+        if (empty($token)) {
+            $session->setFlash(
+                'danger',
+                'ไม่พบ Token จาก SSO (token ว่าง) กรุณา login ผ่าน SSO หรือส่ง token มาด้วย'
+            );
+            return $this->redirect(['site/about']);
+        }
+
+        try {
+            $client = new Client(['transport' => 'yii\httpclient\CurlTransport']);
+            $apiUrl = 'https://sci-sskru.com/authen/list-facultys';
+
+            // 1) POST ก่อน
+            $response = $client->createRequest()
+                ->setMethod('POST')
+                ->setUrl($apiUrl)
+                ->setFormat(Client::FORMAT_JSON)
+                ->setHeaders([
+                    'Authorization' => 'Bearer ' . $token,
+                    'Content-Type'  => 'application/json',
+                ])
+                ->setData([]) // ถ้าต้องการ filter เพิ่มเติมค่อยใส่ทีหลัง
+                ->send();
+
+            // 2) ถ้า POST ไม่ ok → ลอง GET
+            if (!$response->isOk) {
+                $response = $client->createRequest()
+                    ->setMethod('GET')
+                    ->setUrl($apiUrl)
+                    ->setHeaders([
+                        'Authorization' => 'Bearer ' . $token,
+                    ])
+                    ->send();
+            }
+
+            if (!$response->isOk) {
+                $session->setFlash(
+                    'danger',
+                    "เรียก list-facultys ไม่สำเร็จ (HTTP {$response->statusCode})"
+                );
+                return $this->redirect(['site/about']);
+            }
+
+            $json = $response->getData();
+
+            if (!isset($json['data']) || !is_array($json['data']) || count($json['data']) === 0) {
+                $session->setFlash('warning', 'ไม่พบข้อมูลคณะจากระบบ HRM');
+                return $this->redirect(['site/about']);
+            }
+
+            // 3) LOOP sync ทุกเรคคอร์ด -> tb_organize
+            $total   = count($json['data']);
+            $success = 0;
+            $failed  = 0;
+
+            foreach ($json['data'] as $row) {
+                // ปรับ key ตาม JSON ที่ API ส่งจริง
+                $facultyId   = $row['faculty_id']      ?? null;            // รหัสคณะ
+                $facultyName = $row['faculty_name_th'] // ชื่อภาษาไทย (ถ้ามี)
+                            ?? $row['faculty_name']
+                            ?? $row['name']
+                            ?? null;
+
+                if (empty($facultyId) || empty($facultyName)) {
+                    $failed++;
+                    continue;
+                }
+
+                // หาจาก org_id = faculty_id
+                /** @var Organize $org */
+                $org = Organize::findOne(['org_id' => (int)$facultyId]);
+                if ($org === null) {
+                    $org = new Organize();
+                    $org->org_id = (int)$facultyId;
+                }
+
+                $org->org_name    = $facultyName;
+                $org->org_address = $row['address']   ?? $org->org_address ?? '';
+                $org->org_tel     = $row['tel']       ?? $row['phone'] ?? $org->org_tel ?? '';
+
+                if (!$org->save()) {
+                    Yii::error(
+                        'HRM faculty sync validate fail for org_id=' . $org->org_id
+                        . ' data='   . json_encode($org->attributes, JSON_UNESCAPED_UNICODE)
+                        . ' errors=' . json_encode($org->getErrors(), JSON_UNESCAPED_UNICODE),
+                        'sso.sync.faculty'
+                    );
+                    $failed++;
+                    continue;
+                }
+
+                $success++;
+            }
+
+            // 4) Flash ผลลัพธ์แล้ว redirect
+            if ($failed === 0) {
+                $session->setFlash('success', "อัปเดตข้อมูลคณะ (tb_organize) สำเร็จทั้งหมด {$success} รายการ");
+            } else {
+                $session->setFlash(
+                    'warning',
+                    "Sync คณะเสร็จสิ้น: สำเร็จ {$success} รายการ, ล้มเหลว {$failed} รายการ (รวม {$total})"
+                );
+            }
+
+            return $this->redirect(['site/about']);
+
+        } catch (\Throwable $e) {
+            Yii::error('HRM faculty sync exception: ' . $e->getMessage(), 'sso.sync.faculty');
+            $session->setFlash('danger', 'เกิดข้อผิดพลาด (faculty sync): ' . $e->getMessage());
+            return $this->redirect(['site/about']);
+        }
+    }
+
+    public function actionUpDeptJson()
+{
+    $session = Yii::$app->session;
+    $request = Yii::$app->request;
+
+    // token
+    $token = $request->post('token') ?: $session->get('hrm_sci_token');
+    if (empty($token)) {
+        $session->setFlash('danger', 'ไม่พบ Token จาก SSO กรุณา login ใหม่');
+        return $this->redirect(['site/about']);
+    }
+
+    try {
+        $client = new Client(['transport' => 'yii\httpclient\CurlTransport']);
+        $apiUrl = 'https://sci-sskru.com/authen/list-departments';
+
+        // POST
+        $response = $client->createRequest()
+            ->setMethod('POST')
+            ->setUrl($apiUrl)
+            ->setFormat(Client::FORMAT_JSON)
+            ->setHeaders([
+                'Authorization' => 'Bearer ' . $token,
+                'Content-Type'  => 'application/json',
+            ])
+            ->setData([])
+            ->send();
+
+        // fallback GET
+        if (!$response->isOk) {
+            $response = $client->createRequest()
+                ->setMethod('GET')
+                ->setUrl($apiUrl)
+                ->setHeaders(['Authorization' => 'Bearer ' . $token])
+                ->send();
+        }
+
+        if (!$response->isOk) {
+            $session->setFlash('danger', "เรียก list-departments ไม่สำเร็จ (HTTP {$response->statusCode})");
+            return $this->redirect(['site/about']);
+        }
+
+        $json = $response->getData();
+
+        if (!isset($json['data']) || !is_array($json['data'])) {
+            $session->setFlash('warning', 'ไม่พบข้อมูลภาควิชาจาก API');
+            return $this->redirect(['site/about']);
+        }
+
+        $total   = count($json['data']);
+        $success = 0;
+        $failed  = 0;
+
+        foreach ($json['data'] as $row) {
+
+            $deptId   = $row['dept_id']  ?? null;
+            $deptName = $row['dept_name'] ?? null;
+            $facultyId = $row['faculty_id'] ?? null;  // org_id
+
+            if (!$deptId || !$deptName || !$facultyId) {
+                $failed++;
+                continue;
+            }
+
+            /** @var Department $dept */
+            $dept = Department::findOne(['dept_id' => $deptId]);
+            if ($dept === null) {
+                $dept = new Department();
+                $dept->dept_id = (int)$deptId;
+            }
+
+            // Mapping API → tb_department
+            $dept->dept_name    = $deptName;
+            $dept->org_id       = (int)$facultyId;                 // คณะ
+            $dept->dept_tel     = $row['dept_tel']     ?? '';
+            $dept->dept_address = $row['dept_address'] ?? '';
+
+            if (!$dept->save()) {
+                Yii::error(
+                    'Department Sync Failed: id=' . $dept->dept_id
+                    . ' errors=' . json_encode($dept->getErrors(), JSON_UNESCAPED_UNICODE),
+                    'sso.sync.department'
+                );
+                $failed++;
+                continue;
+            }
+
+            $success++;
+        }
+
+        // Flash result
+        if ($failed === 0) {
+            $session->setFlash('success', "อัปเดตข้อมูลภาควิชาสำเร็จ {$success}/{$total} รายการ");
+        } else {
+            $session->setFlash(
+                'warning',
+                "Sync ภาควิชาเสร็จสิ้น สำเร็จ {$success}, ล้มเหลว {$failed} จาก {$total}"
+            );
+        }
+
+        return $this->redirect(['site/about']);
+
+    } catch (\Throwable $e) {
+        Yii::error("Department Sync Exception: " . $e->getMessage(), 'sso.sync.department');
+        $session->setFlash('danger', "เกิดข้อผิดพลาด: " . $e->getMessage());
+        return $this->redirect(['site/about']);
+    }
+}
 
 
 

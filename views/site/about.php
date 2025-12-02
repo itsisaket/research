@@ -9,6 +9,8 @@ $this->params['isLoginPage'] = true;
 
 $csrf    = Yii::$app->request->getCsrfToken();
 $syncUrl = Url::to(['/site/up-user-json']);
+$syncFac   = Url::to(['/site/up-faculty-json']);
+$syncDept  = Url::to(['/site/up-dept-json']);
 ?>
 <div class="site-about">
   <h1><?= Html::encode($this->title) ?></h1>
@@ -17,11 +19,11 @@ $syncUrl = Url::to(['/site/up-user-json']);
 </div>
 
 <!-- ปุ่ม Sync -->
-<button type="button"
-        id="btn-sync-hrm"
-        class="btn btn-primary mb-3">
-  🔄 Sync บุคลากรจาก HRM
-</button>
+<div class="mb-3">
+  <button type="button" id="btn-sync-hrm"   class="btn btn-primary">🔄 Sync บุคลากรจาก API</button>
+  <button type="button" id="btn-sync-fac"   class="btn btn-success">🔄 Sync คณะจาก API</button>
+  <button type="button" id="btn-sync-dept"  class="btn btn-warning">🔄 Sync ภาควิชาจาก API</button>
+</div>
 
 <hr>
 
@@ -78,9 +80,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const deptPre     = document.getElementById("dept-json");
   const deptMeta    = document.getElementById("dept-meta");
   const btnSync     = document.getElementById("btn-sync-hrm");
+  
 
   const csrfToken   = <?= json_encode($csrf) ?>;
   const syncUrl     = <?= json_encode($syncUrl) ?>;
+  const syncFacUrl  = <?= json_encode($syncFac) ?>;
+  const syncDeptUrl = <?= json_encode($syncDept) ?>;
 
   // -------- 1) แสดง localStorage --------
   tbody.innerHTML = "";

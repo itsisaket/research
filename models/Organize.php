@@ -3,15 +3,17 @@
 namespace app\models;
 
 use Yii;
+use yii\db\ActiveRecord;
 
 /**
  * This is the model class for table "tb_organize".
  *
- * @property int $org_id
+ * @property int    $org_id
  * @property string $org_name
- * @property string $org_logo
+ * @property string $org_address
+ * @property string $org_tel
  */
-class Organize extends \yii\db\ActiveRecord
+class Organize extends ActiveRecord
 {
     /**
      * {@inheritdoc}
@@ -22,13 +24,24 @@ class Organize extends \yii\db\ActiveRecord
     }
 
     /**
+     * ระบุ primary key (เพราะชื่อไม่ใช่ id)
+     */
+    public static function primaryKey()
+    {
+        return ['org_id'];
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['org_name', 'org_logo'], 'required'],
-            [['org_name', 'org_logo'], 'string', 'max' => 100],
+            [['org_id', 'org_name'], 'required'],
+            [['org_id'], 'integer'],
+            [['org_address'], 'string'],
+            [['org_name'], 'string', 'max' => 100],
+            [['org_tel'], 'string', 'max' => 15],
         ];
     }
 
@@ -38,9 +51,10 @@ class Organize extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
-            'org_id' => 'Org ID',
-            'org_name' => 'Org Name',
-            'org_logo' => 'Org Logo',
+            'org_id'      => 'รหัสหน่วยงาน/คณะ',
+            'org_name'    => 'ชื่อหน่วยงาน/คณะ',
+            'org_address' => 'ที่อยู่',
+            'org_tel'     => 'โทรศัพท์',
         ];
     }
 }
