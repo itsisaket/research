@@ -177,8 +177,6 @@ function stopPlaceholders(){
 
   // 1) ไม่มี token → แจ้งเตือน + redirect ไปหน้า report
   if (!token) {
-      swalAuto('warning', 'แจ้งเตือน',
-        'ยังไม่มี token ในระบบ ขอเปลี่ยนเส้นทางไปหน้ารายงาน...', 1500, true);
 
       // เก็บ DOM ให้โล่ง ๆ ไว้
       statusEl.className = 'alert alert-warning mb-4';
