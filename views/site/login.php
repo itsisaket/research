@@ -173,10 +173,20 @@ function showCta(msg, type='warning'){
 
   const token = localStorage.getItem('hrm-sci-token');
 
-  // ✅ 1) ไม่มีโทเคนเลย → ให้ผู้ใช้กดไป login HRM (ยังไม่ redirect อัตโนมัติ)
+  // 1) ไม่มีโทเคนเลย → ให้ผู้ใช้กดไป login HRM (ยังไม่ redirect อัตโนมัติ)
   if (!token) {
-    showCta('ยังไม่มีข้อมูลโทเคน (ไม่พบ hrm-sci-token)');
-    return;
+      const statusEl = $('status');
+      statusEl.className = 'alert alert-warning mb-4';
+      statusEl.textContent = 'ยังไม่มี token ในระบบ ขอเปลี่ยนเส้นทางไปหน้ารายงาน...';
+
+      // ไม่แสดงปุ่ม login HRM
+      $('login-cta').classList.add('d-none');
+      $('profile-card').classList.add('d-none');
+      $('actions-logout').classList.add('d-none');
+
+      // redirect อัตโนมัติ 1.5 วินาที
+      redirectToReport(1500);
+      return;
   }
 
   // 2) เช็ก payload / exp
