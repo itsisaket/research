@@ -107,6 +107,7 @@ const CSRF_TOKEN = <?= json_encode($csrf) ?>;
 const SYNC_URL   = <?= json_encode($sync) ?>;   
 const INDEX_URL  = <?= json_encode($index) ?>;
 const REPORT_URL = <?= json_encode($report) ?>;
+
 const API_PROFILE_URL = 'https://sci-sskru.com/authen/profile';
 
 const $ = (id)=>document.getElementById(id);

@@ -29,7 +29,6 @@ public function behaviors()
             'ruleConfig' => [
                 'class' => \app\components\HanumanRule::class,
             ],
-            // จำกัดเฉพาะ action ที่อยากคุมสิทธิ์
             'only' => [
                 'index', 'login', 'error', 'about',
                 'my-profile',
@@ -39,11 +38,10 @@ public function behaviors()
 
                 // ✅ public: guest + login → index, login, error
                 [
-                    'actions' => ['index', 'login', 'error'],
+                    'actions' => ['index', 'login', 'error','my-profile'],
                     'allow'   => true,
                     'roles'   => ['?', '@'],
                 ],
-
                 // ✅ researcher + admin: ดู about ได้
                 [
                     'actions' => ['about'],
@@ -51,10 +49,9 @@ public function behaviors()
                     'roles'   => ['researcher', 'admin'],
                 ],
 
-                // ✅ admin เท่านั้น: profile + sync APIs
+                // ✅ admin เท่านั้น: sync APIs
                 [
                     'actions' => [
-                        'my-profile',
                         'up-user-json',
                         'up-faculty-json',
                         'up-dept-json',
@@ -73,6 +70,7 @@ public function behaviors()
         ],
     ];
 }
+
 
 
     public function actions()
