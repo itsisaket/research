@@ -162,7 +162,7 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
       <div class="col-12 col-md-4">
         <?= $form->field($model, 'projectStartDate')->widget(DatePicker::class, [
           'options' => ['placeholder' => 'เลือกวันที่เริ่ม...'],
-          'type' => DatePicker::TYPE_COMPONENT_APPEND,
+          'type' => DatePicker::TYPE_INPUT,
           'pickerIcon' => '<i class="fas fa-calendar-plus text-primary"></i>',
           'pluginOptions' => [
             'autoclose' => true,
@@ -175,7 +175,7 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
       <div class="col-12 col-md-4">
         <?= $form->field($model, 'projectEndDate')->widget(DatePicker::class, [
           'options' => ['placeholder' => 'เลือกวันที่สิ้นสุด...'],
-          'type' => DatePicker::TYPE_COMPONENT_APPEND,
+          'type' => DatePicker::TYPE_INPUT,
           'pickerIcon' => '<i class="fas fa-calendar-check text-success"></i>',
           'pluginOptions' => [
             'autoclose' => true,

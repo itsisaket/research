@@ -131,7 +131,7 @@ if (empty($model->article_publish)) {
         ])->widget(DatePicker::class, [
           'name' => 'article_publish',
           'options' => ['placeholder' => 'เลือกวันที่...'],
-          'type' => DatePicker::TYPE_COMPONENT_APPEND,
+          'type' => DatePicker::TYPE_INPUT,
           'pickerIcon' => '<i class="fas fa-calendar-alt text-primary"></i>',
           'pluginOptions' => [
             'autoclose' => true,
@@ -140,7 +140,8 @@ if (empty($model->article_publish)) {
           ],
         ]) ?>
       </div>
-            <div class="col-12 col-md-3">
+
+      <div class="col-12 col-md-3">
         <?= $form->field($model, 'branch', [
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-layer-group\"></i></span>\n{input}\n</div>\n{error}"
         ])->dropDownList($branchItems, ['prompt' => 'เลือกสาขา..']) ?>
