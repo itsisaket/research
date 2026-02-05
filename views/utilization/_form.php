@@ -85,7 +85,7 @@ if (empty($model->province)) {
     </div>
 
     <!-- ===== ข้อมูลโครงการ ===== -->
-    <h6 class="mb-2"><i class="fas fa-file-signature me-1"></i> ข้อมูลโครงการ</h6>
+    <h4 class="mb-2"><i class="fas fa-file-signature me-1"></i> ข้อมูลโครงการ</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3">
@@ -97,7 +97,7 @@ if (empty($model->province)) {
     </div>
 
     <!-- ===== หน่วยงาน / นักวิจัย / ประเภท / วันที่ ===== -->
-    <h6 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและรายละเอียดการใช้ประโยชน์</h6>
+    <h4 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและรายละเอียดการใช้ประโยชน์</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3 align-items-end">
@@ -136,7 +136,7 @@ if (empty($model->province)) {
     </div>
 
     <!-- ===== สถานที่ ===== -->
-    <h6 class="mt-4 mb-2"><i class="fas fa-map-marker-alt me-1"></i> สถานที่/พื้นที่ใช้ประโยชน์</h6>
+    <h4 class="mt-4 mb-2"><i class="fas fa-map-marker-alt me-1"></i> สถานที่/พื้นที่ใช้ประโยชน์</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3 align-items-end">
@@ -185,7 +185,7 @@ if (empty($model->province)) {
     </div>
 
     <!-- ===== รายละเอียด/อ้างอิง ===== -->
-    <h6 class="mt-4 mb-2"><i class="fas fa-align-left me-1"></i> รายละเอียดและเอกสารอ้างอิง</h6>
+    <h4 class="mt-4 mb-2"><i class="fas fa-align-left me-1"></i> รายละเอียดและเอกสารอ้างอิง</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3">

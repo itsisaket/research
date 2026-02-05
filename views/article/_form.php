@@ -73,9 +73,8 @@ if (empty($model->article_publish)) {
     </div>
 
     <!-- ===== ชื่อบทความ ===== -->
-    <h6 class="mb-2"><i class="fas fa-file-alt me-1"></i> ชื่อบทความ</h6>
+    <h4 class="mb-2"><i class="fas fa-file-alt me-1"></i> ชื่อบทความ</h4>
     <hr class="mt-2 mb-3">
-
     <div class="row g-3">
       <div class="col-12">
         <?= $form->field($model, 'article_th', [
@@ -91,7 +90,7 @@ if (empty($model->article_publish)) {
     </div>
 
     <!-- ===== หน่วยงาน / นักวิจัย ===== -->
-    <h6 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและนักวิจัย</h6>
+    <h4 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและนักวิจัย</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3">
@@ -109,7 +108,7 @@ if (empty($model->article_publish)) {
     </div>
 
     <!-- ===== ข้อมูลการเผยแพร่ ===== -->
-    <h6 class="mt-4 mb-2"><i class="fas fa-book me-1"></i> ข้อมูลการเผยแพร่</h6>
+    <h4 class="mt-4 mb-2"><i class="fas fa-book me-1"></i> ข้อมูลการเผยแพร่</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3 align-items-end">
@@ -149,7 +148,7 @@ if (empty($model->article_publish)) {
     </div>
 
     <!-- ===== สถานะ / สาขา / อ้างอิง ===== -->
-    <h6 class="mt-4 mb-2"><i class="fas fa-clipboard-check me-1"></i> สถานะและข้อมูลเพิ่มเติม</h6>
+    <h4 class="mt-4 mb-2"><i class="fas fa-clipboard-check me-1"></i> สถานะและข้อมูลเพิ่มเติม</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3">

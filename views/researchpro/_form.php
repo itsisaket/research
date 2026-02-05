@@ -84,7 +84,7 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
     </div>
 
     <!-- ===== ชื่อโครงการ ===== -->
-    <h6 class="mb-2"><i class="fas fa-file-alt me-1"></i> ชื่อโครงการ</h6>
+    <h4 class="mb-2"><i class="fas fa-file-alt me-1"></i> ชื่อโครงการ</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3">
@@ -102,7 +102,7 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
     </div>
 
     <!-- ===== หน่วยงาน / หัวหน้าโครงการ ===== -->
-    <h6 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและหัวหน้าโครงการ</h6>
+    <h4 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและหัวหน้าโครงการ</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3">
@@ -124,7 +124,7 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
     </div>
 
     <!-- ===== รายละเอียดโครงการ ===== -->
-    <h6 class="mt-4 mb-2"><i class="fas fa-clipboard-list me-1"></i> รายละเอียดโครงการ</h6>
+    <h4 class="mt-4 mb-2"><i class="fas fa-clipboard-list me-1"></i> รายละเอียดโครงการ</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3">
@@ -145,7 +145,7 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
     </div>
 
     <!-- ===== ทุน/วันเริ่ม-สิ้นสุด/สถานะ ===== -->
-    <h6 class="mt-4 mb-2"><i class="fas fa-coins me-1"></i> ทุนและระยะเวลา</h6>
+    <h4 class="mt-4 mb-2"><i class="fas fa-coins me-1"></i> ทุนและระยะเวลา</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3">
@@ -187,7 +187,7 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
     </div>
 
     <!-- ===== พื้นที่วิจัย (คงของเดิม) ===== -->
-    <h6 class="mt-4 mb-2"><i class="fas fa-map-marker-alt me-1"></i> พื้นที่วิจัย</h6>
+    <h4 class="mt-4 mb-2"><i class="fas fa-map-marker-alt me-1"></i> พื้นที่วิจัย</h4>
     <hr class="mt-2 mb-3">
 
     <div class="row g-3 align-items-end">
