@@ -82,35 +82,50 @@ class Utilization extends \yii\db\ActiveRecord
     public function getUserid()
     {
         $session = Yii::$app->session;
-        $ty = $session->get('ty');
+        $ty = $session['ty'] ?? null;
 
         $users = [];
 
         if (!Yii::$app->user->isGuest) {
-            $identity = Yii::$app->user->identity;
 
-            // เริ่มจาก user ตัวเอง
-            $users = Account::find()->where(['username' => $identity->username])->all();
+            // ปกติ: ให้เห็นเฉพาะตัวเอง
+            $users = Account::find()
+                ->where(['username' => Yii::$app->user->identity->username])
+                ->all();
 
-            // ถ้าไม่ใช่สิทธิ์พื้นฐาน → ให้เห็นเฉพาะ org
-            if ($identity->position != 1) {
+            // ถ้าไม่ใช่นักวิจัย (position != 1) → เห็นเฉพาะหน่วยงานตัวเอง
+            if ((int)Yii::$app->user->identity->position !== 1 && $ty) {
                 $users = Account::find()
                     ->where(['org_id' => $ty])
                     ->orderBy(['uname' => SORT_ASC])
                     ->all();
             }
 
-            // ถ้าเป็น admin
-            if ($identity->position == 4) {
+            // admin (position == 4) → เห็นทั้งหมด
+            if ((int)Yii::$app->user->identity->position === 4) {
                 $users = Account::find()
                     ->orderBy(['uname' => SORT_ASC])
                     ->all();
             }
         }
 
-        return ArrayHelper::map($users, 'username', function ($user) {
-            return trim($user->uname . ' ' . $user->luname);
+        $userList = ArrayHelper::map($users, 'username', function ($user) {
+
+            $fn = trim((string)($user->uname ?? ''));
+            $ln = trim((string)($user->luname ?? ''));
+
+            $full = trim($fn . ' ' . $ln);
+
+            // ❌ กันกรณีชื่อเป็น email / มี @
+            if ($full === '' || strpos($full, '@') !== false) {
+                // ใช้รหัสบุคลากรแทน (username ของ Account)
+                return 'รหัสบุคลากร: ' . $user->username;
+            }
+
+            return $full;
         });
+
+        return $userList;
     }
 
     public function getOrgid()
