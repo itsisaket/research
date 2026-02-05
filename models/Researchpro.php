@@ -82,25 +82,56 @@ class Researchpro extends \yii\db\ActiveRecord
         ];
     }
 
-    public function getUserid(){  
+    public function getUserid()
+    {
         $session = Yii::$app->session;
-        $ty=$session['ty'];
-        
-        if (!Yii::$app->user->isGuest){
-            $users = Account::find()->where(['username'=>Yii::$app->user->identity->username])->all();
-            if (Yii::$app->user->identity->position !=1) {
-                $users = Account::find()->where(['org_id'=>$ty])->orderBy('uname')->all();
+        $ty = $session['ty'] ?? null;
+
+        $users = [];
+
+        if (!Yii::$app->user->isGuest) {
+
+            // ปกติ: ให้เห็นเฉพาะตัวเอง
+            $users = Account::find()
+                ->where(['username' => Yii::$app->user->identity->username])
+                ->all();
+
+            // ถ้าไม่ใช่นักวิจัย (position != 1) → เห็นเฉพาะหน่วยงานตัวเอง
+            if ((int)Yii::$app->user->identity->position !== 1 && $ty) {
+                $users = Account::find()
+                    ->where(['org_id' => $ty])
+                    ->orderBy(['uname' => SORT_ASC])
+                    ->all();
             }
-            if (Yii::$app->user->identity->position == 4) {
-                $users = Account::find()->orderBy('uname')->all();
+
+            // admin (position == 4) → เห็นทั้งหมด
+            if ((int)Yii::$app->user->identity->position === 4) {
+                $users = Account::find()
+                    ->orderBy(['uname' => SORT_ASC])
+                    ->all();
             }
         }
-        $userList  = [];
+
         $userList = ArrayHelper::map($users, 'username', function ($user) {
-            return $user->uname.' '.$user->luname;
-         }); 
-         return $userList;
-    }     
+
+            $fn = trim((string)($user->uname ?? ''));
+            $ln = trim((string)($user->luname ?? ''));
+
+            $full = trim($fn . ' ' . $ln);
+
+            // ❌ กันกรณีชื่อเป็น email / มี @
+            if ($full === '' || strpos($full, '@') !== false) {
+                // ใช้รหัสบุคลากรแทน (username ของ Account)
+                return 'รหัสบุคลากร: ' . $user->username;
+            }
+
+            return $full;
+        });
+
+        return $userList;
+    }
+   
+
     public function getOrgid(){  
         $session = Yii::$app->session;
         $ty=$session['ty'];

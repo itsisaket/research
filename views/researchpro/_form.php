@@ -24,21 +24,32 @@ $subDistrict = $sub_district ?? [];
  * ========================= */
 $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
 
-// 1) หัวหน้าโครงการ (username) = user ที่ login
-if (empty($model->username) && $me) {
-    // ใช้ user.id เป็นค่าที่เก็บใน researchpro.username (ตามที่คุณเลือกใช้ username เป็น field นี้)
-    $model->username = (string)$me->id;
+// ✅ เตรียมรายการ dropdown ครั้งเดียว (ใช้ getter ของ model)
+$orgItems  = $model->orgid ?? [];
+$userItems = $model->userid ?? [];
+
+// 1) หัวหน้าโครงการ (tb_researchpro.username) = Account.username ของคน login
+if (empty($model->username) && $me && !empty($me->username)) {
+    $model->username = (string)$me->username;
 }
 
 // 2) หน่วยงาน (org_id) = org_id ของ user ที่ login
-if (empty($model->org_id) && $me) {
-    // ต้องมี field org_id ใน identity (user table)
-    if (!empty($me->org_id)) {
-        $model->org_id = (int)$me->org_id;
-    }
+if (empty($model->org_id) && $me && !empty($me->org_id)) {
+    $model->org_id = (int)$me->org_id;
 }
 
-// 3) ปีเสนอ/วันที่ (ตามเดิมคุณ)
+// 3) กันกรณี default org_id อยู่ แต่ไม่อยู่ในรายการ (เช่น list ถูก filter)
+if (!empty($model->org_id) && !isset($orgItems[$model->org_id]) && $me) {
+    $orgItems[$model->org_id] = $me->dept_name ?? ('หน่วยงาน #' . $model->org_id);
+}
+
+// 4) กันกรณี default username อยู่ แต่ไม่อยู่ในรายการ (เช่น list ถูก filter)
+// (ไม่ใช้ email) ถ้าระบบ sync ชื่อไม่มา จะใช้ “รหัสบุคลากร: xxx”
+if (!empty($model->username) && !isset($userItems[$model->username])) {
+    $userItems[$model->username] = 'รหัสบุคลากร: ' . $model->username;
+}
+
+// 5) ปีเสนอ/วันที่ (ตามเดิม)
 $today = date('d-m-Y');
 $thaiYear = (int)date('Y') + 543;
 
@@ -49,6 +60,7 @@ if (empty($model->projectStartDate)) $model->projectStartDate = $today;
 if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
 
 ?>
+
 <div class="researchpro-form">
 
 <?php $form = ActiveForm::begin(); ?>
@@ -92,55 +104,6 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
     <!-- ===== หน่วยงาน / หัวหน้าโครงการ ===== -->
     <h6 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและหัวหน้าโครงการ</h6>
     <hr class="mt-2 mb-3">
-
-<?php
-  // เตรียมรายการ dropdown
-  $orgItems  = $model->orgid ?? [];
-  $userItems = $model->userid ?? [];
-
-  // กันกรณี default org_id อยู่ แต่ไม่อยู่ในรายการ (เช่น list ถูก filter)
-  if (!empty($model->org_id) && !isset($orgItems[$model->org_id]) && $me) {
-      $orgItems[$model->org_id] = $me->dept_name ?? ('หน่วยงาน #' . $model->org_id);
-  }
-
-  /** ===============================
-   *  FIX: ห้ามแสดง email ใน dropdown
-   * =============================== */
-
-  // 1) ทำ label สำหรับผู้ใช้ที่ login: ชื่อ-สกุล เท่านั้น (ไม่ใช้ email)
-  $meLabel = null;
-  if ($me) {
-      $title = $me->title_name ?? ''; // ถ้ามี
-      $fn    = $me->first_name ?? '';
-      $ln    = $me->last_name  ?? '';
-      $name  = trim($title . $fn . ' ' . $ln);
-
-      // ถ้ามี fullname ใช้ได้เลย แต่ต้องกันกรณีเป็น email
-      if ($name === '' && !empty($me->fullname) && strpos($me->fullname, '@') === false) {
-          $name = trim($me->fullname);
-      }
-
-      // fallback สุดท้าย: ห้ามใช้ email
-      if ($name === '') {
-          $name = 'ไม่พบชื่อ (ID: ' . $me->id . ')';
-      }
-
-      $meLabel = $name;
-  }
-
-  // 2) ถ้า userItems มี email เป็น label → แทนที่ด้วยชื่อของคน login เมื่อ uid ตรงกัน
-  if ($me && isset($userItems[$me->id])) {
-      if (strpos((string)$userItems[$me->id], '@') !== false) {
-          $userItems[$me->id] = $meLabel;
-      }
-  }
-
-  // 3) กันกรณี default username อยู่ แต่ไม่อยู่ในรายการ → เติมด้วยชื่อ (ไม่ใช่ email)
-  if (!empty($model->username) && !isset($userItems[$model->username]) && $me) {
-      $userItems[$model->username] = $meLabel ?? ('ไม่พบชื่อ (ID: ' . $model->username . ')');
-  }
-?>
-
 
     <div class="row g-3">
       <div class="col-12 col-md-8">
