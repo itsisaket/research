@@ -37,7 +37,7 @@ class UtilizationController extends Controller
 
                     // ✅ เฉพาะ researcher (position = 1) + admin (position = 4) ดู view ได้
                     [
-                        'actions' => ['view','create', 'update',],
+                        'actions' => ['view','create', 'update'],
                         'allow'   => true,
                         'roles'   => ['researcher', 'admin'],
                     ],
