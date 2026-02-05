@@ -101,19 +101,19 @@ if (empty($model->province)) {
     <hr class="mt-2 mb-3">
 
     <div class="row g-3 align-items-end">
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-md-4">
         <?= $form->field($model, 'org_id', [
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-sitemap\"></i></span>\n{input}\n</div>\n{error}"
         ])->dropDownList($orgItems, ['prompt' => 'เลือกหน่วยงาน..']) ?>
       </div>
 
-      <div class="col-12 col-md-4">
+      <div class="col-12 col-md-2">
         <?= $form->field($model, 'username', [
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-user-tie\"></i></span>\n{input}\n</div>\n{error}"
         ])->dropDownList($userItems, ['prompt' => 'เลือกนักวิจัย..']) ?>
       </div>
 
-      <div class="col-12 col-md-2">
+      <div class="col-12 col-md-3">
         <?= $form->field($model, 'utilization_type', [
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-tags\"></i></span>\n{input}\n</div>\n{error}"
         ])->dropDownList($typeItems, ['prompt' => 'เลือกการใช้ประโยชน์..']) ?>

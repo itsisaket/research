@@ -2,88 +2,182 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use app\models\Organize;
 use yii\helpers\ArrayHelper;
 
-use kartik\widgets\Select2;
-use kartik\widgets\TypeaheadBasic;
-use kartik\depdrop\DepDrop;
-use kartik\widgets\FileInput;
 use kartik\date\DatePicker;
-use yii\helpers\Url;
-use yii\bootstrap4\Alert;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\Article */
 /* @var $form yii\widgets\ActiveForm */
+
+/* =========================
+ * DEFAULTS from login user (หลักการเดียวกัน)
+ * ========================= */
+$me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
+
+// ✅ เตรียมรายการ dropdown ครั้งเดียว
+$orgItems   = $model->orgid ?? [];
+$userItems  = $model->userid ?? [];
+$pubItems   = $model->publication ?? [];
+$branchItems= $model->Branch ?? [];
+$ecItems    = $model->Ec ?? [];
+
+// 1) นักวิจัย (uid) = Account.username ของคน login (ให้สอดคล้องกับระบบคุณที่ใช้ username เป็นรหัสบุคลากร)
+if (empty($model->uid) && $me && !empty($me->username)) {
+    $model->uid = (string)$me->username;
+}
+
+// 2) หน่วยงาน (org_id) = org_id ของ user ที่ login
+if (empty($model->org_id) && $me && !empty($me->org_id)) {
+    $model->org_id = (int)$me->org_id;
+}
+
+// 3) กันกรณี default org_id อยู่แต่ไม่อยู่ใน list (เช่น list ถูก filter)
+if (!empty($model->org_id) && !isset($orgItems[$model->org_id]) && $me) {
+    $orgItems[$model->org_id] = $me->dept_name ?? ('หน่วยงาน #' . $model->org_id);
+}
+
+// 4) กันกรณี default uid อยู่แต่ไม่อยู่ใน list
+if (!empty($model->uid) && !isset($userItems[$model->uid])) {
+    $userItems[$model->uid] = 'รหัสบุคลากร: ' . $model->uid;
+}
+
+// 5) วันที่เผยแพร่: default วันนี้
+$today = date('d-m-Y');
+if (empty($model->article_publish)) {
+    $model->article_publish = $today;
+}
+
 ?>
 
 <div class="article-form">
 
-    <?php $form = ActiveForm::begin(); ?>
-    <div class="row">
-        <div class="col-sm-12">
-            
+<?php $form = ActiveForm::begin(); ?>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body">
+
+    <!-- ===== Header ===== -->
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+      <div>
+        <h5 class="mb-1">
+          <i class="fas fa-newspaper me-1"></i> ข้อมูลบทความวิชาการ
+        </h5>
+        <div class="text-muted small">
+          <i class="fas fa-info-circle me-1"></i> กรอกข้อมูลให้ครบถ้วนก่อนบันทึก
         </div>
-    </div>
-    <div class="row ">
-        <div class="col-sm-12">
-            <?= $form->field($model, 'article_th')->textInput(['maxlength' => true]) ?>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-12">
-            <?= $form->field($model, 'article_eng')->textInput(['maxlength' => true]) ?>
-        </div>
-    </div>    
-    <div class="row">
-        <div class="col-sm-6">
-            <?= $form->field($model, 'org_id')->dropDownList($model->orgid, ['prompt' => 'เลือกหน่วยงาน..']) ?>
-        </div>
-        <div class="col-sm-4">
-            <?= $form->field($model, 'uid')->dropDownList($model->userid, ['prompt' => 'เลือกนักวิจัย..']) ?>
-        </div>
-    </div>    
-    <div class="row">
-        <div class="col-sm-8">
-            <?= $form->field($model, 'journal')->textInput(['maxlength' => true]) ?>
-        </div>
-        <div class="col-sm-2">
-            <?= $form->field($model, 'publication_type')->dropDownList($model->publication, ['prompt' => 'เลือกประเภท..']) ?>
-        </div>
-        <div class="col-sm-2">
-            <?= $form->field($model, 'article_publish')->widget(DatePicker::className(), [
-                                    //'language'=>'th',
-                                    'name' => 'article_publish',
-                                    'options' => ['placeholder' => 'เลือกวันที่...'],
-                                    'type' => DatePicker::TYPE_COMPONENT_APPEND,
-                                    'pickerIcon' => '<i class="fas fa-calendar-alt text-primary"></i>',
-                                    'pluginOptions' => [
-                                        'autoclose' => true,
-                                        'format' => 'dd-mm-yyyy',
-                                        'todayHighlight' => true,
-                                    ]
-                                ])
-                                ?>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-3">
-            <?= $form->field($model, 'status_ec')->radioList($model->Ec); ?>
-        </div>
-        <div class="col-sm-3">
-            <?= $form->field($model, 'branch')->dropDownList($model->Branch, ['prompt' => 'เลือกสาขา..']) ?>
-        </div>
-        <div class="col-sm-6">
-            <?= $form->field($model, 'refer')->textarea(['rows' => 3]) ?>
-        </div>
-    </div>
-    <hr>
-    <div class="form-group">
-        <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>
-        <?= Html::resetButton('Reset', ['class' => 'btn btn-outline-secondary']) ?>
+      </div>
+      <div class="text-muted small">
+        <i class="fas fa-calendar-alt me-1"></i> <?= date('d/m/Y') ?>
+      </div>
     </div>
 
-    <?php ActiveForm::end(); ?>
+    <!-- ===== ชื่อบทความ ===== -->
+    <h6 class="mb-2"><i class="fas fa-file-alt me-1"></i> ชื่อบทความ</h6>
+    <hr class="mt-2 mb-3">
+
+    <div class="row g-3">
+      <div class="col-12">
+        <?= $form->field($model, 'article_th', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-language\"></i></span>\n{input}\n</div>\n{error}"
+        ])->textInput(['maxlength' => true, 'placeholder' => 'ชื่อบทความ (ภาษาไทย)']) ?>
+      </div>
+
+      <div class="col-12">
+        <?= $form->field($model, 'article_eng', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-font\"></i></span>\n{input}\n</div>\n{error}"
+        ])->textInput(['maxlength' => true, 'placeholder' => 'Article title (English)']) ?>
+      </div>
+    </div>
+
+    <!-- ===== หน่วยงาน / นักวิจัย ===== -->
+    <h6 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและนักวิจัย</h6>
+    <hr class="mt-2 mb-3">
+
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <?= $form->field($model, 'org_id', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-sitemap\"></i></span>\n{input}\n</div>\n{error}"
+        ])->dropDownList($orgItems, ['prompt' => 'เลือกหน่วยงาน..']) ?>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <?= $form->field($model, 'uid', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-user-tie\"></i></span>\n{input}\n</div>\n{error}"
+        ])->dropDownList($userItems, ['prompt' => 'เลือกนักวิจัย..']) ?>
+      </div>
+    </div>
+
+    <!-- ===== ข้อมูลการเผยแพร่ ===== -->
+    <h6 class="mt-4 mb-2"><i class="fas fa-book me-1"></i> ข้อมูลการเผยแพร่</h6>
+    <hr class="mt-2 mb-3">
+
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-md-8">
+        <?= $form->field($model, 'journal', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-journal-whills\"></i></span>\n{input}\n</div>\n{error}"
+        ])->textInput(['maxlength' => true, 'placeholder' => 'ชื่อวารสาร/แหล่งเผยแพร่']) ?>
+      </div>
+
+      <div class="col-12 col-md-2">
+        <?= $form->field($model, 'publication_type', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-tags\"></i></span>\n{input}\n</div>\n{error}"
+        ])->dropDownList($pubItems, ['prompt' => 'เลือกประเภท..']) ?>
+      </div>
+
+      <div class="col-12 col-md-2">
+        <?= $form->field($model, 'article_publish', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-calendar-check\"></i></span>\n{input}\n</div>\n{error}"
+        ])->widget(DatePicker::class, [
+          'name' => 'article_publish',
+          'options' => ['placeholder' => 'เลือกวันที่...'],
+          'type' => DatePicker::TYPE_COMPONENT_APPEND,
+          'pickerIcon' => '<i class="fas fa-calendar-alt text-primary"></i>',
+          'pluginOptions' => [
+            'autoclose' => true,
+            'format' => 'dd-mm-yyyy',
+            'todayHighlight' => true,
+          ],
+        ]) ?>
+      </div>
+    </div>
+
+    <!-- ===== สถานะ / สาขา / อ้างอิง ===== -->
+    <h6 class="mt-4 mb-2"><i class="fas fa-clipboard-check me-1"></i> สถานะและข้อมูลเพิ่มเติม</h6>
+    <hr class="mt-2 mb-3">
+
+    <div class="row g-3">
+      <div class="col-12 col-md-3">
+        <?= $form->field($model, 'status_ec')->radioList($ecItems); ?>
+      </div>
+
+      <div class="col-12 col-md-3">
+        <?= $form->field($model, 'branch', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-layer-group\"></i></span>\n{input}\n</div>\n{error}"
+        ])->dropDownList($branchItems, ['prompt' => 'เลือกสาขา..']) ?>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <?= $form->field($model, 'refer', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-link\"></i></span>\n{input}\n</div>\n{error}"
+        ])->textarea(['rows' => 3, 'placeholder' => 'อ้างอิง/รายละเอียดเพิ่มเติม (เช่น DOI/URL/หมายเหตุ)']) ?>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card-footer bg-transparent d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <div class="text-muted small">
+      <i class="fas fa-shield-alt me-1"></i> ตรวจสอบความถูกต้องก่อนบันทึก
+    </div>
+    <div class="d-flex gap-2">
+      <?= Html::submitButton('<i class="fas fa-save"></i> บันทึก', ['class' => 'btn btn-success', 'encode' => false]) ?>
+      <?= Html::resetButton('<i class="fas fa-undo"></i> ล้างค่า', ['class' => 'btn btn-outline-secondary', 'encode' => false]) ?>
+    </div>
+  </div>
+
+</div>
+
+<?php ActiveForm::end(); ?>
 
 </div>

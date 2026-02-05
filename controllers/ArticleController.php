@@ -25,7 +25,7 @@ class ArticleController extends Controller
     /**
      * @inheritDoc
      */
-    public function behaviors()
+     public function behaviors()
     {
         return [
             'access' => [
