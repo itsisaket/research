@@ -17,6 +17,10 @@ use yii\helpers\ArrayHelper;
 use yii\helpers\BaseFileHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
+
+use app\models\Province;
+use app\models\Amphur;
+use app\models\District;
 /**
  * ArticleController implements the CRUD actions for Article model.
  */
@@ -71,23 +75,22 @@ class ArticleController extends Controller
      * @return string
      */
     public function actionIndex()
-    {   $session = Yii::$app->session;
-        $ty=$session['ty'];
+    {
+        $session = Yii::$app->session;
+        $ty = $session['ty'] ?? null;
 
-        $searchModel = new ArticleSearch();
+        $searchModel  = new ArticleSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
-        
-        if (!Yii::$app->user->isGuest) {
-             $dataProvider->query->andWhere(['org_id'=>$ty]);
+
+        if (!Yii::$app->user->isGuest && $ty) {
+            $dataProvider->query->andWhere(['org_id' => $ty]);
         }
 
-
         return $this->render('index', [
-            'searchModel' => $searchModel,
+            'searchModel'  => $searchModel,
             'dataProvider' => $dataProvider,
         ]);
     }
-
     /**
      * Displays a single Article model.
      * @param int $article_id รหัสบทความ
