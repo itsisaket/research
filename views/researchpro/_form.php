@@ -8,7 +8,6 @@ use kartik\depdrop\DepDrop;
 use kartik\date\DatePicker;
 
 use yii\helpers\Url;
-
 use app\models\Province;
 
 /* @var $this yii\web\View */
@@ -20,279 +19,245 @@ use app\models\Province;
 $amphur      = $amphur ?? [];
 $subDistrict = $sub_district ?? [];
 
-/** ====== Defaults (ไม่เพิ่ม CSS, ใช้ bootstrap เดิม) ====== */
-$today = date('d-m-Y');
+/* =========================
+ * DEFAULTS from login user
+ * ========================= */
+$me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
 
-// ปีเสนอ: ใช้ปี พ.ศ. ปัจจุบันเป็นค่าเริ่มต้น (กัน null)
-$thaiYearNow = (int)date('Y') + 543;
-if (empty($model->projectYearsubmit) && isset($model->years[$thaiYearNow])) {
-    $model->projectYearsubmit = $thaiYearNow;
+// 1) หัวหน้าโครงการ (username) = user ที่ login
+if (empty($model->username) && $me) {
+    // ใช้ user.id เป็นค่าที่เก็บใน researchpro.username (ตามที่คุณเลือกใช้ username เป็น field นี้)
+    $model->username = (string)$me->id;
 }
 
-// วันที่เริ่ม/สิ้นสุด: ถ้ายังว่าง ให้ default วันนี้
+// 2) หน่วยงาน (org_id) = org_id ของ user ที่ login
+if (empty($model->org_id) && $me) {
+    // ต้องมี field org_id ใน identity (user table)
+    if (!empty($me->org_id)) {
+        $model->org_id = (int)$me->org_id;
+    }
+}
+
+// 3) ปีเสนอ/วันที่ (ตามเดิมคุณ)
+$today = date('d-m-Y');
+$thaiYear = (int)date('Y') + 543;
+
+if (empty($model->projectYearsubmit) && isset($model->years[$thaiYear])) {
+    $model->projectYearsubmit = $thaiYear;
+}
 if (empty($model->projectStartDate)) $model->projectStartDate = $today;
 if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
-
-// นักวิจัย: ถ้าระบบมี user login และฟิลด์ว่าง ให้ default เป็น user ปัจจุบัน (ถ้าตรงกับรายการ)
-if (empty($model->username) && !Yii::$app->user->isGuest) {
-    $uid = Yii::$app->user->id;
-    if (isset($model->userid[$uid])) $model->username = $uid;
-}
 
 ?>
 <div class="researchpro-form">
 
-<?php $form = ActiveForm::begin([
-    'options' => ['class' => 'needs-validation'],
-]); ?>
-
-<!-- Header -->
-<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-    <div>
-        <h4 class="mb-1">
-            <i class="bi bi-journal-text me-1"></i>
-            ข้อมูลโครงการวิจัย
-        </h4>
-        <div class="text-muted small">
-            <i class="bi bi-info-circle me-1"></i>
-            กรอกข้อมูลให้ครบถ้วนเพื่อใช้ในระบบ ResearchPro
-        </div>
-    </div>
-    <div class="text-muted small">
-        <i class="bi bi-calendar-event me-1"></i>
-        อัปเดต: <?= Html::encode(date('d/m/Y')) ?>
-    </div>
-</div>
+<?php $form = ActiveForm::begin(); ?>
 
 <div class="card shadow-sm mb-3">
-    <div class="card-body">
+  <div class="card-body">
 
-        <!-- ===== 1) ชื่อโครงการ ===== -->
-        <div class="d-flex align-items-center mb-2">
-            <h6 class="mb-0">
-                <i class="bi bi-card-text me-1"></i>
-                ชื่อโครงการ
-            </h6>
-        </div>
-        <hr class="mt-2 mb-3">
-
-        <div class="row g-3">
-            <div class="col-12">
-                <?= $form->field($model, 'projectNameTH', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-translate\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->textInput(['maxlength' => true, 'placeholder' => 'ระบุชื่อโครงการ (ภาษาไทย)']) ?>
-            </div>
-            <div class="col-12">
-                <?= $form->field($model, 'projectNameEN', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-type\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->textInput(['maxlength' => true, 'placeholder' => 'Project title (English)']) ?>
-            </div>
-        </div>
-
-        <!-- ===== 2) หน่วยงาน/นักวิจัย ===== -->
-        <div class="d-flex align-items-center mt-4 mb-2">
-            <h6 class="mb-0">
-                <i class="bi bi-building me-1"></i>
-                หน่วยงานและผู้รับผิดชอบ
-            </h6>
-        </div>
-        <hr class="mt-2 mb-3">
-
-        <div class="row g-3">
-            <div class="col-12 col-md-8">
-                <?= $form->field($model, 'org_id', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-diagram-3\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->dropDownList($model->orgid ?? [], [
-                    'prompt' => 'เลือกหน่วยงาน..'
-                ]) ?>
-            </div>
-            <div class="col-12 col-md-4">
-                <?= $form->field($model, 'username', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-person-badge\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->dropDownList($model->userid ?? [], [
-                    'prompt' => 'เลือกนักวิจัย..'
-                ]) ?>
-            </div>
-        </div>
-
-        <!-- ===== 3) ประเภท/สาขา/ปี/งบ ===== -->
-        <div class="d-flex align-items-center mt-4 mb-2">
-            <h6 class="mb-0">
-                <i class="bi bi-clipboard-data me-1"></i>
-                รายละเอียดโครงการ
-            </h6>
-        </div>
-        <hr class="mt-2 mb-3">
-
-        <div class="row g-3">
-            <div class="col-12 col-md-3">
-                <?= $form->field($model, 'researchTypeID', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-tags\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->dropDownList($model->Restype ?? [], [
-                    'prompt' => 'เลือกประเภทวิจัย..'
-                ]) ?>
-            </div>
-            <div class="col-12 col-md-3">
-                <?= $form->field($model, 'branch', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-diagram-2\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->dropDownList($model->Branch ?? [], [
-                    'prompt' => 'เลือกสาขา..'
-                ]) ?>
-            </div>
-            <div class="col-12 col-md-3">
-                <?= $form->field($model, 'projectYearsubmit', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-calendar2-week\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->dropDownList($model->years ?? [], [
-                    'prompt' => 'เลือกปีเสนอ..'
-                ]) ?>
-            </div>
-            <div class="col-12 col-md-3">
-                <?= $form->field($model, 'budgets', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-cash-coin\"></i></span>\n{input}\n<span class=\"input-group-text\">บาท</span>\n</div>\n{hint}\n{error}"
-                ])->textInput(['inputmode' => 'numeric', 'placeholder' => 'เช่น 1500000']) ?>
-            </div>
-        </div>
-
-        <!-- ===== 4) แหล่งทุน/วันที่/สถานะ ===== -->
-        <div class="d-flex align-items-center mt-4 mb-2">
-            <h6 class="mb-0">
-                <i class="bi bi-piggy-bank me-1"></i>
-                ทุนวิจัยและช่วงเวลาดำเนินงาน
-            </h6>
-        </div>
-        <hr class="mt-2 mb-3">
-
-        <div class="row g-3">
-            <div class="col-12 col-md-4">
-                <?= $form->field($model, 'fundingAgencyID', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-bank\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->dropDownList($model->ResAgency ?? [], [
-                    'prompt' => 'เลือกหน่วยงานผู้ให้ทุน..'
-                ]) ?>
-            </div>
-            <div class="col-12 col-md-4">
-                <?= $form->field($model, 'researchFundID', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-wallet2\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->dropDownList($model->ResFund ?? [], [
-                    'prompt' => 'เลือกแหล่งทุน..'
-                ]) ?>
-            </div>
-
-            <div class="col-12 col-md-4">
-                <?= $form->field($model, 'jobStatusID', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-flag\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->dropDownList($model->resstatus ?? [], [
-                    'prompt' => 'เลือกสถานะโครงการ..'
-                ]) ?>
-            </div>
-
-            <div class="col-12 col-md-4">
-                <?= $form->field($model, 'projectStartDate', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-calendar-plus\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->widget(DatePicker::class, [
-                    'options' => ['placeholder' => 'เลือกวันที่เริ่ม...'],
-                    'type' => DatePicker::TYPE_COMPONENT_APPEND,
-                    'pickerIcon' => '<i class="bi bi-calendar3"></i>',
-                    'pluginOptions' => [
-                        'autoclose' => true,
-                        'format' => 'dd-mm-yyyy',
-                        'todayHighlight' => true,
-                    ],
-                ]) ?>
-            </div>
-
-            <div class="col-12 col-md-4">
-                <?= $form->field($model, 'projectEndDate', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-calendar-check\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->widget(DatePicker::class, [
-                    'options' => ['placeholder' => 'เลือกวันที่สิ้นสุด...'],
-                    'type' => DatePicker::TYPE_COMPONENT_APPEND,
-                    'pickerIcon' => '<i class="bi bi-calendar3"></i>',
-                    'pluginOptions' => [
-                        'autoclose' => true,
-                        'format' => 'dd-mm-yyyy',
-                        'todayHighlight' => true,
-                    ],
-                ]) ?>
-            </div>
-        </div>
-
-        <!-- ===== 5) พื้นที่วิจัย ===== -->
-        <div class="d-flex align-items-center mt-4 mb-2">
-            <h6 class="mb-0">
-                <i class="bi bi-geo-alt me-1"></i>
-                พื้นที่วิจัย
-            </h6>
-        </div>
-        <hr class="mt-2 mb-3">
-
-        <div class="row g-3 align-items-end">
-            <div class="col-12 col-md-6">
-                <?= $form->field($model, 'researchArea', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-pin-map\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->textInput(['maxlength' => true, 'placeholder' => 'เช่น อ.ขุนหาญ จ.ศรีสะเกษ']) ?>
-            </div>
-
-            <div class="col-12 col-md-2">
-                <?php
-                $provinceItems = ArrayHelper::map(
-                    Province::find()->where(['PROVINCE_ID' => 33])->all(),
-                    'PROVINCE_ID',
-                    'PROVINCE_NAME'
-                );
-                // ถ้าล็อกจังหวัดไว้ ให้ default เป็น 33 เมื่อว่าง
-                if (empty($model->province)) $model->province = 33;
-                ?>
-                <?= $form->field($model, 'province', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-map\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->dropDownList($provinceItems, [
-                    'id' => 'ddl-province',
-                    'prompt' => 'เลือกจังหวัด',
-                ]) ?>
-            </div>
-
-            <div class="col-12 col-md-2">
-                <?= $form->field($model, 'district', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-signpost-split\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->widget(DepDrop::class, [
-                    'options' => ['id' => 'ddl-amphur'],
-                    'data' => $amphur,
-                    'pluginOptions' => [
-                        'depends' => ['ddl-province'],
-                        'placeholder' => 'เลือกอำเภอ...',
-                        'url' => Url::to(['/researchpro/get-amphur']),
-                    ],
-                ]) ?>
-            </div>
-
-            <div class="col-12 col-md-2">
-                <?= $form->field($model, 'sub_district', [
-                    'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"bi bi-geo\"></i></span>\n{input}\n</div>\n{hint}\n{error}"
-                ])->widget(DepDrop::class, [
-                    'data' => $subDistrict,
-                    'pluginOptions' => [
-                        'depends' => ['ddl-province', 'ddl-amphur'],
-                        'placeholder' => 'เลือกตำบล...',
-                        'url' => Url::to(['/researchpro/get-district']),
-                    ],
-                ]) ?>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="card-footer bg-transparent d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <!-- ===== Header ===== -->
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+      <div>
+        <h5 class="mb-1">
+          <i class="fas fa-book-open me-1"></i> ข้อมูลโครงการวิจัย
+        </h5>
         <div class="text-muted small">
-            <i class="bi bi-shield-check me-1"></i>
-            โปรดตรวจสอบความถูกต้องก่อนบันทึก
+          <i class="fas fa-info-circle me-1"></i> กรอกข้อมูลให้ครบถ้วนก่อนบันทึก
         </div>
-        <div class="d-flex gap-2">
-            <?= Html::a('<i class="bi bi-arrow-left"></i> ย้อนกลับ', ['index'], ['class' => 'btn btn-outline-secondary', 'encode' => false]) ?>
-            <?= Html::submitButton('<i class="bi bi-save"></i> บันทึกข้อมูล', ['class' => 'btn btn-success', 'encode' => false]) ?>
-        </div>
+      </div>
+      <div class="text-muted small">
+        <i class="fas fa-calendar-alt me-1"></i> <?= date('d/m/Y') ?>
+      </div>
     </div>
+
+    <!-- ===== ชื่อโครงการ ===== -->
+    <h6 class="mb-2"><i class="fas fa-file-alt me-1"></i> ชื่อโครงการ</h6>
+    <hr class="mt-2 mb-3">
+
+    <div class="row g-3">
+      <div class="col-12">
+        <?= $form->field($model, 'projectNameTH', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-language\"></i></span>\n{input}\n</div>\n{error}"
+        ])->textInput(['maxlength' => true, 'placeholder' => 'ชื่อโครงการ (ภาษาไทย)']) ?>
+      </div>
+
+      <div class="col-12">
+        <?= $form->field($model, 'projectNameEN', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-font\"></i></span>\n{input}\n</div>\n{error}"
+        ])->textInput(['maxlength' => true, 'placeholder' => 'Project Title (English)']) ?>
+      </div>
+    </div>
+
+    <!-- ===== หน่วยงาน / หัวหน้าโครงการ ===== -->
+    <h6 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและหัวหน้าโครงการ</h6>
+    <hr class="mt-2 mb-3">
+
+    <?php
+      // เตรียมรายการ dropdown
+      $orgItems  = $model->orgid ?? [];
+      $userItems = $model->userid ?? [];
+
+      // กันกรณี default org_id อยู่ แต่ไม่อยู่ในรายการ (เช่น list ถูก filter)
+      if (!empty($model->org_id) && !isset($orgItems[$model->org_id]) && $me) {
+          $orgItems[$model->org_id] = $me->dept_name ?? ('หน่วยงาน #' . $model->org_id);
+      }
+
+      // กันกรณี default username อยู่ แต่ไม่อยู่ในรายการ (เช่น list ถูก filter)
+      $meLabel = null;
+      if ($me) {
+          $meLabel = trim(($me->fullname ?? '') ?: (($me->first_name ?? '').' '.($me->last_name ?? '')));
+          if ($meLabel === '') $meLabel = $me->email ?? ('User #' . $me->id);
+      }
+      if (!empty($model->username) && !isset($userItems[$model->username]) && $me) {
+          $userItems[$model->username] = $meLabel ?? ('User #' . $model->username);
+      }
+    ?>
+
+    <div class="row g-3">
+      <div class="col-12 col-md-8">
+        <?= $form->field($model, 'org_id', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-sitemap\"></i></span>\n{input}\n</div>\n{error}"
+        ])->dropDownList($orgItems, [
+          'prompt' => 'เลือกหน่วยงาน..'
+        ]) ?>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <?= $form->field($model, 'username', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-user-tie\"></i></span>\n{input}\n</div>\n{error}"
+        ])->dropDownList($userItems, [
+          'prompt' => 'เลือกหัวหน้าโครงการ..'
+        ]) ?>
+      </div>
+    </div>
+
+    <!-- ===== รายละเอียดโครงการ ===== -->
+    <h6 class="mt-4 mb-2"><i class="fas fa-clipboard-list me-1"></i> รายละเอียดโครงการ</h6>
+    <hr class="mt-2 mb-3">
+
+    <div class="row g-3">
+      <div class="col-12 col-md-3">
+        <?= $form->field($model, 'researchTypeID')->dropDownList($model->Restype ?? [], ['prompt' => 'เลือกประเภทวิจัย..']) ?>
+      </div>
+      <div class="col-12 col-md-3">
+        <?= $form->field($model, 'branch')->dropDownList($model->Branch ?? [], ['prompt' => 'เลือกสาขา..']) ?>
+      </div>
+      <div class="col-12 col-md-3">
+        <?= $form->field($model, 'projectYearsubmit')->dropDownList($model->years ?? [], ['prompt' => 'เลือกปีเสนอ..']) ?>
+      </div>
+      <div class="col-12 col-md-3">
+        <?= $form->field($model, 'budgets', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-money-bill-wave\"></i></span>\n{input}\n<span class=\"input-group-text\">บาท</span>\n</div>\n{error}"
+        ])->textInput(['inputmode'=>'numeric', 'placeholder'=>'เช่น 1500000']) ?>
+      </div>
+    </div>
+
+    <!-- ===== ทุน/วันเริ่ม-สิ้นสุด/สถานะ ===== -->
+    <h6 class="mt-4 mb-2"><i class="fas fa-coins me-1"></i> ทุนและระยะเวลา</h6>
+    <hr class="mt-2 mb-3">
+
+    <div class="row g-3">
+      <div class="col-12 col-md-4">
+        <?= $form->field($model, 'fundingAgencyID')->dropDownList($model->ResAgency ?? [], ['prompt' => 'เลือกหน่วยงานผู้ให้ทุน..']) ?>
+      </div>
+      <div class="col-12 col-md-4">
+        <?= $form->field($model, 'researchFundID')->dropDownList($model->ResFund ?? [], ['prompt' => 'เลือกแหล่งทุน..']) ?>
+      </div>
+      <div class="col-12 col-md-4">
+        <?= $form->field($model, 'jobStatusID')->dropDownList($model->resstatus ?? [], ['prompt' => 'เลือกสถานะโครงการ..']) ?>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <?= $form->field($model, 'projectStartDate')->widget(DatePicker::class, [
+          'options' => ['placeholder' => 'เลือกวันที่เริ่ม...'],
+          'type' => DatePicker::TYPE_COMPONENT_APPEND,
+          'pickerIcon' => '<i class="fas fa-calendar-plus text-primary"></i>',
+          'pluginOptions' => [
+            'autoclose' => true,
+            'format' => 'dd-mm-yyyy',
+            'todayHighlight' => true,
+          ],
+        ]) ?>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <?= $form->field($model, 'projectEndDate')->widget(DatePicker::class, [
+          'options' => ['placeholder' => 'เลือกวันที่สิ้นสุด...'],
+          'type' => DatePicker::TYPE_COMPONENT_APPEND,
+          'pickerIcon' => '<i class="fas fa-calendar-check text-success"></i>',
+          'pluginOptions' => [
+            'autoclose' => true,
+            'format' => 'dd-mm-yyyy',
+            'todayHighlight' => true,
+          ],
+        ]) ?>
+      </div>
+    </div>
+
+    <!-- ===== พื้นที่วิจัย (คงของเดิม) ===== -->
+    <h6 class="mt-4 mb-2"><i class="fas fa-map-marker-alt me-1"></i> พื้นที่วิจัย</h6>
+    <hr class="mt-2 mb-3">
+
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-md-6">
+        <?= $form->field($model, 'researchArea', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-map\"></i></span>\n{input}\n</div>\n{error}"
+        ])->textInput(['maxlength' => true, 'placeholder' => 'เช่น อ.ขุนหาญ จ.ศรีสะเกษ']) ?>
+      </div>
+
+      <div class="col-12 col-md-2">
+        <?php
+        $provinceItems = ArrayHelper::map(
+            Province::find()->where(['PROVINCE_ID' => 33])->all(),
+            'PROVINCE_ID',
+            'PROVINCE_NAME'
+        );
+        if (empty($model->province)) $model->province = 33;
+        ?>
+        <?= $form->field($model, 'province')->dropDownList($provinceItems, [
+          'id' => 'ddl-province',
+          'prompt' => 'เลือกจังหวัด',
+        ]) ?>
+      </div>
+
+      <div class="col-12 col-md-2">
+        <?= $form->field($model, 'district')->widget(DepDrop::class, [
+          'options' => ['id' => 'ddl-amphur'],
+          'data' => $amphur,
+          'pluginOptions' => [
+            'depends' => ['ddl-province'],
+            'placeholder' => 'เลือกอำเภอ...',
+            'url' => Url::to(['/researchpro/get-amphur']),
+          ],
+        ]) ?>
+      </div>
+
+      <div class="col-12 col-md-2">
+        <?= $form->field($model, 'sub_district')->widget(DepDrop::class, [
+          'data' => $subDistrict,
+          'pluginOptions' => [
+            'depends' => ['ddl-province', 'ddl-amphur'],
+            'placeholder' => 'เลือกตำบล...',
+            'url' => Url::to(['/researchpro/get-district']),
+          ],
+        ]) ?>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card-footer bg-transparent d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <div class="text-muted small">
+      <i class="fas fa-shield-alt me-1"></i> ตรวจสอบความถูกต้องก่อนบันทึก
+    </div>
+    <div class="d-flex gap-2">
+      <?= Html::a('<i class="fas fa-arrow-left"></i> ย้อนกลับ', ['index'], ['class' => 'btn btn-outline-secondary', 'encode'=>false]) ?>
+      <?= Html::submitButton('<i class="fas fa-save"></i> บันทึก', ['class' => 'btn btn-success', 'encode'=>false]) ?>
+    </div>
+  </div>
+
 </div>
 
 <?php ActiveForm::end(); ?>
-
 </div>
