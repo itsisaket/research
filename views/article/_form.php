@@ -113,19 +113,19 @@ if (empty($model->article_publish)) {
     <hr class="mt-2 mb-3">
 
     <div class="row g-3 align-items-end">
-      <div class="col-12 col-md-8">
+      <div class="col-12 col-md-12">
         <?= $form->field($model, 'journal', [
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-journal-whills\"></i></span>\n{input}\n</div>\n{error}"
         ])->textInput(['maxlength' => true, 'placeholder' => 'ชื่อวารสาร/แหล่งเผยแพร่']) ?>
       </div>
 
-      <div class="col-12 col-md-2">
+      <div class="col-12 col-md-3">
         <?= $form->field($model, 'publication_type', [
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-tags\"></i></span>\n{input}\n</div>\n{error}"
         ])->dropDownList($pubItems, ['prompt' => 'เลือกประเภท..']) ?>
       </div>
 
-      <div class="col-12 col-md-2">
+      <div class="col-12 col-md-3">
         <?= $form->field($model, 'article_publish', [
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-calendar-check\"></i></span>\n{input}\n</div>\n{error}"
         ])->widget(DatePicker::class, [
@@ -140,6 +140,11 @@ if (empty($model->article_publish)) {
           ],
         ]) ?>
       </div>
+            <div class="col-12 col-md-3">
+        <?= $form->field($model, 'branch', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-layer-group\"></i></span>\n{input}\n</div>\n{error}"
+        ])->dropDownList($branchItems, ['prompt' => 'เลือกสาขา..']) ?>
+      </div>
     </div>
 
     <!-- ===== สถานะ / สาขา / อ้างอิง ===== -->
@@ -151,13 +156,7 @@ if (empty($model->article_publish)) {
         <?= $form->field($model, 'status_ec')->radioList($ecItems); ?>
       </div>
 
-      <div class="col-12 col-md-3">
-        <?= $form->field($model, 'branch', [
-          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-layer-group\"></i></span>\n{input}\n</div>\n{error}"
-        ])->dropDownList($branchItems, ['prompt' => 'เลือกสาขา..']) ?>
-      </div>
-
-      <div class="col-12 col-md-6">
+      <div class="col-12 col-md-9">
         <?= $form->field($model, 'refer', [
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-link\"></i></span>\n{input}\n</div>\n{error}"
         ])->textarea(['rows' => 3, 'placeholder' => 'อ้างอิง/รายละเอียดเพิ่มเติม (เช่น DOI/URL/หมายเหตุ)']) ?>
