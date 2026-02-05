@@ -21,55 +21,55 @@ class SiteController extends Controller
     private const CLOCK_SKEW       = 120;               // ยอม clock-skew 120s
     private const MAX_BODY_BYTES   = 1048576;           // 1MB
 
-public function behaviors()
-{
-    return [
-        'access' => [
-            'class' => AccessControl::class,
-            'ruleConfig' => [
-                'class' => \app\components\HanumanRule::class,
-            ],
-            'only' => [
-                'index', 'login', 'error', 'about',
-                'my-profile',
-                'up-user-json', 'up-faculty-json', 'up-dept-json',
-            ],
-            'rules' => [
-
-                // ✅ public: guest + login → index, login, error
-                [
-                    'actions' => ['index', 'login', 'error','my-profile'],
-                    'allow'   => true,
-                    'roles'   => ['?', '@'],
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::class,
+                'ruleConfig' => [
+                    'class' => \app\components\HanumanRule::class,
                 ],
-                // ✅ researcher + admin: ดู about ได้
-                [
-                    'actions' => ['about'],
-                    'allow'   => true,
-                    'roles'   => ['researcher', 'admin'],
+                'only' => [
+                    'index', 'login', 'error', 'about',
+                    'my-profile',
+                    'up-user-json', 'up-faculty-json', 'up-dept-json',
                 ],
+                'rules' => [
 
-                // ✅ admin เท่านั้น: sync APIs
-                [
-                    'actions' => [
-                        'up-user-json',
-                        'up-faculty-json',
-                        'up-dept-json',
+                    // ✅ public: guest + login → index, login, error
+                    [
+                        'actions' => ['index', 'login', 'error','my-profile'],
+                        'allow'   => true,
+                        'roles'   => ['?', '@'],
                     ],
-                    'allow' => true,
-                    'roles' => ['admin'],
+                    // ✅ researcher + admin: ดู about ได้
+                    [
+                        'actions' => ['about'],
+                        'allow'   => true,
+                        'roles'   => ['researcher', 'admin'],
+                    ],
+
+                    // ✅ admin เท่านั้น: sync APIs
+                    [
+                        'actions' => [
+                            'up-user-json',
+                            'up-faculty-json',
+                            'up-dept-json',
+                        ],
+                        'allow' => true,
+                        'roles' => ['admin'],
+                    ],
                 ],
             ],
-        ],
 
-        'verbs' => [
-            'class' => VerbFilter::class,
-            'actions' => [
-                'delete' => ['POST'],
+            'verbs' => [
+                'class' => VerbFilter::class,
+                'actions' => [
+                    'delete' => ['POST'],
+                ],
             ],
-        ],
-    ];
-}
+        ];
+    }
 
 
 

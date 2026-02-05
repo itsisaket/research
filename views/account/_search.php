@@ -2,8 +2,6 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use yii\bootstrap5\Modal;
-use yii\helpers\Url;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\AccountSearch */
@@ -28,25 +26,4 @@ use yii\helpers\Url;
 
 
 </div>
-<?php
-     
-     Modal::begin([
-       'id'=>'modal',
-       'size'=>'modal-lg',
-     ]);
-   
-      echo "<div id='modalContent'></div>";
-   
-   Modal::end();
-   
-   
-   
-   //javascript code
-   $this->registerJs("$(function() {
-   $('#button').click(function(){
-   $('#modal').modal('show')
-   .find('#modalContent')
-   .load($(this).attr('value'));
-   });
- })");
-?>
+
