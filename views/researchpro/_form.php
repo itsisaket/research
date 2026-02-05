@@ -93,26 +93,54 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
     <h6 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและหัวหน้าโครงการ</h6>
     <hr class="mt-2 mb-3">
 
-    <?php
-      // เตรียมรายการ dropdown
-      $orgItems  = $model->orgid ?? [];
-      $userItems = $model->userid ?? [];
+<?php
+  // เตรียมรายการ dropdown
+  $orgItems  = $model->orgid ?? [];
+  $userItems = $model->userid ?? [];
 
-      // กันกรณี default org_id อยู่ แต่ไม่อยู่ในรายการ (เช่น list ถูก filter)
-      if (!empty($model->org_id) && !isset($orgItems[$model->org_id]) && $me) {
-          $orgItems[$model->org_id] = $me->dept_name ?? ('หน่วยงาน #' . $model->org_id);
+  // กันกรณี default org_id อยู่ แต่ไม่อยู่ในรายการ (เช่น list ถูก filter)
+  if (!empty($model->org_id) && !isset($orgItems[$model->org_id]) && $me) {
+      $orgItems[$model->org_id] = $me->dept_name ?? ('หน่วยงาน #' . $model->org_id);
+  }
+
+  /** ===============================
+   *  FIX: ห้ามแสดง email ใน dropdown
+   * =============================== */
+
+  // 1) ทำ label สำหรับผู้ใช้ที่ login: ชื่อ-สกุล เท่านั้น (ไม่ใช้ email)
+  $meLabel = null;
+  if ($me) {
+      $title = $me->title_name ?? ''; // ถ้ามี
+      $fn    = $me->first_name ?? '';
+      $ln    = $me->last_name  ?? '';
+      $name  = trim($title . $fn . ' ' . $ln);
+
+      // ถ้ามี fullname ใช้ได้เลย แต่ต้องกันกรณีเป็น email
+      if ($name === '' && !empty($me->fullname) && strpos($me->fullname, '@') === false) {
+          $name = trim($me->fullname);
       }
 
-      // กันกรณี default username อยู่ แต่ไม่อยู่ในรายการ (เช่น list ถูก filter)
-      $meLabel = null;
-      if ($me) {
-          $meLabel = trim(($me->fullname ?? '') ?: (($me->first_name ?? '').' '.($me->last_name ?? '')));
-          if ($meLabel === '') $meLabel = $me->email ?? ('User #' . $me->id);
+      // fallback สุดท้าย: ห้ามใช้ email
+      if ($name === '') {
+          $name = 'ไม่พบชื่อ (ID: ' . $me->id . ')';
       }
-      if (!empty($model->username) && !isset($userItems[$model->username]) && $me) {
-          $userItems[$model->username] = $meLabel ?? ('User #' . $model->username);
+
+      $meLabel = $name;
+  }
+
+  // 2) ถ้า userItems มี email เป็น label → แทนที่ด้วยชื่อของคน login เมื่อ uid ตรงกัน
+  if ($me && isset($userItems[$me->id])) {
+      if (strpos((string)$userItems[$me->id], '@') !== false) {
+          $userItems[$me->id] = $meLabel;
       }
-    ?>
+  }
+
+  // 3) กันกรณี default username อยู่ แต่ไม่อยู่ในรายการ → เติมด้วยชื่อ (ไม่ใช่ email)
+  if (!empty($model->username) && !isset($userItems[$model->username]) && $me) {
+      $userItems[$model->username] = $meLabel ?? ('ไม่พบชื่อ (ID: ' . $model->username . ')');
+  }
+?>
+
 
     <div class="row g-3">
       <div class="col-12 col-md-8">
