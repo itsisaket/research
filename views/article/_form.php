@@ -22,9 +22,9 @@ $pubItems   = $model->publication ?? [];
 $branchItems= $model->Branch ?? [];
 $ecItems    = $model->Ec ?? [];
 
-// 1) นักวิจัย (uid) = Account.username ของคน login (ให้สอดคล้องกับระบบคุณที่ใช้ username เป็นรหัสบุคลากร)
-if (empty($model->uid) && $me && !empty($me->username)) {
-    $model->uid = (string)$me->username;
+// 1) นักวิจัย (username) = Account.username ของคน login (ให้สอดคล้องกับระบบคุณที่ใช้ username เป็นรหัสบุคลากร)
+if (empty($model->username) && $me && !empty($me->username)) {
+    $model->username = (string)$me->username;
 }
 
 // 2) หน่วยงาน (org_id) = org_id ของ user ที่ login
@@ -37,9 +37,9 @@ if (!empty($model->org_id) && !isset($orgItems[$model->org_id])) {
     $orgItems[$model->org_id] = 'หน่วยงาน #' . $model->org_id;
 }
 
-// 4) กันกรณี default uid อยู่แต่ไม่อยู่ใน list
-if (!empty($model->uid) && !isset($userItems[$model->uid])) {
-    $userItems[$model->uid] = 'รหัสบุคลากร: ' . $model->uid;
+// 4) กันกรณี default username อยู่แต่ไม่อยู่ใน list
+if (!empty($model->username) && !isset($userItems[$model->username])) {
+    $userItems[$model->username] = 'รหัสบุคลากร: ' . $model->username;
 }
 
 // 5) วันที่เผยแพร่: default วันนี้
@@ -102,7 +102,7 @@ if (empty($model->article_publish)) {
       </div>
 
       <div class="col-12 col-md-6">
-        <?= $form->field($model, 'uid', [
+        <?= $form->field($model, 'username', [
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-user-tie\"></i></span>\n{input}\n</div>\n{error}"
         ])->dropDownList($userItems, ['prompt' => 'เลือกนักวิจัย..']) ?>
       </div>
