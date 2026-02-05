@@ -32,9 +32,9 @@ if (empty($model->org_id) && $me && !empty($me->org_id)) {
     $model->org_id = (int)$me->org_id;
 }
 
-// 3) กันกรณี default org_id อยู่แต่ไม่อยู่ใน list (เช่น list ถูก filter)
-if (!empty($model->org_id) && !isset($orgItems[$model->org_id]) && $me) {
-    $orgItems[$model->org_id] = $me->dept_name ?? ('หน่วยงาน #' . $model->org_id);
+// 3) กันกรณี default org_id อยู่แต่ไม่อยู่ใน list (ปลอดภัย)
+if (!empty($model->org_id) && !isset($orgItems[$model->org_id])) {
+    $orgItems[$model->org_id] = 'หน่วยงาน #' . $model->org_id;
 }
 
 // 4) กันกรณี default uid อยู่แต่ไม่อยู่ใน list
