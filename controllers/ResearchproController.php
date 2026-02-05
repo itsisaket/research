@@ -22,45 +22,44 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 class ResearchproController extends Controller
 {
-    public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'ruleConfig' => [
-                    'class' => \app\components\HanumanRule::class, // 👈 ใช้ HanumanRule
+
+public function behaviors()
+{
+    return [
+        'access' => [
+            'class' => AccessControl::class,
+            'ruleConfig' => [
+                'class' => \app\components\HanumanRule::class,
+            ],
+            'rules' => [
+                [
+                    'actions' => ['index', 'error'],
+                    'allow'   => true,
+                    'roles'   => ['?', '@'],
                 ],
-                'rules' => [
-                    // ✅ public: ดู index, error, ajax ได้ทุกคน
-                    [
-                        'actions' => ['index', 'error'],
-                        'allow'   => true,
-                        'roles'   => ['?', '@'], // guest + login
-                    ],
-
-                    // ✅ เฉพาะ researcher (position = 1) + admin (position = 4) ดู view ได้
-                    [
-                        'actions' => ['view','create', 'update'],
-                        'allow'   => true,
-                        'roles'   => ['researcher', 'admin'],
-                    ],
-
-                    // ✅ เฉพาะ admin (position = 4) แก้ไข/ลบ/สร้างได้
-                    [
-                        'actions' => ['create', 'update', 'delete','import'],
-                        'allow'   => true,
-                        'roles'   => ['admin'],
-                    ],
+                // ✅ position 1 researcher + 4 admin
+                [
+                    'actions' => ['view', 'create', 'update'],
+                    'allow'   => true,
+                    'roles'   => [1, 4],
+                ],
+                // ✅ admin เท่านั้น
+                [
+                    'actions' => ['delete'],
+                    'allow'   => true,
+                    'roles'   => [4],
                 ],
             ],
-            'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'delete' => ['POST'],
-                ],
+        ],
+        'verbs' => [
+            'class' => VerbFilter::class,
+            'actions' => [
+                'delete' => ['POST'],
             ],
-        ];
-    }
+        ],
+    ];
+}
+
 
     public function actionIndex()
     {
