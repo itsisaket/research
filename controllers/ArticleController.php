@@ -43,15 +43,9 @@ public function behaviors()
                 ],
                 // ✅ position 1 researcher + 4 admin
                 [
-                    'actions' => ['view', 'create', 'update'],
+                    'actions' => ['view', 'create', 'update','delete'],
                     'allow'   => true,
                     'roles'   => [1, 4],
-                ],
-                // ✅ admin เท่านั้น
-                [
-                    'actions' => ['delete'],
-                    'allow'   => true,
-                    'roles'   => [4],
                 ],
             ],
         ],

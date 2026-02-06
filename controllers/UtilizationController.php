@@ -38,15 +38,11 @@ class UtilizationController extends Controller
                         'roles'   => ['@'],
                     ],
                     [
-                        'actions' => ['view', 'create', 'update'],
+                        'actions' => ['view', 'create', 'update','delete'],
                         'allow'   => true,
                         'roles'   => [1, 4],
                     ],
-                    [
-                        'actions' => ['delete'],
-                        'allow'   => true,
-                        'roles'   => [4],
-                    ],
+
                 ],
             ],
             'verbs' => [
