@@ -31,20 +31,16 @@ public function behaviors()
             'ruleConfig' => [
                 'class' => \app\components\HanumanRule::class,
             ],
+            // ✅ ยกเว้น DepDrop AJAX ไม่ให้ผ่าน HanumanRule
+            'except' => ['get-amphur', 'get-district'],
+
             'rules' => [
                 [
                     'actions' => ['index', 'error'],
                     'allow'   => true,
                     'roles'   => ['?', '@'],
                 ],
-                    [
-                        // ✅ เปิด DepDrop ให้คนที่ล็อกอินใช้ได้ทั้งหมด
-                        'actions' => ['get-amphur', 'get-district'],
-                        'allow'   => true,
-                        'roles'   => ['@'],
-                    ],
-                                [
-                    // ✅ เพิ่ม get-amphur, get-district
+                [
                     'actions' => ['view', 'create', 'update'],
                     'allow'   => true,
                     'roles'   => [1, 4],
@@ -59,14 +55,14 @@ public function behaviors()
         'verbs' => [
             'class' => VerbFilter::class,
             'actions' => [
-                'delete' => ['POST'],
-                // (ไม่จำเป็นต้องใส่ก็ได้ แต่ใส่เพื่อชัดเจน)
-                'get-amphur'  => ['POST'],
-                'get-district'=> ['POST'],
+                'delete'       => ['POST'],
+                'get-amphur'   => ['POST'],
+                'get-district' => ['POST'],
             ],
         ],
     ];
 }
+
 
 
 
@@ -138,10 +134,11 @@ public function actionCreate()
             return $this->redirect(['view', 'projectID' => $model->projectID]);
         }
 
+
         return $this->render('update', [
-            'model'        => $model,
-            'amphur'       => $amphur,
-            'subdistrict' => $subdistrict,
+            'model'       => $model,
+            'amphur'      => $amphur,
+            'subDistrict' => $subdistrict,
         ]);
     }
 
