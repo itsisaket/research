@@ -8,6 +8,13 @@ use app\models\Account; // ใช้ Account เป็น identity
 
 class HanumanRule extends AccessRule
 {
+    /**
+     * รองรับ roles ได้ 4 แบบ:
+     * 1) '?' guest
+     * 2) '@' login
+     * 3) ชื่อ role เช่น 'admin','researcher'
+     * 4) ตัวเลข position เช่น 1,4 หรือ '1','4'
+     */
     protected function matchRole($user)
     {
         // 1) ถ้าไม่กำหนด roles → ผ่านทุกคน
@@ -15,27 +22,32 @@ class HanumanRule extends AccessRule
             return true;
         }
 
+        // normalize roles: trim string และคงค่าเดิมของ non-string
+        $roles = array_map(function ($r) {
+            return is_string($r) ? trim($r) : $r;
+        }, $this->roles);
+
         // 2) guest
         if ($user->getIsGuest()) {
-            return in_array('?', $this->roles, true);
+            return in_array('?', $roles, true);
         }
 
         // 3) identity ต้องเป็น Account
         $identity = $user->identity;
         if (!$identity instanceof Account) {
             // ถ้า rule มี '@' อนุญาตคนที่ล็อกอินแล้ว
-            return in_array('@', $this->roles, true);
+            return in_array('@', $roles, true);
         }
 
         // 4) ถ้า rule มี '@' อย่างเดียว → allow
         $hasExtra = false;
-        foreach ($this->roles as $r) {
+        foreach ($roles as $r) {
             if ($r !== '@' && $r !== '?') {
                 $hasExtra = true;
                 break;
             }
         }
-        if (!$hasExtra && in_array('@', $this->roles, true)) {
+        if (!$hasExtra && in_array('@', $roles, true)) {
             return true;
         }
 
@@ -50,26 +62,31 @@ class HanumanRule extends AccessRule
             'admin'      => 4,
         ];
 
-        foreach ($this->roles as $role) {
+        foreach ($roles as $role) {
 
             // ข้าม '@' และ '?'
             if ($role === '@' || $role === '?') {
                 continue;
             }
 
-            // (ก) rule เป็น string เช่น 'admin'
+            // (ก) role เป็น string เช่น 'admin'
             if (is_string($role)) {
+                // string ชื่อ role
                 if (isset($roleMap[$role]) && $position === (int)$roleMap[$role]) {
                     return true;
                 }
+
+                // string ตัวเลข เช่น "4"
+                if (is_numeric($role) && $position === (int)$role) {
+                    return true;
+                }
+
                 continue;
             }
 
-            // (ข) rule เป็นตัวเลข เช่น 1, 4
-            if (is_int($role) || ctype_digit((string)$role)) {
-                if ($position === (int)$role) {
-                    return true;
-                }
+            // (ข) role เป็นตัวเลข เช่น 1,4 หรือ float ที่เป็นตัวเลข
+            if (is_numeric($role) && $position === (int)$role) {
+                return true;
             }
         }
 
