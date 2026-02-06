@@ -12,7 +12,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
 \yii\web\YiiAsset::register($this);
 
-/** ===== owner check: แสดงปุ่มแก้ไข/ลบ เฉพาะเจ้าของเรื่อง (username) ===== */
+/** ===== owner check: แสดงปุ่มลบ เฉพาะเจ้าของเรื่อง (username) ===== */
 $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
 $isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$model->username);
 
@@ -34,7 +34,7 @@ $safe = function ($v, $fallback = '-') {
             <i class="fas fa-newspaper me-1"></i> <?= Html::encode($this->title) ?>
           </h5>
           <div class="text-muted small">
-            <i class="fas fa-info-circle me-1"></i> ทุกคนดูได้ (ปุ่มแก้ไข/ลบ แสดงเฉพาะเจ้าของเรื่อง)
+            <i class="fas fa-info-circle me-1"></i> ทุกคนดูได้และแก้ไขข้อมูลได้ (ปุ่มลบ แสดงเฉพาะเจ้าของเรื่อง)
           </div>
         </div>
         <div class="text-muted small">
@@ -49,13 +49,10 @@ $safe = function ($v, $fallback = '-') {
               'class' => 'btn btn-outline-secondary',
               'encode' => false,
           ]) ?>
-
-          <?php if ($isOwner): ?>
             <?= Html::a('<i class="fas fa-edit me-1"></i> แก้ไขข้อมูล', ['update', 'article_id' => $model->article_id], [
                 'class' => 'btn btn-primary',
                 'encode' => false,
             ]) ?>
-          <?php endif; ?>
         </div>
 
         <div>

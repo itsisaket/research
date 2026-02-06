@@ -36,7 +36,7 @@ $money = function ($v) use ($safe) {
             <i class="fas fa-book-open me-1"></i> <?= Html::encode($this->title) ?>
           </h5>
           <div class="text-muted small">
-            <i class="fas fa-info-circle me-1"></i> ตรวจสอบข้อมูลก่อนแก้ไข/ลบ
+            <i class="fas fa-info-circle me-1"></i> ทุกคนดูได้(ปุ่มแก้ไขข้อมูลและปุ่มลบ แสดงเฉพาะเจ้าของเรื่อง)
           </div>
         </div>
         <div class="text-muted small">

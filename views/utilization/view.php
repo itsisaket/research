@@ -12,9 +12,10 @@ $this->params['breadcrumbs'][] = $this->title;
 
 \yii\web\YiiAsset::register($this);
 
-// ===== check owner (ใช้เฉพาะปุ่มลบ) =====
+/** ===== owner check: แสดงปุ่มลบ เฉพาะเจ้าของเรื่อง (username) ===== */
 $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
-$isOwner = ($me && (string)$me->username === (string)$model->username);
+$isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$model->username);
+
 
 // ===== helper =====
 $safe = fn($v, $f='-') => ($v !== null && $v !== '') ? $v : $f;
@@ -33,7 +34,7 @@ $money = fn($v) => is_numeric($v) ? number_format($v).' บาท' : '-';
       <i class="fas fa-book-open me-1"></i> <?= Html::encode($this->title) ?>
     </h5>
     <div class="text-muted small">
-      <i class="fas fa-info-circle me-1"></i> ทุกคนสามารถเข้าดูข้อมูลได้
+      <i class="fas fa-info-circle me-1"></i> ทุกคนดูได้และแก้ไขข้อมูลได้ (ปุ่มลบ แสดงเฉพาะเจ้าของเรื่อง)
     </div>
   </div>
   <div class="text-muted small">
