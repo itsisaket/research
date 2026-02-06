@@ -191,55 +191,58 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
     <hr class="mt-2 mb-3">
 
     <div class="row g-3 align-items-end">
-      <div class="col-12 col-md-6">
-        <?= $form->field($model, 'researchArea', [
-          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-map\"></i></span>\n{input}\n</div>\n{error}"
-        ])->textInput(['maxlength' => true, 'placeholder' => 'เช่น อ.ขุนหาญ จ.ศรีสะเกษ']) ?>
-      </div>
-
-      <div class="col-12 col-md-2">
-        <?php
-        $provinceItems = ArrayHelper::map(
-            Province::find()
-                ->orderBy(['PROVINCE_NAME' => SORT_ASC])
-                ->all(),
-            'PROVINCE_ID',
-            'PROVINCE_NAME'
-        );
-        if (empty($model->province)) $model->province = 33;
-        ?>
-        <?= $form->field($model, 'province')->dropDownList($provinceItems, [
-            'id' => 'ddl-province',
-            'prompt' => 'เลือกจังหวัด',
-        ]) ?>
+        <div class="col-12 col-md-6">
+          <?= $form->field($model, 'researchArea', [
+            'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-map\"></i></span>\n{input}\n</div>\n{error}"
+          ])->textInput(['maxlength' => true, 'placeholder' => 'เช่น อ.ขุนหาญ จ.ศรีสะเกษ']) ?>
         </div>
 
         <div class="col-12 col-md-2">
-        <?= $form->field($model, 'district')->widget(DepDrop::class, [
-            'options' => ['id' => 'ddl-amphur'],
-            'data' => $amphur ?? [],
-            'pluginOptions' => [
-                'depends' => ['ddl-province'],
-                'placeholder' => 'เลือกอำเภอ...',
-                'url' => Url::to(['/researchpro/get-amphur']),
-                'initialize' => true,
-            ],
-        ]) ?>
+          <?php
+          $provinceItems = ArrayHelper::map(
+              Province::find()
+                  ->orderBy(['PROVINCE_NAME' => SORT_ASC])
+                  ->all(),
+              'PROVINCE_ID',
+              'PROVINCE_NAME'
+          );
+          if (empty($model->province)) $model->province = 33;
+          ?>
+          <?= $form->field($model, 'province')->dropDownList($provinceItems, [
+              'id' => 'ddl-province',
+              'type' => DepDrop::TYPE_SELECT2,
+              'prompt' => 'เลือกจังหวัด',
+          ]) ?>
         </div>
 
         <div class="col-12 col-md-2">
-        <?= $form->field($model, 'sub_district')->widget(DepDrop::class, [
-            'options' => ['id' => 'ddl-tambon'],
-            'data' => $subDistrict ?? [],
-            'pluginOptions' => [
-                'depends' => ['ddl-province', 'ddl-amphur'],
-                'placeholder' => 'เลือกตำบล...',
-                'url' => Url::to(['/researchpro/get-district']),
-                'initialize' => true,
-            ],
-        ]) ?>
+          <?= $form->field($model, 'district')->widget(DepDrop::class, [
+              'options' => ['id' => 'ddl-amphur'],
+              'type' => DepDrop::TYPE_SELECT2,
+              'data' => $amphur ?? [],
+              'pluginOptions' => [
+                  'depends' => ['ddl-province'],
+                  'placeholder' => 'เลือกอำเภอ...',
+                  'url' => Url::to(['/researchpro/get-amphur']),
+                  'initialize' => true,
+              ],
+          ]) ?>
         </div>
-      </div>
+
+        <div class="col-12 col-md-2">
+          <?= $form->field($model, 'sub_district')->widget(DepDrop::class, [
+              'options' => ['id' => 'ddl-tambon'],
+              'type' => DepDrop::TYPE_SELECT2,
+              'data' => $subDistrict ?? [],
+              'pluginOptions' => [
+                  'depends' => ['ddl-province', 'ddl-amphur'],
+                  'placeholder' => 'เลือกตำบล...',
+                  'url' => Url::to(['/researchpro/get-district']),
+                  'initialize' => true,
+              ],
+          ]) ?>
+        </div>
+
   </div>
 
   <div class="card-footer bg-transparent d-flex flex-wrap gap-2 justify-content-between align-items-center">

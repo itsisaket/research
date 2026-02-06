@@ -34,13 +34,12 @@ public function behaviors()
                     'allow'   => true,
                     'roles'   => ['?', '@'],
                 ],
-                // ✅ position 1 researcher + 4 admin
                 [
-                    'actions' => ['view', 'create', 'update'],
+                    // ✅ เพิ่ม get-amphur, get-district
+                    'actions' => ['view', 'create', 'update', 'get-amphur', 'get-district'],
                     'allow'   => true,
                     'roles'   => [1, 4],
                 ],
-                // ✅ admin เท่านั้น
                 [
                     'actions' => ['delete'],
                     'allow'   => true,
@@ -52,6 +51,9 @@ public function behaviors()
             'class' => VerbFilter::class,
             'actions' => [
                 'delete' => ['POST'],
+                // (ไม่จำเป็นต้องใส่ก็ได้ แต่ใส่เพื่อชัดเจน)
+                'get-amphur'  => ['POST'],
+                'get-district'=> ['POST'],
             ],
         ],
     ];
@@ -107,7 +109,7 @@ public function behaviors()
                     $amphur = ArrayHelper::map($this->getAmphur($model->province), 'id', 'name');
                 }
                 if ($model->district) {
-                    $sub_district = ArrayHelper::map($this->getDistrict($model->district), 'id', 'name');
+                    $subdistrict = ArrayHelper::map($this->getDistrict($model->district), 'id', 'name');
                 }
             }
         } else {
@@ -117,7 +119,7 @@ public function behaviors()
         return $this->render('create', [
             'model'        => $model,
             'amphur'       => $amphur,
-            'sub_district' => $sub_district,
+            'subdistrict' => $subdistrict,
         ]);
     }
 
@@ -127,7 +129,7 @@ public function behaviors()
 
         // โหลดค่าจังหวัด-อำเภอ-ตำบลเดิมเข้า DepDrop
         $amphur       = ArrayHelper::map($this->getAmphur($model->province), 'id', 'name');
-        $sub_district = ArrayHelper::map($this->getDistrict($model->district), 'id', 'name');
+        $subdistrict = ArrayHelper::map($this->getDistrict($model->district), 'id', 'name');
 
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
             return $this->redirect(['view', 'utilization_id' => $model->utilization_id]);
@@ -136,7 +138,7 @@ public function behaviors()
         return $this->render('update', [
             'model'        => $model,
             'amphur'       => $amphur,
-            'sub_district' => $sub_district,
+            'subdistrict' => $subdistrict,
         ]);
     }
 
@@ -154,60 +156,76 @@ public function behaviors()
         throw new NotFoundHttpException('The requested page does not exist.');
     }
 
-    /* ============ AJAX for DepDrop ============ */
+/* ===================== DepDrop AJAX ===================== */
 
-    public function actionGetAmphur()
-    {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+public function actionGetAmphur()
+{
+    Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
-        if (isset($_POST['depdrop_parents'])) {
-            $parents = $_POST['depdrop_parents'];
-            if ($parents != null) {
-                $province_id = $parents[0];
-                $out = $this->getAmphur($province_id);
-                return ['output' => $out, 'selected' => ''];
-            }
+    if (isset($_POST['depdrop_parents'])) {
+        $parents = $_POST['depdrop_parents'];
+        $province_id = $parents[0] ?? null;
+
+        if ($province_id) {
+            $out = $this->getAmphur($province_id);
+            return ['output' => $out, 'selected' => ''];
         }
-        return ['output' => '', 'selected' => ''];
     }
+    return ['output' => [], 'selected' => ''];
+}
 
-    public function actionGetDistrict()
-    {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+public function actionGetDistrict()
+{
+    Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
-        if (isset($_POST['depdrop_parents'])) {
-            $parents     = $_POST['depdrop_parents'];
-            $province_id = $parents[0] ?? null;
-            $amphur_id   = $parents[1] ?? null;
+    if (isset($_POST['depdrop_parents'])) {
+        $ids = $_POST['depdrop_parents'];
 
-            if ($amphur_id !== null) {
-                $data = $this->getDistrict($amphur_id);
-                return ['output' => $data, 'selected' => ''];
-            }
+        // กรณี depends = ['ddl-province','ddl-amphur']
+        $amphur_id = $ids[1] ?? null;
+
+        if ($amphur_id) {
+            $out = $this->getDistrict($amphur_id);
+            return ['output' => $out, 'selected' => ''];
         }
-        return ['output' => '', 'selected' => ''];
     }
+    return ['output' => [], 'selected' => ''];
+}
 
-    /* ============ helpers ============ */
+/* ===================== Helper สำหรับ DepDrop ===================== */
 
-    protected function getAmphur($provinceId)
-    {
-        $datas = Amphur::find()->where(['PROVINCE_ID' => $provinceId])->all();
-        return $this->mapData($datas, 'AMPHUR_CODE', 'AMPHUR_NAME');
-    }
+protected function getAmphur($provinceId)
+{
+    $datas = Amphur::find()
+        ->where(['PROVINCE_ID' => $provinceId])
+        ->orderBy(['AMPHUR_NAME' => SORT_ASC])
+        ->all();
 
-    protected function getDistrict($amphurId)
-    {
-        $datas = District::find()->where(['AMPHUR_ID' => $amphurId])->all();
-        return $this->mapData($datas, 'DISTRICT_CODE', 'DISTRICT_NAME');
-    }
+    return $this->mapData($datas, 'AMPHUR_CODE', 'AMPHUR_NAME');
+}
 
-    protected function mapData($datas, $fieldId, $fieldName)
-    {
-        $obj = [];
-        foreach ($datas as $value) {
-            $obj[] = ['id' => $value->{$fieldId}, 'name' => $value->{$fieldName}];
+protected function getDistrict($amphurId)
+{
+    $datas = District::find()
+        ->where(['AMPHUR_ID' => $amphurId])
+        ->orderBy(['DISTRICT_NAME' => SORT_ASC])
+        ->all();
+
+    return $this->mapData($datas, 'DISTRICT_CODE', 'DISTRICT_NAME');
+}
+
+protected function mapData($datas, $fieldId, $fieldName)
+{
+    $obj = [];
+    foreach ($datas as $value) {
+        // รองรับทั้ง ActiveRecord object และ array
+        $id = is_array($value) ? ($value[$fieldId] ?? null) : ($value->{$fieldId} ?? null);
+        $name = is_array($value) ? ($value[$fieldName] ?? null) : ($value->{$fieldName} ?? null);
+
+        if ($id !== null) {
+            $obj[] = ['id' => $id, 'name' => $name];
         }
-        return $obj;
     }
+    return $obj;
+}
 }

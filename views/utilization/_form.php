@@ -145,32 +145,52 @@ if (empty($model->province)) {
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-location-arrow\"></i></span>\n{input}\n</div>\n{error}"
         ])->textInput(['maxlength' => true, 'placeholder' => 'สถานที่/หน่วยงาน/ที่อยู่ (สั้น ๆ)']) ?>
       </div>
+        <div class="col-12 col-md-2">
+          <?php
+          $provinceItems = ArrayHelper::map(
+              Province::find()
+                  ->orderBy(['PROVINCE_NAME' => SORT_ASC])
+                  ->all(),
+              'PROVINCE_ID',
+              'PROVINCE_NAME'
+          );
+          if (empty($model->province)) $model->province = 33;
+          ?>
+          <?= $form->field($model, 'province')->dropDownList($provinceItems, [
+              'type' => DepDrop::TYPE_SELECT2,
+              'id' => 'ddl-province',
+              'prompt' => 'เลือกจังหวัด',
+          ]) ?>
+        </div>
 
-      <div class="col-12 col-md-2">
-        <?php
-        $provinceItems = ArrayHelper::map(
-            Province::find()->where(['PROVINCE_ID' => 33])->all(),
-            'PROVINCE_ID',
-            'PROVINCE_NAME'
-        );
-        ?>
-        <?= $form->field($model, 'province')->dropDownList($provinceItems, [
-          'id' => 'ddl-province',
-          'prompt' => 'เลือกจังหวัด',
-        ]) ?>
-      </div>
+        <div class="col-12 col-md-2">
+          <?= $form->field($model, 'district')->widget(DepDrop::class, [
+              'options' => ['id' => 'ddl-amphur'],
+              'type' => DepDrop::TYPE_SELECT2,
+              'data' => $amphur ?? [],
+              'pluginOptions' => [
+                  'depends' => ['ddl-province'],
+                  'placeholder' => 'เลือกอำเภอ...',
+                  'url' => Url::to(['/researchpro/get-amphur']),
+                  'initialize' => true,
+              ],
+          ]) ?>
+        </div>
 
-      <div class="col-12 col-md-2">
-        <?= $form->field($model, 'district')->widget(DepDrop::class, [
-          'options' => ['id' => 'ddl-amphur'],
-          'data' => $amphur,
-          'pluginOptions' => [
-            'depends' => ['ddl-province'],
-            'placeholder' => 'เลือกอำเภอ...',
-            'url' => Url::to(['/utilization/get-amphur']),
-          ],
-        ]) ?>
-      </div>
+        <div class="col-12 col-md-2">
+          <?= $form->field($model, 'sub_district')->widget(DepDrop::class, [
+              'options' => ['id' => 'ddl-tambon'],
+              'type' => DepDrop::TYPE_SELECT2,
+              'data' => $subDistrict ?? [],
+              'pluginOptions' => [
+                  'depends' => ['ddl-province', 'ddl-amphur'],
+                  'placeholder' => 'เลือกตำบล...',
+                  'url' => Url::to(['/researchpro/get-district']),
+                  'initialize' => true,
+              ],
+          ]) ?>
+        </div>
+
 
       <div class="col-12 col-md-2">
         <?= $form->field($model, 'sub_district')->widget(DepDrop::class, [

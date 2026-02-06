@@ -54,7 +54,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <div>
                 <div class="mui-title">บทความวิจัย</div>
                 <div class="mui-value">
-                    <?= Html::a($counttype4, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 4], ['class' => 'text-white text-decoration-none']) ?>
+                    <?= Html::a($counttype4, ['/article/index'], ['class' => 'text-white text-decoration-none']) ?>
                 </div>
                 
             </div>

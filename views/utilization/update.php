@@ -12,6 +12,6 @@ $this->title = 'การนำไปใช้ประโยชน์';
 
 
     <?= $this->render('_form', [
-        'model' => $model,'amphur'=> $amphur, 'sub_district' =>$sub_district
+        'model' => $model,'amphur'=> $amphur, 'subdistrict' =>$subdistrict
     ]) ?>
 </div>
