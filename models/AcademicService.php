@@ -4,7 +4,9 @@ namespace app\models;
 
 use Yii;
 use yii\db\ActiveRecord;
-
+use yii\helpers\ArrayHelper;
+use app\models\Account;
+use app\models\Organize;
 /**
  * This is the model class for table "academic_service".
  *
@@ -108,10 +110,69 @@ class AcademicService extends ActiveRecord
         return true;
     }
 
-    /** ความสัมพันธ์: เจ้าของรายการ */
-    public function getUser()
+   public function getUserid()
     {
-        return $this->hasOne(Account::class, ['username' => 'username']);
+        $session = Yii::$app->session;
+        $ty = $session['ty'] ?? null;
+
+        $users = [];
+
+        if (!Yii::$app->user->isGuest) {
+
+            // ปกติ: ให้เห็นเฉพาะตัวเอง
+            $users = Account::find()
+                ->where(['username' => Yii::$app->user->identity->username])
+                ->all();
+
+            // ถ้าไม่ใช่นักวิจัย (position != 1) → เห็นเฉพาะหน่วยงานตัวเอง
+            if ((int)Yii::$app->user->identity->position !== 1 && $ty) {
+                $users = Account::find()
+                    ->where(['org_id' => $ty])
+                    ->orderBy(['uname' => SORT_ASC])
+                    ->all();
+            }
+
+            // admin (position == 4) → เห็นทั้งหมด
+            if ((int)Yii::$app->user->identity->position === 4) {
+                $users = Account::find()
+                    ->orderBy(['uname' => SORT_ASC])
+                    ->all();
+            }
+        }
+
+        $userList = ArrayHelper::map($users, 'username', function ($user) {
+
+            $fn = trim((string)($user->uname ?? ''));
+            $ln = trim((string)($user->luname ?? ''));
+
+            $full = trim($fn . ' ' . $ln);
+
+            // ❌ กันกรณีชื่อเป็น email / มี @
+            if ($full === '' || strpos($full, '@') !== false) {
+                // ใช้รหัสบุคลากรแทน (username ของ Account)
+                return 'รหัสบุคลากร: ' . $user->username;
+            }
+
+            return $full;
+        });
+
+        return $userList;
+    }
+
+    public function getOrgid()
+    {
+        $session = Yii::$app->session;
+        $ty = $session['ty'] ?? null;
+
+        if ($ty == 11) {
+            return ArrayHelper::map(Organize::find()->all(), 'org_id', 'org_name');
+        }
+        if ($ty) {
+            return ArrayHelper::map(Organize::find()->where(['org_id' => $ty])->all(), 'org_id', 'org_name');
+        }
+
+        // fallback ถ้าไม่มี ty
+        return ArrayHelper::map(Organize::find()->all(), 'org_id', 'org_name');
     }
 
     /** ความสัมพันธ์: ประเภทบริการวิชาการ */
@@ -127,5 +188,9 @@ class AcademicService extends ActiveRecord
         if (!$u) return $this->username;
         $name = trim(($u->prefix ?? '') . ($u->uname ?? '') . ' ' . ($u->luname ?? ''));
         return $name !== '' ? $name : $this->username;
+    }
+    public function getUser()
+    {
+        return $this->hasOne(Account::class, ['username' => 'username']);
     }
 }

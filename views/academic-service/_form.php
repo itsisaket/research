@@ -12,20 +12,18 @@ use app\models\AcademicServiceType;
 /* @var $model app\models\AcademicService */
 /* @var $form yii\widgets\ActiveForm */
 
-$me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
-
-// default service_date วันนี้
+// default service_date วันนี้ (เก็บเป็น DATE)
 if (empty($model->service_date)) {
-    $model->service_date = date('Y-m-d'); // เก็บเป็น DATE
+    $model->service_date = date('Y-m-d');
 }
 
 $typeItems = AcademicServiceType::getItems(true);
 
-// แสดงชื่อเจ้าของ
-$ownerText = $model->ownerFullname ?? ($model->username ?? '-');
+// ชื่อเจ้าของรายการ
+$ownerText = !empty($model->ownerFullname) ? $model->ownerFullname : ($model->username ?? '-');
 ?>
-<div class="academic-service-form">
 
+<div class="academic-service-form">
 <?php $form = ActiveForm::begin(); ?>
 
 <div class="card shadow-sm mb-3">
@@ -40,7 +38,6 @@ $ownerText = $model->ownerFullname ?? ($model->username ?? '-');
       <div class="text-muted small"><i class="fas fa-calendar-alt me-1"></i> <?= date('d/m/Y') ?></div>
     </div>
 
-    <!-- ข้อมูลหลัก -->
     <h5 class="mb-2"><i class="fas fa-file-alt me-1"></i> ข้อมูลการปฏิบัติงาน</h5>
     <hr class="mt-2 mb-3">
 
@@ -102,12 +99,10 @@ $ownerText = $model->ownerFullname ?? ($model->username ?? '-');
 
     </div>
 
-    <!-- เจ้าของรายการ -->
     <div class="mt-3 text-muted small">
       <i class="fas fa-user-tie me-1"></i> เจ้าของรายการ: <strong><?= Html::encode($ownerText) ?></strong>
     </div>
 
-    <!-- hidden fields: username/org_id (ตั้งค่าใน beforeValidate() แล้ว) -->
     <?= $form->field($model, 'username')->hiddenInput()->label(false) ?>
     <?= $form->field($model, 'org_id')->hiddenInput()->label(false) ?>
 
