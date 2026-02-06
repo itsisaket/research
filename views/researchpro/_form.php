@@ -5,6 +5,7 @@ use yii\widgets\ActiveForm;
 use yii\helpers\ArrayHelper;
 
 use kartik\depdrop\DepDrop;
+use kartik\select2\Select2;
 use kartik\date\DatePicker;
 
 use yii\helpers\Url;
@@ -198,49 +199,65 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
         </div>
 
         <div class="col-12 col-md-2">
-          <?php
-          $provinceItems = ArrayHelper::map(
-              Province::find()
-                  ->orderBy(['PROVINCE_NAME' => SORT_ASC])
-                  ->all(),
-              'PROVINCE_ID',
-              'PROVINCE_NAME'
-          );
-          if (empty($model->province)) $model->province = 33;
-          ?>
-          <?= $form->field($model, 'province')->dropDownList($provinceItems, [
-              'id' => 'ddl-province',
-              'type' => DepDrop::TYPE_SELECT2,
-              'prompt' => 'เลือกจังหวัด',
-          ]) ?>
+        <?php
+        $provinceItems = ArrayHelper::map(
+            Province::find()->orderBy(['PROVINCE_NAME' => SORT_ASC])->all(),
+            'PROVINCE_ID',
+            'PROVINCE_NAME'
+        );
+        if (empty($model->province)) $model->province = 33;
+        ?>
+        <?= $form->field($model, 'province')->widget(Select2::class, [
+            'data' => $provinceItems,
+            'options' => [
+                'id' => 'ddl-province',
+                'placeholder' => 'เลือกจังหวัด',
+            ],
+            'pluginOptions' => [
+                'allowClear' => true,
+            ],
+        ]) ?>
         </div>
 
         <div class="col-12 col-md-2">
-          <?= $form->field($model, 'district')->widget(DepDrop::class, [
-              'options' => ['id' => 'ddl-amphur'],
-              'type' => DepDrop::TYPE_SELECT2,
-              'data' => $amphur ?? [],
-              'pluginOptions' => [
-                  'depends' => ['ddl-province'],
-                  'placeholder' => 'เลือกอำเภอ...',
-                  'url' => Url::to(['/researchpro/get-amphur']),
-                  'initialize' => true,
-              ],
-          ]) ?>
+        <?= $form->field($model, 'district')->widget(DepDrop::class, [
+            'type' => DepDrop::TYPE_SELECT2,
+            'options' => ['id' => 'ddl-amphur'],
+            'data' => $amphur ?? [],
+            'select2Options' => [
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'minimumInputLength' => 0,
+                ],
+            ],
+            'pluginOptions' => [
+                'depends' => ['ddl-province'],
+                'placeholder' => 'เลือกอำเภอ...',
+                'url' => Url::to(['/researchpro/get-amphur']),
+                'initialize' => true,
+            ],
+        ]) ?>
         </div>
 
+
         <div class="col-12 col-md-2">
-          <?= $form->field($model, 'sub_district')->widget(DepDrop::class, [
-              'options' => ['id' => 'ddl-tambon'],
-              'type' => DepDrop::TYPE_SELECT2,
-              'data' => $subDistrict ?? [],
-              'pluginOptions' => [
-                  'depends' => ['ddl-province', 'ddl-amphur'],
-                  'placeholder' => 'เลือกตำบล...',
-                  'url' => Url::to(['/researchpro/get-district']),
-                  'initialize' => true,
-              ],
-          ]) ?>
+        <?= $form->field($model, 'sub_district')->widget(DepDrop::class, [
+            'type' => DepDrop::TYPE_SELECT2,
+            'options' => ['id' => 'ddl-tambon'],
+            'data' => $subDistrict ?? [],
+            'select2Options' => [
+                'pluginOptions' => [
+                    'allowClear' => true,
+                    'minimumInputLength' => 0,
+                ],
+            ],
+            'pluginOptions' => [
+                'depends' => ['ddl-province', 'ddl-amphur'],
+                'placeholder' => 'เลือกตำบล...',
+                'url' => Url::to(['/researchpro/get-district']),
+                'initialize' => true,
+            ],
+        ]) ?>
         </div>
 
   </div>
