@@ -140,6 +140,15 @@ class UtilizationController extends Controller
     public function actionDelete($utilization_id)
     {
         $this->findModel($utilization_id)->delete();
+
+        $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
+        $isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$model->username);
+
+        if (!$isOwner) {
+            throw new \yii\web\ForbiddenHttpException('คุณไม่มีสิทธิ์ลบรายการนี้');
+        }
+
+        $model->delete();
         return $this->redirect(['index']);
     }
 
