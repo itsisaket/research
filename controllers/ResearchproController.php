@@ -23,6 +23,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 class ResearchproController extends Controller
 {
 
+
 public function behaviors()
 {
     return [
@@ -31,20 +32,20 @@ public function behaviors()
             'ruleConfig' => [
                 'class' => \app\components\HanumanRule::class,
             ],
-            // ✅ ยกเว้น DepDrop AJAX ไม่ให้ผ่าน HanumanRule
             'except' => ['get-amphur', 'get-district'],
-
             'rules' => [
                 [
                     'actions' => ['index', 'error'],
                     'allow'   => true,
                     'roles'   => ['?', '@'],
                 ],
+                // ✅ position 1 researcher + 4 admin
                 [
                     'actions' => ['view', 'create', 'update'],
                     'allow'   => true,
                     'roles'   => [1, 4],
                 ],
+                // ✅ admin เท่านั้น
                 [
                     'actions' => ['delete'],
                     'allow'   => true,
@@ -55,9 +56,7 @@ public function behaviors()
         'verbs' => [
             'class' => VerbFilter::class,
             'actions' => [
-                'delete'       => ['POST'],
-                'get-amphur'   => ['POST'],
-                'get-district' => ['POST'],
+                'delete' => ['POST'],
             ],
         ],
     ];
