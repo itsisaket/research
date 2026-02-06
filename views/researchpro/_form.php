@@ -200,42 +200,46 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
       <div class="col-12 col-md-2">
         <?php
         $provinceItems = ArrayHelper::map(
-            Province::find()->where(['PROVINCE_ID' => 33])->all(),
+            Province::find()
+                ->orderBy(['PROVINCE_NAME' => SORT_ASC])
+                ->all(),
             'PROVINCE_ID',
             'PROVINCE_NAME'
         );
         if (empty($model->province)) $model->province = 33;
         ?>
         <?= $form->field($model, 'province')->dropDownList($provinceItems, [
-          'id' => 'ddl-province',
-          'prompt' => 'เลือกจังหวัด',
+            'id' => 'ddl-province',
+            'prompt' => 'เลือกจังหวัด',
         ]) ?>
-      </div>
+        </div>
 
-      <div class="col-12 col-md-2">
+        <div class="col-12 col-md-2">
         <?= $form->field($model, 'district')->widget(DepDrop::class, [
-          'options' => ['id' => 'ddl-amphur'],
-          'data' => $amphur,
-          'pluginOptions' => [
-            'depends' => ['ddl-province'],
-            'placeholder' => 'เลือกอำเภอ...',
-            'url' => Url::to(['/researchpro/get-amphur']),
-          ],
+            'options' => ['id' => 'ddl-amphur'],
+            'data' => $amphur ?? [],
+            'pluginOptions' => [
+                'depends' => ['ddl-province'],
+                'placeholder' => 'เลือกอำเภอ...',
+                'url' => Url::to(['/researchpro/get-amphur']),
+                'initialize' => true,
+            ],
         ]) ?>
-      </div>
+        </div>
 
-      <div class="col-12 col-md-2">
+        <div class="col-12 col-md-2">
         <?= $form->field($model, 'sub_district')->widget(DepDrop::class, [
-          'data' => $subDistrict,
-          'pluginOptions' => [
-            'depends' => ['ddl-province', 'ddl-amphur'],
-            'placeholder' => 'เลือกตำบล...',
-            'url' => Url::to(['/researchpro/get-district']),
-          ],
+            'options' => ['id' => 'ddl-tambon'],
+            'data' => $subDistrict ?? [],
+            'pluginOptions' => [
+                'depends' => ['ddl-province', 'ddl-amphur'],
+                'placeholder' => 'เลือกตำบล...',
+                'url' => Url::to(['/researchpro/get-district']),
+                'initialize' => true,
+            ],
         ]) ?>
+        </div>
       </div>
-    </div>
-
   </div>
 
   <div class="card-footer bg-transparent d-flex flex-wrap gap-2 justify-content-between align-items-center">

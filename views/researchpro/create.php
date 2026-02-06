@@ -10,11 +10,9 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="researchpro-create">
 
-
     <?= $this->render('_form', [
-        'model' => $model,
-        'amphur'=> [],
-        'sub_district' =>[],
+        'model'       => $model,
+        'amphur'      => [],
+        'subDistrict' => [],
     ]) ?>
-
 </div>

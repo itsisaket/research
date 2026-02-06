@@ -15,6 +15,9 @@ use app\models\Resstatus;
 use app\models\ResFund;
 use app\models\ResGency;
 
+use app\models\Article;
+use app\models\ArticleSearch;
+
 class ReportController extends Controller
 {
     public function behaviors()
@@ -126,7 +129,7 @@ class ReportController extends Controller
             $counttype1 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 1])->count();
             $counttype2 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 2])->count();
             $counttype3 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 3])->count();
-            $counttype4 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 4])->count();
+            $counttype4 = Article::find()->where(['username' => $username])->count();
 
             // บนสุดโชว์ชื่อคน login
             $countuser  = trim($user->uname . ' ' . $user->luname);
@@ -134,7 +137,7 @@ class ReportController extends Controller
             $counttype1 = Researchpro::find()->where(['researchTypeID' => 1])->count();
             $counttype2 = Researchpro::find()->where(['researchTypeID' => 2])->count();
             $counttype3 = Researchpro::find()->where(['researchTypeID' => 3])->count();
-            $counttype4 = Researchpro::find()->where(['researchTypeID' => 4])->count();
+            $counttype4 = Article::find()->count();
 
             // นับผู้ใช้ทั้งหมด
             $countuser  = Account::find()->count();

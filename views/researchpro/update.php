@@ -12,7 +12,7 @@ $this->params['breadcrumbs'][] = 'Update';
 
 <?= Html::a('<i class="glyphicon glyphicon-edit"></i> ย้อนกลับ ', ['view', 'projectID' => $model->projectID], ['class' => 'btn btn-info']) ?>
     <?= $this->render('_form', [
-        'model' => $model,'amphur'=> $amphur, 'sub_district' =>$sub_district
+        'model' => $model,'amphur'=> $amphur, 'subdistrict' =>$subdistrict
     ]) ?>
 
 </div>

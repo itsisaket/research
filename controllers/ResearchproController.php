@@ -89,25 +89,24 @@ public function behaviors()
         ]);
     }
 
-    public function actionCreate()
-    {
-        $model = new Researchpro();
+public function actionCreate()
+{
+    $model = new Researchpro();
 
-        if ($this->request->isPost) {
-            if ($model->load($this->request->post()) && $model->save()) {
-                return $this->redirect(['view', 'projectID' => $model->projectID]);
-            }
-        } else {
-            $model->loadDefaultValues();
+    if ($this->request->isPost) {
+        if ($model->load($this->request->post()) && $model->save()) {
+            return $this->redirect(['view', 'projectID' => $model->projectID]);
         }
-
-        // ⭐ ส่ง array ว่าง ๆ ไปให้ view เพื่อ DepDrop ตอน create
-        return $this->render('create', [
-            'model'        => $model,
-            'amphur'       => [],
-            'sub_district' => [],
-        ]);
+    } else {
+        $model->loadDefaultValues();
     }
+
+    return $this->render('create', [
+        'model'       => $model,
+        'amphur'      => [],
+        'subDistrict' => [],
+    ]);
+}
 
     public function actionUpdate($projectID)
     {
@@ -133,7 +132,7 @@ public function behaviors()
         return $this->render('update', [
             'model'        => $model,
             'amphur'       => $amphur,
-            'sub_district' => $subdistrict,
+            'subdistrict' => $subdistrict,
         ]);
     }
 
@@ -150,70 +149,79 @@ public function behaviors()
         }
         throw new NotFoundHttpException('The requested page does not exist.');
     }
+/* ===================== DepDrop AJAX ===================== */
 
-    /* ===================== DepDrop AJAX ===================== */
+public function actionGetAmphur()
+{
+    Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
-    public function actionGetAmphur()
-    {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+    if (isset($_POST['depdrop_parents'])) {
+        $parents = $_POST['depdrop_parents'];
+        $province_id = $parents[0] ?? null;
 
-        $out = [];
-        if (isset($_POST['depdrop_parents'])) {
-            $parents = $_POST['depdrop_parents'];
-            if (!empty($parents)) {
-                $province_id = $parents[0];
-                $out = $this->getAmphur($province_id);
-                return ['output' => $out, 'selected' => ''];
-            }
+        if ($province_id) {
+            $out = $this->getAmphur($province_id);
+            return ['output' => $out, 'selected' => ''];
         }
-        return ['output' => '', 'selected' => ''];
     }
+    return ['output' => [], 'selected' => ''];
+}
 
-    public function actionGetDistrict()
-    {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+public function actionGetDistrict()
+{
+    Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
-        $out = [];
-        if (isset($_POST['depdrop_parents'])) {
-            $ids         = $_POST['depdrop_parents'];
-            $province_id = $ids[0] ?? null;
-            $amphur_id   = $ids[1] ?? null;
+    if (isset($_POST['depdrop_parents'])) {
+        $ids = $_POST['depdrop_parents'];
 
-            // ต้องมีอำเภอถึงจะโหลดตำบล
-            if ($amphur_id) {
-                $out = $this->getDistrict($amphur_id);
-                return ['output' => $out, 'selected' => ''];
-            }
+        // กรณี depends = ['ddl-province','ddl-amphur']
+        $amphur_id = $ids[1] ?? null;
+
+        if ($amphur_id) {
+            $out = $this->getDistrict($amphur_id);
+            return ['output' => $out, 'selected' => ''];
         }
-        return ['output' => '', 'selected' => ''];
     }
+    return ['output' => [], 'selected' => ''];
+}
 
-    /* ===================== Helper สำหรับ DepDrop ===================== */
+/* ===================== Helper สำหรับ DepDrop ===================== */
 
-    protected function getAmphur($provinceId)
-    {
-        $datas = Amphur::find()->where(['PROVINCE_ID' => $provinceId])->all();
-        return $this->mapData($datas, 'AMPHUR_CODE', 'AMPHUR_NAME');
-    }
+protected function getAmphur($provinceId)
+{
+    $datas = Amphur::find()
+        ->where(['PROVINCE_ID' => $provinceId])
+        ->orderBy(['AMPHUR_NAME' => SORT_ASC])
+        ->all();
 
-    protected function getDistrict($amphurId)
-    {
-        $datas = District::find()->where(['AMPHUR_ID' => $amphurId])->all();
-        return $this->mapData($datas, 'DISTRICT_CODE', 'DISTRICT_NAME');
-    }
+    return $this->mapData($datas, 'AMPHUR_CODE', 'AMPHUR_NAME');
+}
 
-    protected function mapData($datas, $fieldId, $fieldName)
-    {
-        $obj = [];
-        foreach ($datas as $value) {
-            $obj[] = [
-                'id'   => $value->{$fieldId},
-                'name' => $value->{$fieldName},
-            ];
+protected function getDistrict($amphurId)
+{
+    $datas = District::find()
+        ->where(['AMPHUR_ID' => $amphurId])
+        ->orderBy(['DISTRICT_NAME' => SORT_ASC])
+        ->all();
+
+    return $this->mapData($datas, 'DISTRICT_CODE', 'DISTRICT_NAME');
+}
+
+protected function mapData($datas, $fieldId, $fieldName)
+{
+    $obj = [];
+    foreach ($datas as $value) {
+        // รองรับทั้ง ActiveRecord object และ array
+        $id = is_array($value) ? ($value[$fieldId] ?? null) : ($value->{$fieldId} ?? null);
+        $name = is_array($value) ? ($value[$fieldName] ?? null) : ($value->{$fieldName} ?? null);
+
+        if ($id !== null) {
+            $obj[] = ['id' => $id, 'name' => $name];
         }
-        return $obj;
     }
-        
+    return $obj;
+}
+      
     public function actionImport()
     {
         $model = new ResearchImportForm();
