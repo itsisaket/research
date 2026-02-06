@@ -15,7 +15,7 @@ class AcademicServiceController extends Controller
     public function behaviors()
     {
         return [
-            'access' => [
+        /*    'access' => [
                 'class' => AccessControl::class,
                 'ruleConfig' => [
                     'class' => \app\components\HanumanRule::class,
@@ -34,7 +34,7 @@ class AcademicServiceController extends Controller
                         'roles'   => [1, 4],
                     ],
                 ],
-            ],
+            ],*/
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
@@ -42,6 +42,7 @@ class AcademicServiceController extends Controller
                 ],
             ],
         ];
+        
     }
 
     public function actionIndex()
