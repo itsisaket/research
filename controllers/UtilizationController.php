@@ -35,12 +35,6 @@ public function behaviors()
                     'allow'   => true,
                     'roles'   => ['?', '@'],
                 ],
-                    [
-                    // ✅ เปิด DepDrop ให้คนที่ล็อกอินใช้ได้ทั้งหมด
-                    'actions' => ['get-amphur', 'get-district'],
-                    'allow'   => true,
-                    'roles'   => ['@'],
-                ],
                 [
                     // ✅ เพิ่ม get-amphur, get-district
                     'actions' => ['view', 'create', 'update'],
@@ -58,9 +52,6 @@ public function behaviors()
             'class' => VerbFilter::class,
             'actions' => [
                 'delete' => ['POST'],
-                // (ไม่จำเป็นต้องใส่ก็ได้ แต่ใส่เพื่อชัดเจน)
-                'get-amphur'  => ['POST'],
-                'get-district'=> ['POST'],
             ],
         ],
     ];

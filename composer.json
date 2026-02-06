@@ -24,7 +24,8 @@
         "kartik-v/yii2-widget-datepicker": "@dev",
         "kartik-v/yii2-widget-depdrop": "@dev",
         "rmrevin/yii2-fontawesome": "^3.7",
-        "phpoffice/phpspreadsheet": "^5.3"
+        "phpoffice/phpspreadsheet": "^5.3",
+        "kartik-v/yii2-widget-select2": "^2.2"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",

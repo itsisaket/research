@@ -28,6 +28,7 @@ $config = [
     'components' => [
         'assetManager' => [
             'appendTimestamp' => true,
+
             'bundles' => [
                 'dosamigos\google\maps\MapAsset' => [
                 'options' => [

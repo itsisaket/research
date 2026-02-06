@@ -5,6 +5,7 @@ use yii\widgets\ActiveForm;
 use yii\helpers\ArrayHelper;
 
 use kartik\depdrop\DepDrop;
+use kartik\select2\Select2;
 use kartik\date\DatePicker;
 
 use yii\helpers\Url;
