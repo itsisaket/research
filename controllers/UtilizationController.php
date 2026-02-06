@@ -36,11 +36,11 @@ public function behaviors()
                     'roles'   => ['?', '@'],
                 ],
                     [
-                        // ✅ เปิด DepDrop ให้คนที่ล็อกอินใช้ได้ทั้งหมด
-                        'actions' => ['get-amphur', 'get-district'],
-                        'allow'   => true,
-                        'roles'   => ['@'],
-                    ],
+                    // ✅ เปิด DepDrop ให้คนที่ล็อกอินใช้ได้ทั้งหมด
+                    'actions' => ['get-amphur', 'get-district'],
+                    'allow'   => true,
+                    'roles'   => ['@'],
+                ],
                 [
                     // ✅ เพิ่ม get-amphur, get-district
                     'actions' => ['view', 'create', 'update'],
