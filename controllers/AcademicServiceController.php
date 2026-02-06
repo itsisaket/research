@@ -9,7 +9,6 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
-use app\components\HanumanRule;
 
 class AcademicServiceController extends Controller
 {
@@ -22,14 +21,15 @@ class AcademicServiceController extends Controller
                     'class' => \app\components\HanumanRule::class,
                 ],
                 'rules' => [
+                    // ✅ ทุกคนเห็น list ได้
                     [
                         'actions' => ['index', 'error'],
                         'allow'   => true,
                         'roles'   => ['?', '@'],
                     ],
-                    // ✅ position 1 researcher + 4 admin
+                    // ✅ researcher(1) + admin(4)
                     [
-                        'actions' => ['view', 'create', 'update','delete'],
+                        'actions' => ['view', 'create', 'update', 'delete'],
                         'allow'   => true,
                         'roles'   => [1, 4],
                     ],
@@ -43,6 +43,7 @@ class AcademicServiceController extends Controller
             ],
         ];
     }
+
     public function actionIndex()
     {
         $searchModel = new AcademicServiceSearch();
@@ -92,10 +93,17 @@ class AcademicServiceController extends Controller
     {
         $model = $this->findModel($service_id);
 
-        // ✅ ลบเฉพาะเจ้าของเรื่อง (username)
         $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
-        $isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$model->username);
+        $myRole = $me ? (string)($me->position ?? '') : '';
 
+        // ✅ admin(4) ลบได้ทุกเคส
+        if ($myRole === '4') {
+            $model->delete();
+            return $this->redirect(['index']);
+        }
+
+        // ✅ researcher(1) ลบได้เฉพาะ owner
+        $isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$model->username);
         if (!$isOwner) {
             throw new \yii\web\ForbiddenHttpException('คุณไม่มีสิทธิ์ลบรายการนี้');
         }
