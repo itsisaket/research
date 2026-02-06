@@ -9,6 +9,7 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
+use app\components\HanumanRule;
 
 class AcademicServiceController extends Controller
 {
@@ -22,14 +23,15 @@ class AcademicServiceController extends Controller
                 ],
                 'rules' => [
                     [
-                        'actions' => ['index', 'view'],
+                        'actions' => ['index', 'error'],
                         'allow'   => true,
-                        'roles'   => ['?', '@'], // ทุกคนดูได้
+                        'roles'   => ['?', '@'],
                     ],
+                    // ✅ position 1 researcher + 4 admin
                     [
-                        'actions' => ['create', 'update', 'delete'],
+                        'actions' => ['view', 'create', 'update','delete'],
                         'allow'   => true,
-                        'roles'   => ['@'], // ต้องล็อกอินก่อนทำรายการ
+                        'roles'   => [1, 4],
                     ],
                 ],
             ],
@@ -41,7 +43,6 @@ class AcademicServiceController extends Controller
             ],
         ];
     }
-
     public function actionIndex()
     {
         $searchModel = new AcademicServiceSearch();
