@@ -28,13 +28,18 @@ public function behaviors()
             'ruleConfig' => [
                 'class' => \app\components\HanumanRule::class,
             ],
-            'except' => ['get-amphur', 'get-district'],
             'rules' => [
                 [
                     'actions' => ['index', 'error'],
                     'allow'   => true,
                     'roles'   => ['?', '@'],
                 ],
+                    [
+                        // ✅ เปิด DepDrop ให้คนที่ล็อกอินใช้ได้ทั้งหมด
+                        'actions' => ['get-amphur', 'get-district'],
+                        'allow'   => true,
+                        'roles'   => ['@'],
+                    ],
                 [
                     // ✅ เพิ่ม get-amphur, get-district
                     'actions' => ['view', 'create', 'update'],
