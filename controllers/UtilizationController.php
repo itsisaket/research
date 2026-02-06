@@ -28,9 +28,10 @@ public function behaviors()
             'ruleConfig' => [
                 'class' => \app\components\HanumanRule::class,
             ],
+            'except' => ['get-amphur', 'get-district'],
             'rules' => [
                 [
-                    'actions' => ['index', 'error', 'get-amphur', 'get-district'],
+                    'actions' => ['index', 'error'],
                     'allow'   => true,
                     'roles'   => ['?', '@'],
                 ],
