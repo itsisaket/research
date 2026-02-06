@@ -37,13 +37,12 @@ public function behaviors()
                     'allow'   => true,
                     'roles'   => ['?', '@'],
                 ],
-                // ✅ position 1 researcher + 4 admin
                 [
-                    'actions' => ['view', 'create', 'update'],
+                    // ✅ เพิ่ม get-amphur, get-district
+                    'actions' => ['view', 'create', 'update', 'get-amphur', 'get-district'],
                     'allow'   => true,
                     'roles'   => [1, 4],
                 ],
-                // ✅ admin เท่านั้น
                 [
                     'actions' => ['delete'],
                     'allow'   => true,
@@ -55,10 +54,14 @@ public function behaviors()
             'class' => VerbFilter::class,
             'actions' => [
                 'delete' => ['POST'],
+                // (ไม่จำเป็นต้องใส่ก็ได้ แต่ใส่เพื่อชัดเจน)
+                'get-amphur'  => ['POST'],
+                'get-district'=> ['POST'],
             ],
         ],
     ];
 }
+
 
 
     public function actionIndex()
