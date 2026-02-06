@@ -12,10 +12,10 @@ $this->params['breadcrumbs'][] = $this->title;
 
 \yii\web\YiiAsset::register($this);
 
+
 /** ===== owner check: แสดงปุ่มลบ เฉพาะเจ้าของเรื่อง (username) ===== */
 $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
 $isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$model->username);
-
 
 // ===== helper =====
 $safe = fn($v, $f='-') => ($v !== null && $v !== '') ? $v : $f;
