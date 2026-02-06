@@ -57,15 +57,6 @@ class AcademicService extends ActiveRecord
             // defaults
             [['status'], 'default', 'value' => 1],
 
-            // FK exists checks (ถ้าตาราง/โมเดลชื่อไม่ตรง ปรับตรงนี้)
-            [['type_id'], 'exist', 'skipOnError' => true,
-                'targetClass' => AcademicServiceType::class,
-                'targetAttribute' => ['type_id' => 'type_id']
-            ],
-            [['username'], 'exist', 'skipOnError' => true,
-                'targetClass' => Account::class,
-                'targetAttribute' => ['username' => 'username']
-            ],
         ];
     }
 
@@ -90,25 +81,6 @@ class AcademicService extends ActiveRecord
         ];
     }
 
-    /** auto-set owner + org_id เมื่อ create */
-    public function beforeValidate()
-    {
-        if (!parent::beforeValidate()) {
-            return false;
-        }
-
-        if ($this->isNewRecord) {
-            $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
-            if ($me && empty($this->username) && !empty($me->username)) {
-                $this->username = (string)$me->username;
-            }
-            if ($me && empty($this->org_id) && !empty($me->org_id)) {
-                $this->org_id = (int)$me->org_id;
-            }
-        }
-
-        return true;
-    }
 
    public function getUserid()
     {
