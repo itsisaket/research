@@ -17,38 +17,17 @@ public function behaviors()
     return [
         'access' => [
             'class' => \yii\filters\AccessControl::class,
-            'ruleConfig' => [
-                'class' => \app\components\HanumanRule::class,
-            ],
             'rules' => [
-                // ✅ ทุกคนดู list/view ได้
                 [
-                    'actions' => ['index', 'view', 'error'],
-                    'allow'   => true,
-                    'roles'   => ['?', '@'],
+                    'actions' => ['index', 'view', 'create', 'update', 'delete'],
+                    'allow' => true,
+                    'roles' => ['@'], // login อย่างเดียวพอ
                 ],
-
-                // ✅ ต้อง login + ต้องเป็น position 1 หรือ 4
-                [
-                    'actions' => ['create', 'update', 'delete'],
-                    'allow'   => true,
-                    'roles'   => ['@'],
-                    'matchCallback' => function () {
-                        $me = Yii::$app->user->identity;
-                        $pos = $me ? (int)($me->position ?? 0) : 0;
-                        return in_array($pos, [1, 4], true);
-                    },
-                ],
-            ],
-        ],
-        'verbs' => [
-            'class' => \yii\filters\VerbFilter::class,
-            'actions' => [
-                'delete' => ['POST'],
             ],
         ],
     ];
 }
+
 
     public function actionIndex()
     {
