@@ -12,13 +12,9 @@ $this->params['breadcrumbs'][] = $this->title;
 
 \yii\web\YiiAsset::register($this);
 
-/** ===== owner check: แสดง/เข้าดูได้เฉพาะเจ้าของเรื่อง (username) ===== */
+/** ===== owner check: แสดงปุ่มแก้ไข/ลบ เฉพาะเจ้าของเรื่อง (username) ===== */
 $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
 $isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$model->username);
-
-if (!$isOwner) {
-    throw new \yii\web\ForbiddenHttpException('คุณไม่มีสิทธิ์เข้าดูข้อมูลรายการนี้');
-}
 
 /** ===== helpers กัน null ===== */
 $safe = function ($v, $fallback = '-') {
@@ -38,7 +34,7 @@ $safe = function ($v, $fallback = '-') {
             <i class="fas fa-newspaper me-1"></i> <?= Html::encode($this->title) ?>
           </h5>
           <div class="text-muted small">
-            <i class="fas fa-info-circle me-1"></i> แสดงข้อมูลเฉพาะเจ้าของเรื่อง (username)
+            <i class="fas fa-info-circle me-1"></i> ทุกคนดูได้ (ปุ่มแก้ไข/ลบ แสดงเฉพาะเจ้าของเรื่อง)
           </div>
         </div>
         <div class="text-muted small">
@@ -54,21 +50,25 @@ $safe = function ($v, $fallback = '-') {
               'encode' => false,
           ]) ?>
 
-          <?= Html::a('<i class="fas fa-edit me-1"></i> แก้ไขข้อมูล', ['update', 'article_id' => $model->article_id], [
-              'class' => 'btn btn-primary',
-              'encode' => false,
-          ]) ?>
+          <?php if ($isOwner): ?>
+            <?= Html::a('<i class="fas fa-edit me-1"></i> แก้ไขข้อมูล', ['update', 'article_id' => $model->article_id], [
+                'class' => 'btn btn-primary',
+                'encode' => false,
+            ]) ?>
+          <?php endif; ?>
         </div>
 
         <div>
-          <?= Html::a('<i class="fas fa-trash-alt me-1"></i> ลบข้อมูล', ['delete', 'article_id' => $model->article_id], [
-              'class' => 'btn btn-danger',
-              'encode' => false,
-              'data' => [
-                  'confirm' => 'ยืนยันการลบรายการนี้หรือไม่?',
-                  'method' => 'post',
-              ],
-          ]) ?>
+          <?php if ($isOwner): ?>
+            <?= Html::a('<i class="fas fa-trash-alt me-1"></i> ลบข้อมูล', ['delete', 'article_id' => $model->article_id], [
+                'class' => 'btn btn-danger',
+                'encode' => false,
+                'data' => [
+                    'confirm' => 'ยืนยันการลบรายการนี้หรือไม่?',
+                    'method' => 'post',
+                ],
+            ]) ?>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -186,7 +186,7 @@ $safe = function ($v, $fallback = '-') {
 
     <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
       <div class="text-muted small">
-        <i class="fas fa-shield-alt me-1"></i> ระบบจำกัดสิทธิ์ตามเจ้าของรายการ (username)
+        <i class="fas fa-shield-alt me-1"></i> แสดงปุ่มแก้ไข/ลบเฉพาะเจ้าของเรื่อง (username)
       </div>
       <div class="text-muted small">
         <i class="fas fa-clock me-1"></i> <?= date('d/m/Y H:i') ?>
