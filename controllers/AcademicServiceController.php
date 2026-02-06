@@ -18,15 +18,34 @@ public function behaviors()
         'access' => [
             'class' => \yii\filters\AccessControl::class,
             'rules' => [
+                // ทุกคนดูได้
                 [
-                    'actions' => ['index', 'view', 'create', 'update', 'delete'],
-                    'allow' => true,
-                    'roles' => ['@'], // login อย่างเดียวพอ
+                    'actions' => ['index', 'view', 'error'],
+                    'allow'   => true,
+                    'roles'   => ['?', '@'],
                 ],
+                // ต้อง login และเป็น position 1 หรือ 4
+                [
+                    'actions' => ['create', 'update', 'delete'],
+                    'allow'   => true,
+                    'roles'   => ['@'],
+                    'matchCallback' => function () {
+                        $me = Yii::$app->user->identity;
+                        $pos = $me ? (int)($me->position ?? 0) : 0;
+                        return in_array($pos, [1, 4], true);
+                    },
+                ],
+            ],
+        ],
+        'verbs' => [
+            'class' => \yii\filters\VerbFilter::class,
+            'actions' => [
+                'delete' => ['POST'],
             ],
         ],
     ];
 }
+
 
 
     public function actionIndex()
