@@ -15,13 +15,13 @@ use app\models\Province;
 /* @var $model app\models\Utilization */
 /* @var $form yii\widgets\ActiveForm */
 /* @var $amphur array|null */
-/* @var $sub_district array|null */
+/* @var $subdistrict array|null */
 
-$amphur       = $amphur ?? [];
-$sub_district = $sub_district ?? [];
+$amphur      = $amphur ?? [];
+$subdistrict = $subdistrict ?? [];
 
 /* =========================
- * DEFAULTS from login user (หลักการเดียวกับ ResearchPro)
+ * DEFAULTS from login user
  * ========================= */
 $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
 
@@ -30,17 +30,17 @@ $orgItems  = $model->orgid ?? [];
 $userItems = $model->userid ?? [];
 $typeItems = $model->utilizationtype ?? [];
 
-// 1) นักวิจัย (tb_utilization.username) = Account.username ของคน login
+// 1) นักวิจัย
 if (empty($model->username) && $me && !empty($me->username)) {
     $model->username = (string)$me->username;
 }
 
-// 2) หน่วยงาน (org_id) = org_id ของ user ที่ login
+// 2) หน่วยงาน
 if (empty($model->org_id) && $me && !empty($me->org_id)) {
     $model->org_id = (int)$me->org_id;
 }
 
-// 3) กันกรณี default org_id อยู่แต่ไม่อยู่ใน list (เช่น list ถูก filter)
+// 3) กันกรณี default org_id อยู่แต่ไม่อยู่ใน list
 if (!empty($model->org_id) && !isset($orgItems[$model->org_id]) && $me) {
     $orgItems[$model->org_id] = $me->dept_name ?? ('หน่วยงาน #' . $model->org_id);
 }
@@ -50,13 +50,13 @@ if (!empty($model->username) && !isset($userItems[$model->username])) {
     $userItems[$model->username] = 'รหัสบุคลากร: ' . $model->username;
 }
 
-// 5) วันที่ใช้ประโยชน์: default วันนี้
+// 5) วันที่ใช้ประโยชน์ default วันนี้
 $today = date('d-m-Y');
 if (empty($model->utilization_date)) {
     $model->utilization_date = $today;
 }
 
-// 6) จังหวัด: ล็อกศรีสะเกษเป็นค่าเริ่มต้น
+// 6) จังหวัด default ศรีสะเกษ
 if (empty($model->province)) {
     $model->province = 33;
 }
@@ -147,7 +147,7 @@ if (empty($model->province)) {
         ])->textInput(['maxlength' => true, 'placeholder' => 'สถานที่/หน่วยงาน/ที่อยู่ (สั้น ๆ)']) ?>
       </div>
 
-              <div class="col-12 col-md-2">
+      <div class="col-12 col-md-2">
         <?php
         $provinceItems = ArrayHelper::map(
             Province::find()->orderBy(['PROVINCE_NAME' => SORT_ASC])->all(),
@@ -166,13 +166,13 @@ if (empty($model->province)) {
                 'allowClear' => true,
             ],
         ]) ?>
-        </div>
+      </div>
 
-        <div class="col-12 col-md-2">
+      <div class="col-12 col-md-2">
         <?= $form->field($model, 'district')->widget(DepDrop::class, [
             'type' => DepDrop::TYPE_SELECT2,
             'options' => ['id' => 'ddl-amphur'],
-            'data' => $amphur ?? [],
+            'data' => $amphur,
             'select2Options' => [
                 'pluginOptions' => [
                     'allowClear' => true,
@@ -182,18 +182,17 @@ if (empty($model->province)) {
             'pluginOptions' => [
                 'depends' => ['ddl-province'],
                 'placeholder' => 'เลือกอำเภอ...',
-                'url' => Url::to(['/researchpro/get-amphur']),
+                'url' => Url::to(['/utilization/get-amphur']),
                 'initialize' => true,
             ],
         ]) ?>
-        </div>
+      </div>
 
-
-        <div class="col-12 col-md-2">
+      <div class="col-12 col-md-2">
         <?= $form->field($model, 'sub_district')->widget(DepDrop::class, [
             'type' => DepDrop::TYPE_SELECT2,
             'options' => ['id' => 'ddl-tambon'],
-            'data' => $subDistrict ?? [],
+            'data' => $subdistrict,
             'select2Options' => [
                 'pluginOptions' => [
                     'allowClear' => true,
@@ -203,11 +202,12 @@ if (empty($model->province)) {
             'pluginOptions' => [
                 'depends' => ['ddl-province', 'ddl-amphur'],
                 'placeholder' => 'เลือกตำบล...',
-                'url' => Url::to(['/researchpro/get-district']),
+                'url' => Url::to(['/utilization/get-district']),
                 'initialize' => true,
             ],
         ]) ?>
-        </div>
+      </div>
+    </div>
 
     <!-- ===== รายละเอียด/อ้างอิง ===== -->
     <h4 class="mt-4 mb-2"><i class="fas fa-align-left me-1"></i> รายละเอียดและเอกสารอ้างอิง</h4>

@@ -6,15 +6,14 @@ use yii\helpers\Html;
 /* @var $model app\models\Utilization */
 
 $this->title = 'การนำไปใช้ประโยชน์';
-
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="utilization-create">
 
     <?= $this->render('_form', [
-        'model' => $model,
-        'amphur'=> [],
-        'subdistrict' =>[],
+        'model'       => $model,
+        'amphur'      => [],
+        'subdistrict' => [],
     ]) ?>
 
 </div>
