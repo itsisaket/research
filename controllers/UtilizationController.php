@@ -30,13 +30,13 @@ public function behaviors()
             ],
             'rules' => [
                 [
-                    'actions' => ['index', 'error'],
+                    'actions' => ['index', 'error', 'get-amphur', 'get-district'],
                     'allow'   => true,
                     'roles'   => ['?', '@'],
                 ],
                 [
                     // ✅ เพิ่ม get-amphur, get-district
-                    'actions' => ['view', 'create', 'update', 'get-amphur', 'get-district'],
+                    'actions' => ['view', 'create', 'update'],
                     'allow'   => true,
                     'roles'   => [1, 4],
                 ],
