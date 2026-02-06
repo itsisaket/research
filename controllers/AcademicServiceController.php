@@ -52,10 +52,6 @@ public function behaviors()
         $model = new AcademicService();
         $model->loadDefaultValues();
 
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'service_id' => $model->service_id]);
-        }
-
         return $this->render('create', [
             'model' => $model,
         ]);
