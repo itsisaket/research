@@ -5,8 +5,7 @@ namespace app\models;
 use Yii;
 use yii\db\ActiveRecord;
 use yii\helpers\ArrayHelper;
-use app\models\Account;
-use app\models\Organize;
+
 /**
  * This is the model class for table "academic_service".
  *
