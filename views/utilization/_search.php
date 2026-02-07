@@ -2,7 +2,7 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use yii\helpers\ArrayHelper;
-use app\models\Organization;
+use app\models\Organize;
 ?>
 
 <div class="utilization-search card shadow-sm mb-3">
@@ -27,7 +27,7 @@ use app\models\Organization;
 
             <div class="col-md-4">
                 <?= $form->field($model, 'org_id')->dropDownList(
-                    ArrayHelper::map(Organization::find()->all(), 'org_id', 'org_name'),
+                    ArrayHelper::map(Organize::find()->orderBy(['org_name' => SORT_ASC])->all(), 'org_id', 'org_name'),
                     ['prompt' => '-- เลือกหน่วยงาน --']
                 ) ?>
             </div>
@@ -37,7 +37,6 @@ use app\models\Organization;
         <div class="mt-3">
             <?= Html::submitButton('🔍 ค้นหา', ['class' => 'btn btn-primary']) ?>
             <?= Html::a('รีเซ็ต', ['index'], ['class' => 'btn btn-outline-secondary']) ?>
-            
         </div>
 
         <?php ActiveForm::end(); ?>
