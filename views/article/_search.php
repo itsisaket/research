@@ -1,7 +1,14 @@
 <?php
-use yii\helpers\ArrayHelper;
 
+use yii\helpers\Html;
+use yii\widgets\ActiveForm;
 
+/* @var $this yii\web\View */
+/* @var $model app\models\ArticleSearch */
+/* @var $form yii\widgets\ActiveForm */
+/* @var $pubItems array */
+
+$pubItems = $pubItems ?? [];
 ?>
 
 <div class="article-search card shadow-sm mb-3">
