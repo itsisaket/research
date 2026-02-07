@@ -27,10 +27,9 @@ $pubItems = $pubItems ?? [];
             </div>
 
             <div class="col-12 col-md-3">
-                <?= $form->field($model, 'publication_type')->dropDownList(
-                    $pubItems,
-                    ['prompt' => '-- ประเภทฐาน --']
-                ) ?>
+                <?= $form->field($model, 'publication_type')
+                    ->dropDownList($pubItems, ['prompt' => '-- ประเภทฐาน --'])
+                    ->label('ประเภทฐาน') ?>
             </div>
 
             <div class="col-12 col-md-3">
