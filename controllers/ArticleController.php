@@ -7,6 +7,7 @@ use app\models\Article;
 use app\models\ArticleSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
+use yii\web\ForbiddenHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use app\components\HanumanRule;
@@ -21,6 +22,11 @@ use yii\helpers\Url;
 use app\models\Province;
 use app\models\Amphur;
 use app\models\District;
+
+use yii\db\Expression;
+use app\models\WorkContributor;
+use app\models\WorkContributorRole;
+
 /**
  * ArticleController implements the CRUD actions for Article model.
  */
@@ -43,7 +49,7 @@ public function behaviors()
                 ],
                 // ✅ position 1 researcher + 4 admin
                 [
-                    'actions' => ['view', 'create', 'update','delete'],
+                    'actions' => ['view', 'create', 'update', 'delete', 'add-contributors', 'delete-contributor'],
                     'allow'   => true,
                     'roles'   => [1, 4],
                 ],
@@ -89,10 +95,17 @@ public function behaviors()
      */
     public function actionView($article_id)
     {
+        $model = $this->findModel($article_id);
+
+        $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
+        $isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$model->username);
+
         return $this->render('view', [
-            'model' => $this->findModel($article_id),
+            'model' => $model,
+            'isOwner' => $isOwner,
         ]);
     }
+
 
     /**
      * Creates a new Article model.
@@ -145,7 +158,8 @@ public function behaviors()
      */
     public function actionDelete($article_id)
     {
-        $this->findModel($article_id)->delete();
+        $model = $this->findModel($article_id);
+
         $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
         $isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$model->username);
 
@@ -156,6 +170,7 @@ public function behaviors()
         $model->delete();
         return $this->redirect(['index']);
     }
+
 
     /**
      * Finds the Article model based on its primary key value.
@@ -172,4 +187,98 @@ public function behaviors()
 
         throw new NotFoundHttpException('The requested page does not exist.');
     }
+
+        public function actionAddContributors($article_id)
+    {
+        $article = Article::findOne((int)$article_id);
+        if (!$article) throw new NotFoundHttpException('ไม่พบบทความ');
+
+        // (ตามข้อความของคุณ: ทุกคนดูได้และแก้ไขได้) → อนุญาตผู้ล็อกอินเพิ่มผู้ร่วม
+        if (Yii::$app->user->isGuest) {
+            throw new ForbiddenHttpException('กรุณาเข้าสู่ระบบ');
+        }
+
+        $form = new WorkContributor();
+        $form->scenario = 'multi';
+        $form->ref_type = 'article';
+        $form->ref_id   = (int)$article->article_id;
+        $form->role_code_form = Yii::$app->request->post('WorkContributor')['role_code_form'] ?? 'author';
+        $form->sort_order = (int)(Yii::$app->request->post('WorkContributor')['sort_order'] ?? 1);
+        $form->note = Yii::$app->request->post('WorkContributor')['note'] ?? null;
+
+        if ($form->load(Yii::$app->request->post()) && $form->validate()) {
+
+            $role = $form->role_code_form ?: 'member';
+            $startOrder = (int)$form->sort_order;
+            $created = 0;
+
+            $tx = Yii::$app->db->beginTransaction();
+            try {
+                $i = 0;
+                foreach ((array)$form->usernames as $uname) {
+                    $uname = trim((string)$uname);
+                    if ($uname === '') continue;
+
+                    $row = new WorkContributor();
+                    $row->ref_type = 'article';
+                    $row->ref_id   = (int)$article->article_id;
+                    $row->username = $uname;
+                    $row->role_code = $role;
+                    $row->sort_order = $startOrder + $i;
+                    $row->note = $form->note;
+
+                    // กันซ้ำแบบนิ่ม ๆ (ชน UNIQUE ก็ข้าม)
+                    try {
+                        if ($row->save(false)) {
+                            $created++;
+                            $i++;
+                        }
+                    } catch (\Throwable $e) {
+                        continue;
+                    }
+                }
+
+                $tx->commit();
+                Yii::$app->session->setFlash('success', "เพิ่มผู้ร่วมสำเร็จ {$created} คน");
+            } catch (\Throwable $e) {
+                $tx->rollBack();
+                Yii::$app->session->setFlash('error', 'บันทึกไม่สำเร็จ: ' . $e->getMessage());
+            }
+        }
+
+        return $this->redirect(['view', 'article_id' => $article->article_id]);
+    }
+
+    public function actionDeleteContributor($article_id, $wc_id)
+    {
+        $article = Article::findOne((int)$article_id);
+        if (!$article) throw new NotFoundHttpException('ไม่พบบทความ');
+
+        $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
+        $isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$article->username);
+
+        // ตามเงื่อนไขคุณ: ปุ่มลบแสดงเฉพาะเจ้าของเรื่อง
+        if (!$isOwner) {
+            throw new ForbiddenHttpException('ลบได้เฉพาะเจ้าของเรื่อง');
+        }
+
+        $row = WorkContributor::findOne((int)$wc_id);
+        if ($row && $row->ref_type === 'article' && (int)$row->ref_id === (int)$article->article_id) {
+            $row->delete();
+            Yii::$app->session->setFlash('success', 'ลบผู้ร่วมแล้ว');
+        }
+
+        return $this->redirect(['view', 'article_id' => $article->article_id]);
+    }
+
+    // helper: รายการผู้ใช้ให้ Select2 (ปรับ fullname ให้ตรงกับระบบคุณ)
+    protected function getAccountUserItems()
+    {
+        return \app\models\Account::find()
+            ->select(["CONCAT(username,' - ',uname,' ',luname) AS text"])
+            ->indexBy('username')
+            ->orderBy(['uname' => SORT_ASC])
+            ->column();
+    }
+
 }

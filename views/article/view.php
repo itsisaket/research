@@ -178,7 +178,10 @@ $safe = function ($v, $fallback = '-') {
               ],
           ],
       ]) ?>
-
+        <?= $this->render('_contributors', [
+            'article' => $model,
+            'isOwner' => $isOwner,
+        ]) ?>
     </div>
 
     <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
