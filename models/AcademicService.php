@@ -39,7 +39,7 @@ class AcademicService extends ActiveRecord
     {
         return [
             // required
-            [['service_date', 'type_id', 'title', 'hours'], 'required'],
+            [['username', 'service_date', 'type_id', 'title', 'hours'], 'required'],
 
             // types
             [['type_id', 'org_id', 'status'], 'integer'],
