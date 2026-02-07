@@ -181,11 +181,11 @@ $safe = function ($v, $fallback = '-') {
         ],
     ]) ?>
 
-    <?= $this->render('_contributors', [
-        'article' => $model,
-        'isOwner' => $isOwner,
-        'wrapCard' => false, // ให้ _contributors แสดงแบบไม่ซ้อน card
-    ]) ?>
+        <?= $this->render('_contributors', [
+            'article' => $model,
+            'isOwner' => $isOwner,
+            'wrapCard' => false,
+        ]) ?>
 
 
     </div>
