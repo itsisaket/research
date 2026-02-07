@@ -73,10 +73,22 @@ $safe = function ($v, $fallback = '-') {
       <h5 class="mb-2"><i class="fas fa-user-tie me-1"></i> ผู้รับผิดชอบและหน่วยงาน</h5>
       <hr class="mt-2 mb-3">
 
+<!-- ===== Row: ผู้รับผิดชอบ/หน่วยงาน | ผู้ร่วมดำเนินงาน/ผู้เขียนร่วม ===== -->
+<div class="row g-3 mb-4">
+
+  <!-- ซ้าย: ผู้รับผิดชอบ/หน่วยงาน -->
+  <div class="col-12 col-lg-6">
+    <div class="h-100">
+
+      <div class="d-flex align-items-center justify-content-between">
+        <h5 class="mb-2"><i class="fas fa-user-tie me-1"></i> ผู้รับผิดชอบและหน่วยงาน</h5>
+      </div>
+      <hr class="mt-2 mb-3">
+
       <?= DetailView::widget([
           'model' => $model,
-          'options' => ['class' => 'table table-bordered table-striped mb-4'],
-          'template' => '<tr><th style="width:260px;">{label}</th><td>{value}</td></tr>',
+          'options' => ['class' => 'table table-bordered table-striped mb-0'],
+          'template' => '<tr><th style="width:220px;">{label}</th><td>{value}</td></tr>',
           'attributes' => [
               [
                   'attribute' => 'username',
@@ -95,6 +107,26 @@ $safe = function ($v, $fallback = '-') {
               ],
           ],
       ]) ?>
+
+    </div>
+  </div>
+
+  <!-- ขวา: ผู้ร่วมดำเนินงาน/ผู้เขียนร่วม -->
+  <div class="col-12 col-lg-6">
+    <div class="h-100">
+
+      <?= $this->render('_contributors', [
+          'article' => $model,
+          'isOwner' => $isOwner,
+          'wrapCard' => false, // (เพิ่ม parameter นี้ใน _contributors.php ตามข้อ 2)
+      ]) ?>
+
+    </div>
+  </div>
+
+</div>
+
+
 
       <!-- ===== Section: ชื่อบทความ ===== -->
       <h5 class="mb-2"><i class="fas fa-file-alt me-1"></i> ชื่อบทความ</h5>
@@ -178,10 +210,7 @@ $safe = function ($v, $fallback = '-') {
               ],
           ],
       ]) ?>
-        <?= $this->render('_contributors', [
-            'article' => $model,
-            'isOwner' => $isOwner,
-        ]) ?>
+
     </div>
 
     <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">

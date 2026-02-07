@@ -34,14 +34,18 @@ $formModel->role_code_form = 'author';
 $formModel->sort_order = (count($contribs) ? (count($contribs) + 1) : 1);
 ?>
 
-<div class="card shadow-sm mt-3">
-  <div class="card-body">
+    <?php if ($wrapCard): ?>
+    <div class="card shadow-sm mt-3">
+    <div class="card-body">
+    <?php endif; ?>
 
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h5 class="mb-0"><i class="fas fa-users me-1"></i> ผู้ร่วมดำเนินงาน/ผู้เขียนร่วม</h5>
-      <span class="text-muted small"><?= count($contribs) ?> คน</span>
+    <?php if (!$wrapCard): ?>
+    <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-2"><i class="fas fa-users me-1"></i> ผู้ร่วมดำเนินงาน/ผู้เขียนร่วม</h5>
+        <span class="text-muted small"><?= count($contribs) ?> คน</span>
     </div>
     <hr class="mt-2 mb-3">
+    <?php endif; ?>
 
     <?php if (empty($contribs)): ?>
       <div class="text-muted">ยังไม่มีผู้ร่วม</div>
@@ -122,5 +126,7 @@ $formModel->sort_order = (count($contribs) ? (count($contribs) + 1) : 1);
       <?php ActiveForm::end(); ?>
     </div>
 
+<?php if ($wrapCard): ?>
   </div>
 </div>
+<?php endif; ?>
