@@ -275,7 +275,7 @@ public function behaviors()
     protected function getAccountUserItems()
     {
         return \app\models\Account::find()
-            ->select(["CONCAT(username,' - ',uname,' ',luname) AS text"])
+            ->select(["CONCAT(uname,' ',luname) AS text"])
             ->indexBy('username')
             ->orderBy(['uname' => SORT_ASC])
             ->column();
