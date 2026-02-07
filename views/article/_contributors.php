@@ -102,6 +102,16 @@ $formModel->note = null;
             <?= Html::encode(number_format((float)$c->contribution_pct, 0)) ?>%
         </span>
         <?php endif; ?>
+        <?php if ($isOwner): ?>
+        <form method="post" action="<?= \yii\helpers\Url::to(['update-contributor-pct','article_id'=>$refId,'wc_id'=>$c->wc_id]) ?>" class="d-flex align-items-center gap-1">
+            <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
+            <input type="number" name="pct" step="0.01" min="0" max="100"
+                value="<?= Html::encode($c->contribution_pct) ?>"
+                class="form-control form-control-sm" style="width:90px;" placeholder="%">
+            <button class="btn btn-sm btn-outline-primary" type="submit"><i class="fas fa-check"></i></button>
+        </form>
+        <?php endif; ?>
+
     </div>
 
     <!-- ขวา: จัดการ -->
@@ -165,7 +175,12 @@ $formModel->note = null;
           'options' => ['placeholder' => 'บทบาท'],
       ])->label(false); ?>
     </div>
-
+    <div style="width:110px; min-width:110px;">
+    <?= $f->field($formModel, 'pct_form')->input('number', [
+        'min' => 0, 'max' => 100, 'step' => 0.01,
+        'placeholder' => '%',
+    ])->label(false); ?>
+    </div>
     <!-- ปุ่มบันทึก -->
     <div class="align-self-end mb-2">
       <?= Html::submitButton(

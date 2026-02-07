@@ -201,9 +201,6 @@ public function behaviors()
     $form->scenario = 'multi';
     $form->ref_type = 'article';
     $form->ref_id   = (int)$article->article_id;
-    $form->role_code_form = Yii::$app->request->post('WorkContributor')['role_code_form'] ?? 'author';
-    $form->sort_order     = (int)(Yii::$app->request->post('WorkContributor')['sort_order'] ?? 1);
-    $form->note           = Yii::$app->request->post('WorkContributor')['note'] ?? null;
 
     if ($form->load(Yii::$app->request->post()) && $form->validate()) {
 
@@ -211,25 +208,18 @@ public function behaviors()
         $startOrder = (int)$form->sort_order;
         $created = 0;
 
-        // ✅ sanitize usernames (ตัดว่าง/ซ้ำ)
+        // ✅ % จากฟอร์ม (ค่าเดียวให้ทั้งชุด) — ว่างได้
+        $pct = $form->pct_form;
+        $pct = ($pct === '' || $pct === null) ? null : (float)$pct;
+
         $selected = (array)$form->usernames;
         $selected = array_map('trim', $selected);
-        $selected = array_values(array_unique(array_filter($selected, function ($v) {
-            return $v !== '';
-        })));
-
-        $cnt = count($selected);
-
-        // ✅ คำนวณ % แบบรวม 100 เป๊ะ (2 ตำแหน่ง)
-        $basePct = ($cnt > 0) ? floor((100 / $cnt) * 100) / 100 : null; // 2 decimals
-        $sumBase = ($cnt > 0) ? $basePct * $cnt : 0;
-        $lastPct = ($cnt > 0) ? round(100 - $sumBase, 2) + $basePct : null; // ให้คนสุดท้ายรับเศษ
+        $selected = array_values(array_unique(array_filter($selected, fn($v) => $v !== '')));
 
         $tx = Yii::$app->db->beginTransaction();
         try {
             $i = 0;
-            foreach ($selected as $index => $uname) {
-
+            foreach ($selected as $uname) {
                 $row = new WorkContributor();
                 $row->ref_type = 'article';
                 $row->ref_id   = (int)$article->article_id;
@@ -238,12 +228,9 @@ public function behaviors()
                 $row->sort_order = $startOrder + $i;
                 $row->note = $form->note;
 
-                // ✅ ใส่สัดส่วน (optional): คนสุดท้ายรับเศษ
-                if ($cnt > 0) {
-                    $row->contribution_pct = ($index === ($cnt - 1)) ? $lastPct : $basePct;
-                }
+                // ✅ ใส่ % ตามที่กรอก (ไม่กรอกก็ NULL)
+                $row->contribution_pct = $pct;
 
-                // กันซ้ำแบบนิ่ม ๆ (ชน UNIQUE ก็ข้าม)
                 try {
                     if ($row->save(false)) {
                         $created++;
@@ -296,6 +283,34 @@ public function behaviors()
             ->indexBy('username')
             ->orderBy(['uname' => SORT_ASC])
             ->column();
+    }
+    
+    public function actionUpdateContributorPct($article_id, $wc_id)
+    {
+        $article = Article::findOne((int)$article_id);
+        if (!$article) throw new NotFoundHttpException('ไม่พบบทความ');
+
+        $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
+        $isOwner = ($me && (string)$me->username === (string)$article->username);
+        if (!$isOwner) throw new ForbiddenHttpException('แก้ไขได้เฉพาะเจ้าของเรื่อง');
+
+        $row = WorkContributor::findOne((int)$wc_id);
+        if (!$row || $row->ref_type !== 'article' || (int)$row->ref_id !== (int)$article->article_id) {
+            throw new NotFoundHttpException('ไม่พบผู้ร่วม');
+        }
+
+        $pct = Yii::$app->request->post('pct');
+        $pct = ($pct === '' || $pct === null) ? null : (float)$pct;
+        if ($pct !== null && ($pct < 0 || $pct > 100)) {
+            Yii::$app->session->setFlash('error', 'สัดส่วนต้องอยู่ระหว่าง 0–100');
+            return $this->redirect(['view', 'article_id' => $article->article_id]);
+        }
+
+        $row->contribution_pct = $pct;
+        $row->save(false, ['contribution_pct']);
+
+        Yii::$app->session->setFlash('success', 'อัปเดตสัดส่วนแล้ว');
+        return $this->redirect(['view', 'article_id' => $article->article_id]);
     }
 
 }
