@@ -6,38 +6,48 @@ use yii\widgets\ActiveForm;
 /* @var $this yii\web\View */
 /* @var $model app\models\ArticleSearch */
 /* @var $form yii\widgets\ActiveForm */
+
+$pubItems = $model->publication ?? []; // ✅ จาก Article::getPublication()
 ?>
 
-<div class="article-search">
+<div class="article-search card shadow-sm mb-3">
+    <div class="card-body">
 
-    <?php $form = ActiveForm::begin([
-        'action' => ['index'],
-        'method' => 'get',
-    ]); ?>
+        <?php $form = ActiveForm::begin([
+            'action' => ['index'],
+            'method' => 'get',
+        ]); ?>
 
-    <?php // echo $form->field($model, 'article_id') ?>
+        <div class="row g-3">
 
-    <?= $form->field($model, 'article_th') ?>
+            <!-- 1) ชื่อบทความ -->
+            <div class="col-12 col-md-6">
+                <?= $form->field($model, 'article_th')
+                    ->textInput(['placeholder' => 'ชื่อบทความ (ไทย)']) ?>
+            </div>
 
-    <?php // echo $form->field($model, 'article_eng') ?>
+            <!-- 2) ประเภทฐาน -->
+            <div class="col-12 col-md-3">
+                <?= $form->field($model, 'publication_type')->dropDownList(
+                    $pubItems,
+                    ['prompt' => '-- ประเภทฐาน --']
+                ) ?>
+            </div>
 
-    <?php // echo $form->field($model, 'username') ?>
+            <!-- 3) นักวิจัย (ค้นด้วยชื่อ-สกุล) -->
+            <div class="col-12 col-md-3">
+                <?= $form->field($model, 'researcher_name')
+                    ->textInput(['placeholder' => 'ชื่อ/นามสกุล นักวิจัย']) ?>
+            </div>
 
-    <?php // echo $form->field($model, 'org_id') ?>
+        </div>
 
-    <?php // echo $form->field($model, 'publication_type') ?>
+        <div class="mt-3">
+            <?= Html::submitButton('🔍 ค้นหา', ['class' => 'btn btn-primary']) ?>
+            <?= Html::resetButton('รีเซ็ต', ['class' => 'btn btn-outline-secondary']) ?>
+        </div>
 
-    <?php // echo $form->field($model, 'article_publish') ?>
+        <?php ActiveForm::end(); ?>
 
-    <?php // echo $form->field($model, 'journal') ?>
-
-    <?php // echo $form->field($model, 'refer') ?>
-
-    <div class="form-group">
-        <?= Html::submitButton('Search', ['class' => 'btn btn-primary']) ?>
-        <?= Html::resetButton('Reset', ['class' => 'btn btn-outline-secondary']) ?>
     </div>
-
-    <?php ActiveForm::end(); ?>
-
 </div>

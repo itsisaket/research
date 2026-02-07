@@ -1,32 +1,45 @@
 <?php
-
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-
-/* @var $this yii\web\View */
-/* @var $model app\models\UtilizationSearch */
-/* @var $form yii\widgets\ActiveForm */
+use yii\helpers\ArrayHelper;
+use app\models\Organization;
 ?>
 
-<div class="utilization-search">
+<div class="utilization-search card shadow-sm mb-3">
+    <div class="card-body">
 
-    <?php $form = ActiveForm::begin([
-        'action' => ['index'],
-        'method' => 'get',
-    ]); ?>
+        <?php $form = ActiveForm::begin([
+            'action' => ['index'],
+            'method' => 'get',
+        ]); ?>
 
+        <div class="row g-3">
 
+            <div class="col-md-5">
+                <?= $form->field($model, 'project_name')
+                    ->textInput(['placeholder' => 'ชื่อโครงการ']) ?>
+            </div>
 
-    <?= $form->field($model, 'project_name') ?>
+            <div class="col-md-3">
+                <?= $form->field($model, 'username')
+                    ->textInput(['placeholder' => 'username ผู้ใช้']) ?>
+            </div>
 
+            <div class="col-md-4">
+                <?= $form->field($model, 'org_id')->dropDownList(
+                    ArrayHelper::map(Organization::find()->all(), 'org_id', 'org_name'),
+                    ['prompt' => '-- เลือกหน่วยงาน --']
+                ) ?>
+            </div>
 
+        </div>
 
+        <div class="mt-3">
+            <?= Html::submitButton('🔍 ค้นหา', ['class' => 'btn btn-primary']) ?>
+            <?= Html::resetButton('รีเซ็ต', ['class' => 'btn btn-outline-secondary']) ?>
+        </div>
 
-    <div class="form-group">
-        <?= Html::submitButton('Search', ['class' => 'btn btn-primary']) ?>
-        <?= Html::resetButton('Reset', ['class' => 'btn btn-outline-secondary']) ?>
+        <?php ActiveForm::end(); ?>
+
     </div>
-
-    <?php ActiveForm::end(); ?>
-
 </div>

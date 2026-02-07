@@ -186,7 +186,7 @@ $money = function ($v) use ($safe) {
               ],
               [
                   'attribute' => 'researchFundID',
-                  'label' => 'แหล่งทุน',
+                  'label' => 'ประเภทการวิจัย',
                   'value' => function($model) use ($safe) {
                       return $safe($model->resFunds->researchFundName ?? null);
                   },
