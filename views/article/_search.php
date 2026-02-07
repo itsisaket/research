@@ -1,6 +1,6 @@
 <?php
 use yii\helpers\ArrayHelper;
-use app\models\Publication;
+
 
 ?>
 
@@ -21,12 +21,12 @@ use app\models\Publication;
 
             <div class="col-12 col-md-3">
                 <?= $form->field($model, 'publication_type')
-                    ->dropDownList($pubItems, ['prompt' => '-- ประเภทฐาน --'])
+                    ->dropDownList($pubItems, [
+                        'prompt' => '-- ประเภทฐาน --',
+                        'options' => ['' => ['selected' => true]], // ✅ ให้เริ่มต้นเป็นค่าว่าง
+                    ])
                     ->label('ประเภทฐาน') ?>
             </div>
-        <?= $form->field($model, 'publication_type', [
-        ])->dropDownList($pubItems, ['prompt' => 'เลือกประเภท..']) ?>
-
 
             <div class="col-12 col-md-3">
                 <?= $form->field($model, 'researcher_name')

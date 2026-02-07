@@ -64,11 +64,14 @@ public function actionIndex()
     }
 
     // ✅ ดึงรายการประเภทฐานที่ controller
-    $pubItems = ArrayHelper::map(
-        Publication::find()->orderBy(['publication_name' => SORT_ASC])->all(),
-        'publication_type',
-        'publication_name'
-    );
+        $pubItems = ArrayHelper::map(
+            Publication::find()
+                ->andWhere(['>', 'publication_type', 0])   // ✅ ตัด 0
+                ->orderBy(['publication_name' => SORT_ASC])
+                ->all(),
+            'publication_type',
+            'publication_name'
+        );
 
 
     return $this->render('index', [
