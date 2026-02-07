@@ -11,14 +11,16 @@ use app\models\Article;
  */
 class ArticleSearch extends Article
 {
+    public $researcher_name;
+    
     /**
      * {@inheritdoc}
      */
     public function rules()
     {
         return [
-            [['article_id', 'username', 'org_id', 'publication_type'], 'integer'],
-            [['article_th', 'article_eng', 'article_publish', 'journal', 'refer'], 'safe'],
+            [['article_id', 'org_id', 'publication_type'], 'integer'],
+            [['article_th', 'article_eng', 'article_publish', 'journal', 'refer', 'username', 'researcher_name'], 'safe'],
         ];
     }
 
@@ -40,36 +42,42 @@ class ArticleSearch extends Article
      */
     public function search($params)
     {
-        $query = Article::find();
-
-        // add conditions that should always apply here
+        $query = Article::find()->alias('a')
+            ->joinWith(['user u']); // ✅ join ไป Account ผ่าน getUser()
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'sort' => [
+                'defaultOrder' => ['article_id' => SORT_DESC],
+            ],
+            'pagination' => ['pageSize' => 20],
         ]);
 
         $this->load($params);
 
         if (!$this->validate()) {
-            // uncomment the following line if you do not want to return any records when validation fails
-            // $query->where('0=1');
             return $dataProvider;
         }
 
-        // grid filtering conditions
+        // exact filters
         $query->andFilterWhere([
-            'article_id' => $this->article_id,
-            'username' => $this->username,
-            'org_id' => $this->org_id,
-            'publication_type' => $this->publication_type,
-            'article_publish' => $this->article_publish,
+            'a.article_id' => $this->article_id,
+            'a.org_id' => $this->org_id,
+            'a.publication_type' => $this->publication_type,
         ]);
 
-        $query->andFilterWhere(['like', 'article_th', $this->article_th])
-            ->andFilterWhere(['like', 'article_eng', $this->article_eng])
-            ->andFilterWhere(['like', 'journal', $this->journal])
-            ->andFilterWhere(['like', 'refer', $this->refer]);
+        // like filters
+        $query->andFilterWhere(['like', 'a.article_th', $this->article_th]);
+
+        // ✅ นักวิจัย (ค้นด้วยชื่อ/นามสกุล)
+        if (!empty($this->researcher_name)) {
+            $query->andFilterWhere(['or',
+                ['like', 'u.uname', $this->researcher_name],
+                ['like', 'u.luname', $this->researcher_name],
+            ]);
+        }
 
         return $dataProvider;
     }
+
 }
