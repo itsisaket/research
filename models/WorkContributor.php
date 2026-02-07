@@ -17,24 +17,21 @@ class WorkContributor extends ActiveRecord
         return 'work_contributor';
     }
 
+
     public function rules()
     {
         return [
-            [['ref_type', 'ref_id'], 'required'],
-            [['ref_id', 'sort_order'], 'integer'],
-            [['work_hours', 'contribution_pct'], 'number'],
-            [['ref_type'], 'string', 'max' => 30],
+            [['ref_type','ref_id'], 'required'],
+            [['ref_id','sort_order'], 'integer'],
+            [['work_hours','contribution_pct'], 'number'],
             [['username'], 'string', 'max' => 50],
             [['role_code'], 'string', 'max' => 20],
-            [['note'], 'string', 'max' => 255],
 
-            // ===== multi form =====
             [['usernames'], 'required', 'on' => 'multi'],
             [['usernames'], 'each', 'rule' => ['string', 'max' => 50], 'on' => 'multi'],
             [['role_code_form'], 'string', 'max' => 20, 'on' => 'multi'],
-
-            // ✅ pct_form optional
             [['pct_form'], 'number', 'min' => 0, 'max' => 100, 'on' => 'multi'],
+            ['ref_type', 'in', 'range' => ['article','researchpro','academic_service','utilization']]
         ];
     }
 

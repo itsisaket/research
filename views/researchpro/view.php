@@ -123,6 +123,13 @@ $money = function ($v) use ($safe) {
           ],
       ]) ?>
 
+    <?= $this->render('//_shared/_contributors', [
+        'refType' => 'article',
+        'refId' => (int)$model->article_id,
+        'isOwner' => $isOwner,
+        'wrapCard' => false,
+    ]) ?>
+    
       <!-- ===== Section: รายละเอียดโครงการ ===== -->
       <h5 class="mb-2"><i class="fas fa-clipboard-list me-1"></i> รายละเอียดโครงการ</h5>
       <hr class="mt-2 mb-3">

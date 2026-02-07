@@ -89,31 +89,39 @@ public function behaviors()
         ]);
     }
 
+
     public function actionView($projectID)
     {
+        $model = $this->findModel($projectID);
+
+        $me = Yii::$app->user->identity ?? null;
+        $isOwner = ($me && (string)$me->username === (string)$model->username);
+
         return $this->render('view', [
-            'model' => $this->findModel($projectID),
+            'model' => $model,
+            'isOwner' => $isOwner,
+        ]);
+        
+    }
+
+    public function actionCreate()
+    {
+        $model = new Researchpro();
+
+        if ($this->request->isPost) {
+            if ($model->load($this->request->post()) && $model->save()) {
+                return $this->redirect(['view', 'projectID' => $model->projectID]);
+            }
+        } else {
+            $model->loadDefaultValues();
+        }
+
+        return $this->render('create', [
+            'model'       => $model,
+            'amphur'      => [],
+            'subdistrict' => [],
         ]);
     }
-
-public function actionCreate()
-{
-    $model = new Researchpro();
-
-    if ($this->request->isPost) {
-        if ($model->load($this->request->post()) && $model->save()) {
-            return $this->redirect(['view', 'projectID' => $model->projectID]);
-        }
-    } else {
-        $model->loadDefaultValues();
-    }
-
-    return $this->render('create', [
-        'model'       => $model,
-        'amphur'      => [],
-        'subdistrict' => [],
-    ]);
-}
 
     public function actionUpdate($projectID)
     {

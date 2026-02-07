@@ -181,11 +181,12 @@ $safe = function ($v, $fallback = '-') {
         ],
     ]) ?>
 
-        <?= $this->render('_contributors', [
-            'article' => $model,
-            'isOwner' => $isOwner,
-            'wrapCard' => false,
-        ]) ?>
+    <?= $this->render('//_shared/_contributors', [
+        'refType' => 'article',
+        'refId' => (int)$model->article_id,
+        'isOwner' => $isOwner,
+        'wrapCard' => false,
+    ]) ?>
 
 
     </div>
