@@ -188,66 +188,83 @@ public function behaviors()
         throw new NotFoundHttpException('The requested page does not exist.');
     }
 
-        public function actionAddContributors($article_id)
-    {
-        $article = Article::findOne((int)$article_id);
-        if (!$article) throw new NotFoundHttpException('ไม่พบบทความ');
+ public function actionAddContributors($article_id)
+{
+    $article = Article::findOne((int)$article_id);
+    if (!$article) throw new NotFoundHttpException('ไม่พบบทความ');
 
-        // (ตามข้อความของคุณ: ทุกคนดูได้และแก้ไขได้) → อนุญาตผู้ล็อกอินเพิ่มผู้ร่วม
-        if (Yii::$app->user->isGuest) {
-            throw new ForbiddenHttpException('กรุณาเข้าสู่ระบบ');
-        }
+    if (Yii::$app->user->isGuest) {
+        throw new ForbiddenHttpException('กรุณาเข้าสู่ระบบ');
+    }
 
-        $form = new WorkContributor();
-        $form->scenario = 'multi';
-        $form->ref_type = 'article';
-        $form->ref_id   = (int)$article->article_id;
-        $form->role_code_form = Yii::$app->request->post('WorkContributor')['role_code_form'] ?? 'author';
-        $form->sort_order = (int)(Yii::$app->request->post('WorkContributor')['sort_order'] ?? 1);
-        $form->note = Yii::$app->request->post('WorkContributor')['note'] ?? null;
+    $form = new WorkContributor();
+    $form->scenario = 'multi';
+    $form->ref_type = 'article';
+    $form->ref_id   = (int)$article->article_id;
+    $form->role_code_form = Yii::$app->request->post('WorkContributor')['role_code_form'] ?? 'author';
+    $form->sort_order     = (int)(Yii::$app->request->post('WorkContributor')['sort_order'] ?? 1);
+    $form->note           = Yii::$app->request->post('WorkContributor')['note'] ?? null;
 
-        if ($form->load(Yii::$app->request->post()) && $form->validate()) {
+    if ($form->load(Yii::$app->request->post()) && $form->validate()) {
 
-            $role = $form->role_code_form ?: 'member';
-            $startOrder = (int)$form->sort_order;
-            $created = 0;
+        $role = $form->role_code_form ?: 'member';
+        $startOrder = (int)$form->sort_order;
+        $created = 0;
 
-            $tx = Yii::$app->db->beginTransaction();
-            try {
-                $i = 0;
-                foreach ((array)$form->usernames as $uname) {
-                    $uname = trim((string)$uname);
-                    if ($uname === '') continue;
+        // ✅ sanitize usernames (ตัดว่าง/ซ้ำ)
+        $selected = (array)$form->usernames;
+        $selected = array_map('trim', $selected);
+        $selected = array_values(array_unique(array_filter($selected, function ($v) {
+            return $v !== '';
+        })));
 
-                    $row = new WorkContributor();
-                    $row->ref_type = 'article';
-                    $row->ref_id   = (int)$article->article_id;
-                    $row->username = $uname;
-                    $row->role_code = $role;
-                    $row->sort_order = $startOrder + $i;
-                    $row->note = $form->note;
+        $cnt = count($selected);
 
-                    // กันซ้ำแบบนิ่ม ๆ (ชน UNIQUE ก็ข้าม)
-                    try {
-                        if ($row->save(false)) {
-                            $created++;
-                            $i++;
-                        }
-                    } catch (\Throwable $e) {
-                        continue;
-                    }
+        // ✅ คำนวณ % แบบรวม 100 เป๊ะ (2 ตำแหน่ง)
+        $basePct = ($cnt > 0) ? floor((100 / $cnt) * 100) / 100 : null; // 2 decimals
+        $sumBase = ($cnt > 0) ? $basePct * $cnt : 0;
+        $lastPct = ($cnt > 0) ? round(100 - $sumBase, 2) + $basePct : null; // ให้คนสุดท้ายรับเศษ
+
+        $tx = Yii::$app->db->beginTransaction();
+        try {
+            $i = 0;
+            foreach ($selected as $index => $uname) {
+
+                $row = new WorkContributor();
+                $row->ref_type = 'article';
+                $row->ref_id   = (int)$article->article_id;
+                $row->username = $uname;
+                $row->role_code = $role;
+                $row->sort_order = $startOrder + $i;
+                $row->note = $form->note;
+
+                // ✅ ใส่สัดส่วน (optional): คนสุดท้ายรับเศษ
+                if ($cnt > 0) {
+                    $row->contribution_pct = ($index === ($cnt - 1)) ? $lastPct : $basePct;
                 }
 
-                $tx->commit();
-                Yii::$app->session->setFlash('success', "เพิ่มผู้ร่วมสำเร็จ {$created} คน");
-            } catch (\Throwable $e) {
-                $tx->rollBack();
-                Yii::$app->session->setFlash('error', 'บันทึกไม่สำเร็จ: ' . $e->getMessage());
+                // กันซ้ำแบบนิ่ม ๆ (ชน UNIQUE ก็ข้าม)
+                try {
+                    if ($row->save(false)) {
+                        $created++;
+                        $i++;
+                    }
+                } catch (\Throwable $e) {
+                    continue;
+                }
             }
-        }
 
-        return $this->redirect(['view', 'article_id' => $article->article_id]);
+            $tx->commit();
+            Yii::$app->session->setFlash('success', "เพิ่มผู้ร่วมสำเร็จ {$created} คน");
+        } catch (\Throwable $e) {
+            $tx->rollBack();
+            Yii::$app->session->setFlash('error', 'บันทึกไม่สำเร็จ: ' . $e->getMessage());
+        }
     }
+
+    return $this->redirect(['view', 'article_id' => $article->article_id]);
+}
+
 
     public function actionDeleteContributor($article_id, $wc_id)
     {

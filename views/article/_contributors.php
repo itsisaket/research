@@ -14,6 +14,7 @@ $wrapCard = $wrapCard ?? true;
 $refType = 'article';
 $refId = (int)$article->article_id;
 
+
 $contribs = WorkContributor::find()
     ->where(['ref_type' => $refType, 'ref_id' => $refId])
     ->orderBy(['sort_order' => SORT_ASC, 'wc_id' => SORT_ASC])
@@ -50,6 +51,7 @@ $formModel->scenario = 'multi';
 $formModel->ref_type = $refType;
 $formModel->ref_id = $refId;
 $formModel->role_code_form = 'author';
+$formModel->contribution_pct = null;
 
 // ซ่อนฟิลด์ แต่ยังส่งค่า default ให้ระบบ
 $formModel->sort_order = (count($contribs) ? (count($contribs) + 1) : 1);
@@ -95,6 +97,11 @@ $formModel->note = null;
       <span class="badge bg-secondary ms-1">
         <?= Html::encode($roleText) ?>
       </span>
+      <?php if ($c->contribution_pct !== null && $c->contribution_pct !== ''): ?>
+        <span class="badge bg-light text-dark border ms-1">
+            <?= Html::encode(number_format((float)$c->contribution_pct, 0)) ?>%
+        </span>
+        <?php endif; ?>
     </div>
 
     <!-- ขวา: จัดการ -->
@@ -172,6 +179,7 @@ $formModel->note = null;
   <!-- hidden fields -->
   <?= $f->field($formModel, 'sort_order')->hiddenInput()->label(false); ?>
   <?= $f->field($formModel, 'note')->hiddenInput()->label(false); ?>
+  <?= $f->field($formModel, 'contribution_pct')->hiddenInput()->label(false); ?>
 
   <?php ActiveForm::end(); ?>
 </div>
