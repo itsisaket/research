@@ -153,8 +153,10 @@ $safe = function ($v, $fallback = '-') {
       ]) ?>
 
     <!-- ===== Row: ผู้รับผิดชอบ/หน่วยงาน | ผู้ร่วมดำเนินงาน/ผู้เขียนร่วม ===== -->
+     <hr class="mt-2 mb-3">
     <div class="row g-3 mb-4">
-
+      <h5 class="mb-2"><i class="fas fa-link me-1"></i> อ้างอิง/ข้อมูลเพิ่มเติม</h5>
+      <hr class="mt-2 mb-3">
     <!-- ซ้าย: ผู้รับผิดชอบ/หน่วยงาน -->
     <div class="col-12 col-lg-5">
         <div class="h-100">

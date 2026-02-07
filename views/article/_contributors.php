@@ -81,41 +81,40 @@ $formModel->note = null;
         $roleText = $roleItems[$c->role_code] ?? $c->role_code;
       ?>
 
-      <div class="list-group-item px-0">
-        <div class="d-flex justify-content-between align-items-start gap-2">
+<div class="list-group-item px-0">
+  <div class="d-flex justify-content-between align-items-center">
 
-          <!-- ซ้าย: ชื่อ + บทบาท -->
-          <div>
-            <div class="fw-semibold">
-              <?= Html::encode($fullName) ?>
-            </div>
-            <div class="text-muted small">
-              <?= Html::encode($uname) ?>
-            </div>
-            <span class="badge bg-secondary mt-1">
-              <?= Html::encode($roleText) ?>
-            </span>
-          </div>
+    <!-- ซ้าย: บรรทัดเดียว -->
+    <div class="text-truncate">
+      <span class="fw-semibold">
+        <?= Html::encode($fullName) ?>
+      </span>
+      <span class="text-muted small">
+        (<?= Html::encode($uname) ?>)
+      </span>
+      <span class="badge bg-secondary ms-1">
+        <?= Html::encode($roleText) ?>
+      </span>
+    </div>
 
-          <!-- ขวา: จัดการ -->
-          <?php if ($isOwner): ?>
-            <div class="text-end">
-              <?= Html::a('<i class="fas fa-trash-alt"></i>', ['delete-contributor',
-                  'article_id' => $refId,
-                  'wc_id' => $c->wc_id
-              ], [
-                  'class' => 'btn btn-sm btn-outline-danger',
-                  'encode' => false,
-                  'data' => [
-                      'confirm' => 'ลบผู้ร่วมคนนี้หรือไม่?',
-                      'method' => 'post',
-                  ],
-              ]) ?>
-            </div>
-          <?php endif; ?>
+    <!-- ขวา: จัดการ -->
+    <?php if ($isOwner): ?>
+      <?= Html::a('<i class="fas fa-trash-alt"></i>', ['delete-contributor',
+          'article_id' => $refId,
+          'wc_id' => $c->wc_id
+      ], [
+          'class' => 'btn btn-sm btn-outline-danger',
+          'encode' => false,
+          'data' => [
+              'confirm' => 'ลบผู้ร่วมคนนี้หรือไม่?',
+              'method' => 'post',
+          ],
+      ]) ?>
+    <?php endif; ?>
 
-        </div>
-      </div>
+  </div>
+</div>
+
 
     <?php endforeach; ?>
 
@@ -125,41 +124,58 @@ $formModel->note = null;
 
 
 <div class="border rounded p-3 bg-light">
-  <div class="fw-semibold mb-2"><i class="fas fa-plus-circle me-1"></i> เพิ่มผู้ร่วม (เลือกได้หลายคน)</div>
+
+  <div class="fw-semibold mb-2">
+    <i class="fas fa-plus-circle me-1"></i> เพิ่มผู้ร่วม
+  </div>
 
   <?php $f = ActiveForm::begin([
       'action' => ['add-contributors', 'article_id' => $refId],
       'method' => 'post',
   ]); ?>
 
-  <?= $f->field($formModel, 'usernames')->widget(Select2::class, [
-      'data' => $userItems,
-      'options' => ['placeholder' => 'เลือกผู้ร่วม...', 'multiple' => true],
-      'pluginOptions' => ['allowClear' => true, 'closeOnSelect' => false],
-  ])->label(false); ?>
+  <div class="d-flex flex-wrap align-items-center gap-2">
 
-  <div class="row g-2">
-    <div class="col-12 col-md-6">
+    <!-- ผู้ร่วม (กินพื้นที่หลัก) -->
+    <div class="flex-grow-1" style="min-width:240px;">
+      <?= $f->field($formModel, 'usernames')->widget(Select2::class, [
+          'data' => $userItems,
+          'options' => [
+              'placeholder' => 'เลือกผู้ร่วม...',
+              'multiple' => true,
+          ],
+          'pluginOptions' => [
+              'allowClear' => true,
+              'closeOnSelect' => false,
+          ],
+      ])->label(false); ?>
+    </div>
+
+    <!-- บทบาท -->
+    <div style="min-width:160px;">
       <?= $f->field($formModel, 'role_code_form')->widget(Select2::class, [
           'data' => $roleItems,
-          'options' => ['placeholder' => 'เลือกบทบาท...'],
-      ])->label('บทบาท'); ?>
+          'options' => ['placeholder' => 'บทบาท'],
+      ])->label(false); ?>
     </div>
+
+    <!-- ปุ่มบันทึก -->
+    <div class="align-self-end mb-2">
+      <?= Html::submitButton(
+          '<i class="fas fa-save me-1"></i> เพิ่ม',
+          ['class' => 'btn btn-success', 'encode' => false]
+      ) ?>
+    </div>
+
   </div>
 
-  <!-- ซ่อนเริ่มลำดับ + หมายเหตุ (ยังส่งค่าไปด้วย) -->
+  <!-- hidden fields -->
   <?= $f->field($formModel, 'sort_order')->hiddenInput()->label(false); ?>
   <?= $f->field($formModel, 'note')->hiddenInput()->label(false); ?>
 
-  <div class="mt-2">
-    <?= Html::submitButton('<i class="fas fa-save me-1"></i> เพิ่มผู้ร่วม', [
-        'class' => 'btn btn-success',
-        'encode' => false,
-    ]) ?>
-  </div>
-
   <?php ActiveForm::end(); ?>
 </div>
+
 
 <?php if ($wrapCard): ?>
   </div>
