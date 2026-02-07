@@ -51,27 +51,27 @@ class ArticleController extends Controller
         ];
     }
 
-    public function actionIndex()
-    {
-        $session = Yii::$app->session;
-        $ty = $session['ty'] ?? null;
+public function actionIndex()
+{
+    $session = Yii::$app->session;
+    $ty = $session['ty'] ?? null;
 
-        $searchModel  = new ArticleSearch();
-        $dataProvider = $searchModel->search($this->request->queryParams);
+    $searchModel  = new ArticleSearch();
+    $dataProvider = $searchModel->search($this->request->queryParams);
 
-        if (!Yii::$app->user->isGuest && $ty) {
-            $dataProvider->query->andWhere(['a.org_id' => (int)$ty]);
-        }
-
-        // ✅ ใช้วิธีเดียวกับฟอร์ม create (ชัวร์สุดในระบบคุณ)
-        $pubItems = (new Article())->publication;
-
-        return $this->render('index', [
-            'searchModel'  => $searchModel,
-            'dataProvider' => $dataProvider,
-            'pubItems'     => $pubItems,
-        ]);
+    if (!Yii::$app->user->isGuest && $ty) {
+        $dataProvider->query->andWhere(['a.org_id' => (int)$ty]);
     }
+
+    // ✅ ใช้วิธีเดียวกับฟอร์ม create (ชัวร์สุดในระบบคุณ)
+    $pubItems = (new Article())->publication;
+
+    return $this->render('index', [
+        'searchModel'  => $searchModel,
+        'dataProvider' => $dataProvider,
+        'pubItems'     => $pubItems,
+    ]);
+}
 
     public function actionView($article_id)
     {

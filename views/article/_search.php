@@ -1,14 +1,19 @@
 <?php
 
 use yii\helpers\Html;
+use yii\helpers\ArrayHelper;
 use yii\widgets\ActiveForm;
+use app\models\Publication;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\ArticleSearch */
 /* @var $form yii\widgets\ActiveForm */
-/* @var $pubItems array */
 
-$pubItems = $pubItems ?? [];
+$pubItems = ArrayHelper::map(
+    Publication::find()->orderBy(['publication_name' => SORT_ASC])->all(),
+    'publication_type',
+    'publication_name'
+);
 ?>
 
 <div class="article-search card shadow-sm mb-3">
@@ -28,10 +33,7 @@ $pubItems = $pubItems ?? [];
 
             <div class="col-12 col-md-3">
                 <?= $form->field($model, 'publication_type')
-                    ->dropDownList($pubItems, [
-                        'prompt' => '-- ประเภทฐาน --',
-                        'options' => ['' => ['selected' => true]], // ✅ ให้เริ่มต้นเป็นค่าว่าง
-                    ])
+                    ->dropDownList($pubItems, ['prompt' => '-- ประเภทฐาน --'])
                     ->label('ประเภทฐาน') ?>
             </div>
 
@@ -45,7 +47,6 @@ $pubItems = $pubItems ?? [];
         <div class="mt-3">
             <?= Html::submitButton('🔍 ค้นหา', ['class' => 'btn btn-primary']) ?>
             <?= Html::a('รีเซ็ต', ['index'], ['class' => 'btn btn-outline-secondary']) ?>
-
         </div>
 
         <?php ActiveForm::end(); ?>
