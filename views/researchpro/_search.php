@@ -5,8 +5,8 @@ use yii\widgets\ActiveForm;
 use yii\helpers\ArrayHelper;
 
 use app\models\Account;        // หัวหน้าโครงการ (username)
-use app\models\ResearchFund;   // แหล่งทุน
-use app\models\ResearchType;   // ประเภทการวิจัย
+use app\models\ResFund;   // แหล่งทุน
+use app\models\Restype;   // ประเภทการวิจัย
 
 /* @var $this yii\web\View */
 /* @var $model app\models\ResearchproSearch */
@@ -18,8 +18,8 @@ for ($y = $yNow; $y >= $yNow - 10; $y--) {
     $yearItems[$y] = $y;
 }
 
-$fundItems = ArrayHelper::map(ResearchFund::find()->orderBy(['researchFundName' => SORT_ASC])->all(), 'researchFundID', 'researchFundName');
-$typeItems = ArrayHelper::map(ResearchType::find()->orderBy(['researchTypeName' => SORT_ASC])->all(), 'researchTypeID', 'researchTypeName');
+$fundItems = ArrayHelper::map(ResFund::find()->orderBy(['researchFundName' => SORT_ASC])->all(), 'researchFundID', 'researchFundName');
+$typeItems = ArrayHelper::map(Restype::find()->orderBy(['restypename' => SORT_ASC])->all(), 'restypeid', 'restypename');
 
 // ถ้าคุณมีตารางบุคลากร/บัญชีผู้ใช้
 $userItems = ArrayHelper::map(Account::find()->orderBy(['fullname' => SORT_ASC])->all(), 'username', 'fullname');

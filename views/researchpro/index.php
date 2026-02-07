@@ -59,7 +59,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php endif; ?>
 
 
-    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
+    <?php  echo $this->render('_search', ['model' => $searchModel]); ?>
 
     <?php Pjax::begin(['id' => 'pjax-researchpro']); ?>
 
