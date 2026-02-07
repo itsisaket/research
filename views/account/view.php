@@ -1,9 +1,7 @@
 <?php
-
 use yii\helpers\Html;
 use yii\widgets\DetailView;
 
-/* @var $this yii\web\View */
 /* @var $model app\models\Account */
 /* @var $cntResearch int */
 /* @var $cntArticle int */
@@ -18,190 +16,105 @@ $this->title = 'โปรไฟล์ผู้ใช้';
 $this->params['breadcrumbs'][] = ['label' => 'Accounts', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 
-/* ===== helpers ===== */
-$prefix = $model->hasprefix->prefixname ?? '';
-$fullName = trim(($prefix ? $prefix.' ' : '').($model->uname ?? '').' '.($model->luname ?? ''));
-$fullName = $fullName ?: '-';
-
-$orgName = $model->hasorg->org_name ?? '-';
-$posName = $model->hasposition->positionname ?? '-';
-
-$badge = function($text){
-    $t = mb_strtolower((string)$text);
-    $class = 'badge-secondary';
-    if (strpos($t, 'admin') !== false || strpos($t, 'ผู้ดูแล') !== false) $class = 'badge-danger';
-    elseif (strpos($t, 'user') !== false || strpos($t, 'ผู้ใช้งาน') !== false) $class = 'badge-primary';
-    elseif (strpos($t, 'review') !== false || strpos($t, 'ผู้ตรวจ') !== false) $class = 'badge-warning';
-    return '<span class="badge '.$class.'">'.Html::encode($text ?: '-').'</span>';
-};
-
-$statCard = function($title, $count, $icon, $url, $bg){
-    $count = (int)$count;
-    return Html::a(
-        "<div class='card border-0 shadow-sm h-100 text-white {$bg}'>
-            <div class='card-body d-flex justify-content-between align-items-center'>
-                <div>
-                    <div class='small text-white-50 mb-1'>{$title}</div>
-                    <div class='h3 mb-0 font-weight-bold'>{$count}</div>
-                    <div class='small text-white-50'>คลิกเพื่อดูรายการ</div>
-                </div>
-                <div class='text-white-50' style='font-size:34px; line-height:1'>
-                    <i class='{$icon}'></i>
-                </div>
-            </div>
-        </div>",
-        $url,
-        ['class' => 'text-decoration-none d-block', 'encode' => false, 'data-pjax' => 0]
-    );
-};
-
-$recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $titleField) {
-
-    $pk = 'id';
-    if (!empty($items)) {
-        $cls = get_class($items[0]);
-        $pk  = $cls::primaryKey()[0] ?? 'id';
-    }
-
-    $head = "
-      <div class='card-header bg-white d-flex justify-content-between align-items-center'>
-        <strong><i class='{$icon}'></i> {$title}</strong>
-        ".Html::a('ดูทั้งหมด', $indexUrl, ['class'=>'btn btn-sm btn-outline-primary','data-pjax'=>0])."
-      </div>
-    ";
+/* ===== helper ===== */
+$listCard = function($title, $icon, $items, $viewRoute, $pkField, $titleField){
+    $html = "<div class='card border-0 shadow-sm h-100'>
+        <div class='card-header bg-white'>
+            <strong><i class='{$icon}'></i> {$title}</strong>
+        </div>
+        <div class='card-body p-0'>";
 
     if (empty($items)) {
-        $body = "<div class='p-3 text-muted small'>ยังไม่มีข้อมูล</div>";
+        $html .= "<div class='p-3 text-muted small'>ไม่มีข้อมูล</div>";
     } else {
-        $body = "<ul class='list-group list-group-flush'>";
+        $html .= "<ul class='list-group list-group-flush'>";
         foreach ($items as $m) {
-            $id = $m->$pk ?? null;
+            $id = $m->$pkField;
+            $name = $m->$titleField ?? '-';
 
-            // ✅ ดึงชื่อเรื่องจากฟิลด์จริง
-            $t = null;
-            if ($m->hasAttribute($titleField)) {
-                $t = trim((string)$m->$titleField);
-            }
-            if ($t === '') $t = null;
-
-            // fallback
-            if ($t === null) $t = $id ? ('รายการ #' . $id) : 'รายการ (ไม่ทราบรหัส)';
-
-            $label = "<span class='text-truncate d-inline-block' style='max-width:92%;'>".Html::encode($t)."</span>";
-
-            $link = $id
-                ? Html::a($label, [$viewRoute, 'id' => $id], ['class'=>'text-decoration-none','encode'=>false,'data-pjax'=>0])
-                : $label;
-
-            $body .= "
-              <li class='list-group-item py-2 d-flex justify-content-between align-items-center'>
-                {$link}
-                <span class='text-muted'><i class='bi bi-box-arrow-up-right'></i></span>
-              </li>
-            ";
+            $html .= "<li class='list-group-item py-2'>
+                ".Html::a(
+                    Html::encode($name),
+                    [$viewRoute, 'id' => $id],
+                    ['class'=>'text-decoration-none','data-pjax'=>0]
+                )."
+            </li>";
         }
-        $body .= "</ul>";
+        $html .= "</ul>";
     }
 
-    return "<div class='card border-0 shadow-sm h-100'>{$head}<div class='card-body p-0'>{$body}</div></div>";
+    $html .= "</div></div>";
+    return $html;
 };
-
 ?>
 
-<div class="account-view container-fluid">
+<div class="container-fluid">
 
-  <!-- ===== Summary ===== -->
-  <div class="row">
-    <div class="col-md-6 col-lg-3 mb-3">
-      <?= $statCard('งานวิจัย', $cntResearch ?? 0, 'bi bi-journal-text',
-          ['researchpro/index', 'ResearchproSearch[uid]' => $model->uid], 'bg-primary') ?>
-    </div>
+<!-- =========================
+1) สรุปจำนวนเรื่อง
+========================= -->
+<div class="row mb-3">
+  <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-muted">งานวิจัย</div><div class="h4"><?= $cntResearch ?></div></div></div></div>
+  <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-muted">บทความ</div><div class="h4"><?= $cntArticle ?></div></div></div></div>
+  <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-muted">การนำไปใช้</div><div class="h4"><?= $cntUtil ?></div></div></div></div>
+  <div class="col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-muted">บริการวิชาการ</div><div class="h4"><?= $cntService ?></div></div></div></div>
+</div>
 
-    <div class="col-md-6 col-lg-3 mb-3">
-      <?= $statCard('บทความ', $cntArticle ?? 0, 'bi bi-file-earmark-text',
-          ['article/index', 'ArticleSearch[uid]' => $model->uid], 'bg-danger') ?>
-    </div>
+<!-- =========================
+2) ข้อมูลผู้ใช้
+========================= -->
+<div class="card shadow-sm mb-3">
+  <div class="card-header bg-white"><strong>ข้อมูลผู้ใช้</strong></div>
+  <div class="card-body">
+    <?= DetailView::widget([
+        'model' => $model,
+        'options' => ['class'=>'table table-sm table-striped mb-0'],
+        'attributes' => [
+            'username',
+            'email',
+            'tel',
+            [
+                'label' => 'ชื่อ - สกุล',
+                'value' => trim(($model->hasprefix->prefixname ?? '').' '.($model->uname ?? '').' '.($model->luname ?? '')),
+            ],
+            [
+                'label' => 'สังกัด',
+                'value' => $model->hasorg->org_name ?? '-',
+            ],
+            [
+                'label' => 'สถานะ',
+                'value' => $model->hasposition->positionname ?? '-',
+            ],
+        ],
+    ]) ?>
+  </div>
+</div>
 
-    <div class="col-md-6 col-lg-3 mb-3">
-      <?= $statCard('การนำไปใช้', $cntUtil ?? 0, 'bi bi-lightbulb',
-          ['utilization/index', 'UtilizationSearch[uid]' => $model->uid], 'bg-warning') ?>
-    </div>
+<!-- =========================
+3) รายชื่อเรื่อง (แยกตาม Card)
+========================= -->
+<div class="row mt-2">
 
-    <div class="col-md-6 col-lg-3 mb-3">
-      <?= $statCard('บริการวิชาการ', $cntService ?? 0, 'bi bi-people',
-          ['academic-service/index', 'AcademicServiceSearch[uid]' => $model->uid], 'bg-success') ?>
-    </div>
+  <div class="col-12 col-md-6 mb-3">
+    <?= $listCard('งานวิจัย','bi bi-journal-text',
+        $researchLatest,'researchpro/view','research_id','projectNameTH') ?>
   </div>
 
-  <!-- ===== Profile Detail ===== -->
-  <div class="row">
-    <div class="col-12 mb-3">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white">
-          <strong><i class="bi bi-person-badge"></i> ข้อมูลผู้ใช้</strong>
-        </div>
-        <div class="card-body">
-          <?= DetailView::widget([
-              'model' => $model,
-              'options' => ['class' => 'table table-sm table-striped mb-0'],
-              'attributes' => [
-                  ['label' => 'ชื่อ - สกุล', 'value' => $fullName],
-                  ['label' => 'อีเมล์', 'value' => $model->email ?? '-'],
-                  ['label' => 'เบอร์โทร', 'value' => $model->tel ?? '-'],
-                  ['label' => 'สังกัด', 'value' => $orgName],
-                  ['label' => 'สถานะ', 'format' => 'raw', 'value' => $badge($posName)],
-              ],
-          ]) ?>
-        </div>
-      </div>
-    </div>
+  <div class="col-12 col-md-6 mb-3">
+    <?= $listCard('บทความ','bi bi-file-earmark-text',
+        $articleLatest,'article/view','article_id','article_th') ?>
   </div>
 
-  <!-- ===== รายการข้อมูล (ต่อท้าย แยกตาม Card) ===== -->
-  <div class="row mt-2">
-    <div class="col-12 col-md-6 mb-3">
-      <?= $recentCard(
-          'งานวิจัย',
-          'bi bi-journal-text',
-          $researchLatest ?? [],
-          ['researchpro/index', 'ResearchproSearch[uid]' => $model->uid],
-          'researchpro/view',
-          'projectNameTH'   // ✅ researchpro
-      ) ?>
-    </div>
-
-    <div class="col-12 col-md-6 mb-3">
-      <?= $recentCard(
-          'บทความ',
-          'bi bi-file-earmark-text',
-          $articleLatest ?? [],
-          ['article/index', 'ArticleSearch[uid]' => $model->uid],
-          'article/view',
-          'article_th'      // ✅ article
-      ) ?>
-    </div>
-
-    <div class="col-12 col-md-6 mb-3">
-      <?= $recentCard(
-          'การนำไปใช้',
-          'bi bi-lightbulb',
-          $utilLatest ?? [],
-          ['utilization/index', 'UtilizationSearch[uid]' => $model->uid],
-          'utilization/view',
-          'project_name'    // ✅ utilization
-      ) ?>
-    </div>
-
-    <div class="col-12 col-md-6 mb-3">
-      <?= $recentCard(
-          'บริการวิชาการ',
-          'bi bi-people',
-          $serviceLatest ?? [],
-          ['academic-service/index', 'AcademicServiceSearch[uid]' => $model->uid],
-          'academic-service/view',
-          'title'           // ✅ academic-service
-      ) ?>
-    </div>
+  <div class="col-12 col-md-6 mb-3">
+    <?= $listCard('การนำไปใช้','bi bi-lightbulb',
+        $utilLatest,'utilization/view','util_id','project_name') ?>
   </div>
+
+  <div class="col-12 col-md-6 mb-3">
+    <?= $listCard('บริการวิชาการ','bi bi-people',
+        $serviceLatest,'academic-service/view','service_id','title') ?>
+  </div>
+
+</div>
 
 </div>
