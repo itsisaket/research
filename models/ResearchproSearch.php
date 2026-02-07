@@ -11,8 +11,8 @@ class ResearchproSearch extends Researchpro
     public function rules()
     {
         return [
-            [['projectID', 'org_id', 'projectYearsubmit', 'budgets', 'fundingAgencyID', 'researchFundID', 'researchTypeID', 'jobStatusID', 'sub_district', 'district', 'province'], 'integer'],
-            [['projectNameTH', 'projectNameEN', 'projectStartDate', 'projectEndDate', 'researchArea', 'username'], 'safe'], // ⭐ username เป็น safe เพื่อค้นหาได้
+            [['projectID', 'org_id', 'projectYearsubmit', 'fundingAgencyID'], 'integer'],
+            [['projectNameTH', 'username'], 'safe'],
         ];
     }
 
@@ -39,16 +39,15 @@ class ResearchproSearch extends Researchpro
             return $dataProvider;
         }
 
-        // ===== exact filters (เลือกจาก dropdown) =====
+        // ===== exact filters (dropdown) =====
         $query->andFilterWhere([
             'projectYearsubmit' => $this->projectYearsubmit, // ปีเสนอ
-            'researchFundID'    => $this->researchFundID,    // แหล่งทุน
-            'researchTypeID'    => $this->researchTypeID,    // ประเภทการวิจัย
+            'fundingAgencyID'   => $this->fundingAgencyID,   // แหล่งทุน (ตรงกับ _search)
         ]);
 
-        // ===== text filters (พิมพ์ค้นหา) =====
-        $query->andFilterWhere(['like', 'projectNameTH', $this->projectNameTH]) // ชื่อโครงการ
-              ->andFilterWhere(['like', 'username', $this->username]);          // หัวหน้าโครงการ (username)
+        // ===== text filters =====
+        $query->andFilterWhere(['like', 'projectNameTH', $this->projectNameTH]); // ชื่อโครงการ
+        $query->andFilterWhere(['like', 'username', $this->username]);          // หัวหน้าโครงการ
 
         return $dataProvider;
     }

@@ -5,7 +5,7 @@ use yii\widgets\ActiveForm;
 use yii\helpers\ArrayHelper;
 
 use app\models\Account;        // หัวหน้าโครงการ (username)
-use app\models\ResFund;   // แหล่งทุน
+use app\models\ResGency;   // แหล่งทุน
 use app\models\Restype;   // ประเภทการวิจัย
 
 /* @var $this yii\web\View */
@@ -18,9 +18,7 @@ for ($y = $yNow; $y >= $yNow - 10; $y--) {
     $yearItems[$y] = $y;
 }
 
-$fundItems = ArrayHelper::map(ResFund::find()->orderBy(['researchFundName' => SORT_ASC])->all(), 'researchFundID', 'researchFundName');
-$typeItems = ArrayHelper::map(Restype::find()->orderBy(['restypename' => SORT_ASC])->all(), 'restypeid', 'restypename');
-
+$fundItems = ArrayHelper::map(ResGency::find()->orderBy(['fundingAgencyName' => SORT_ASC])->all(), 'fundingAgencyID', 'fundingAgencyName');
 $userItems = ArrayHelper::map(Account::find()->orderBy(['uname' => SORT_ASC])->all(),'username',
     function ($m) {
         return trim($m->uname . ' ' . $m->luname);
@@ -62,17 +60,9 @@ $userItems = ArrayHelper::map(Account::find()->orderBy(['uname' => SORT_ASC])->a
 
             <!-- 4) แหล่งทุน -->
             <div class="col-12 col-md-2">
-                <?= $form->field($model, 'researchFundID')->dropDownList(
+                <?= $form->field($model, 'fundingAgencyID')->dropDownList(
                     $fundItems,
                     ['prompt' => '-- แหล่งทุน --']
-                ) ?>
-            </div>
-
-            <!-- 5) ประเภทการวิจัย -->
-            <div class="col-12 col-md-3">
-                <?= $form->field($model, 'researchTypeID')->dropDownList(
-                    $typeItems,
-                    ['prompt' => '-- ประเภทการวิจัย --']
                 ) ?>
             </div>
 
@@ -80,7 +70,7 @@ $userItems = ArrayHelper::map(Account::find()->orderBy(['uname' => SORT_ASC])->a
 
         <div class="mt-3">
             <?= Html::submitButton('🔍 ค้นหา', ['class' => 'btn btn-primary']) ?>
-            <?= Html::resetButton('รีเซ็ต', ['class' => 'btn btn-outline-secondary']) ?>
+            <?= Html::a('รีเซ็ต', ['index'], ['class' => 'btn btn-outline-secondary']) ?>
         </div>
 
         <?php ActiveForm::end(); ?>
