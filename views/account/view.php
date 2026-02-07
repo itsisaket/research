@@ -31,8 +31,6 @@ $listCard = function($title, $icon, $items, $viewRoute, $pkField, $titleField){
     } else {
         $html .= "<ul class='list-group list-group-flush'>";
         foreach ($items as $m) {
-
-            // กัน error ถ้าไม่มีฟิลด์
             $id = $m->$pkField ?? null;
             $name = $m->$titleField ?? '-';
 
@@ -41,13 +39,16 @@ $listCard = function($title, $icon, $items, $viewRoute, $pkField, $titleField){
                 continue;
             }
 
-            $html .= "<li class='list-group-item py-2 d-flex justify-content-between align-items-center'>
-                ".Html::a(
-                    "<span class='text-truncate d-inline-block' style='max-width:92%;'>".Html::encode($name)."</span>",
-                    [$viewRoute, 'id' => $id],
-                    ['class'=>'text-decoration-none','data-pjax'=>0,'encode'=>false]
-                )."
-                <span class='text-muted'><i class='bi bi-box-arrow-up-right'></i></span>
+            $label = "<span class='text-truncate d-inline-block' style='max-width:92%;'>"
+                .Html::encode($name).
+                "</span>";
+
+            $html .= "<li class='list-group-item py-2 d-flex justify-content-between align-items-center'>"
+                . Html::a($label, [$viewRoute, 'id' => $id], [
+                    'class' => 'text-decoration-none',
+                    'data-pjax' => 0,
+                ])
+                . "<span class='text-muted'><i class='bi bi-box-arrow-up-right'></i></span>
             </li>";
         }
         $html .= "</ul>";
@@ -130,47 +131,19 @@ $listCard = function($title, $icon, $items, $viewRoute, $pkField, $titleField){
   <div class="row mt-2">
 
     <div class="col-12 col-md-6 mb-3">
-      <?= $listCard(
-          'งานวิจัย',
-          'bi bi-journal-text',
-          $researchLatest ?? [],
-          'researchpro/view',
-          'research_id',        // ✅ PK ของ Researchpro
-          'projectNameTH'       // ✅ ชื่อโครงการภาษาไทย
-      ) ?>
+      <?= $listCard('งานวิจัย','bi bi-journal-text', $researchLatest ?? [], 'researchpro/view', 'research_id', 'projectNameTH') ?>
     </div>
 
     <div class="col-12 col-md-6 mb-3">
-      <?= $listCard(
-          'บทความ',
-          'bi bi-file-earmark-text',
-          $articleLatest ?? [],
-          'article/view',
-          'article_id',         // ✅ PK ของ Article
-          'article_th'          // ✅ ชื่อบทความ(ไทย)
-      ) ?>
+      <?= $listCard('บทความ','bi bi-file-earmark-text', $articleLatest ?? [], 'article/view', 'article_id', 'article_th') ?>
     </div>
 
     <div class="col-12 col-md-6 mb-3">
-      <?= $listCard(
-          'การนำไปใช้',
-          'bi bi-lightbulb',
-          $utilLatest ?? [],
-          'utilization/view',
-          'util_id',            // ✅ PK ของ Utilization
-          'project_name'        // ✅ โครงการวิจัย/งานสร้างสรรค์
-      ) ?>
+      <?= $listCard('การนำไปใช้','bi bi-lightbulb', $utilLatest ?? [], 'utilization/view', 'util_id', 'project_name') ?>
     </div>
 
     <div class="col-12 col-md-6 mb-3">
-      <?= $listCard(
-          'บริการวิชาการ',
-          'bi bi-people',
-          $serviceLatest ?? [],
-          'academic-service/view',
-          'service_id',         // ✅ PK ของ AcademicService
-          'title'               // ✅ เรื่อง
-      ) ?>
+      <?= $listCard('บริการวิชาการ','bi bi-people', $serviceLatest ?? [], 'academic-service/view', 'service_id', 'title') ?>
     </div>
 
   </div>

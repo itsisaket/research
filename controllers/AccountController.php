@@ -88,38 +88,49 @@ public function actionView($id)
 {
     $model = $this->findModel($id);
 
+    // ✅ ใช้ username จาก account เท่านั้น
+    $username = $model->username;
+
     // ===== งานวิจัย =====
-    $condResearch = $this->ownerCondition(Researchpro::class, $model);
-    $cntResearch = (int)Researchpro::find()->where($condResearch)->count();
+    $cntResearch = Researchpro::find()
+        ->where(['username' => $username])
+        ->count();
+
     $researchLatest = Researchpro::find()
-        ->where($condResearch)
+        ->where(['username' => $username])
         ->orderBy(['research_id' => SORT_DESC])
         ->limit(10)
         ->all();
 
     // ===== บทความ =====
-    $condArticle = $this->ownerCondition(Article::class, $model);
-    $cntArticle = (int)Article::find()->where($condArticle)->count();
+    $cntArticle = Article::find()
+        ->where(['username' => $username])
+        ->count();
+
     $articleLatest = Article::find()
-        ->where($condArticle)
+        ->where(['username' => $username])
         ->orderBy(['article_id' => SORT_DESC])
         ->limit(10)
         ->all();
 
     // ===== การนำไปใช้ =====
-    $condUtil = $this->ownerCondition(Utilization::class, $model);
-    $cntUtil = (int)Utilization::find()->where($condUtil)->count();
+    $cntUtil = Utilization::find()
+        ->where(['username' => $username])
+        ->count();
+
     $utilLatest = Utilization::find()
-        ->where($condUtil)
+        ->where(['username' => $username])
         ->orderBy(['util_id' => SORT_DESC])
         ->limit(10)
         ->all();
 
     // ===== บริการวิชาการ =====
-    $condService = $this->ownerCondition(AcademicService::class, $model);
-    $cntService = (int)AcademicService::find()->where($condService)->count();
+    $cntService = AcademicService::find()
+        ->where(['username' => $username])
+        ->count();
+
     $serviceLatest = AcademicService::find()
-        ->where($condService)
+        ->where(['username' => $username])
         ->orderBy(['service_id' => SORT_DESC])
         ->limit(10)
         ->all();
@@ -127,10 +138,10 @@ public function actionView($id)
     return $this->render('view', [
         'model' => $model,
 
-        'cntResearch' => $cntResearch,
-        'cntArticle'  => $cntArticle,
-        'cntUtil'     => $cntUtil,
-        'cntService'  => $cntService,
+        'cntResearch' => (int)$cntResearch,
+        'cntArticle'  => (int)$cntArticle,
+        'cntUtil'     => (int)$cntUtil,
+        'cntService'  => (int)$cntService,
 
         'researchLatest' => $researchLatest,
         'articleLatest'  => $articleLatest,
@@ -140,46 +151,5 @@ public function actionView($id)
 }
 
 
-    protected function findModel($id)
-    {
-        if (($model = Account::findOne((int)$id)) !== null) {
-            return $model;
-        }
-        throw new NotFoundHttpException('ไม่พบข้อมูลผู้ใช้ที่ต้องการ');
-    }
 
-    /**
-     * ✅ เลือก owner ที่ปลอดภัยที่สุด
-     * - ให้ uid/created_by มาก่อน เพื่อกันเคสตารางไม่มี username แล้วเกิด #42S22
-     */
-private function ownerCondition($modelClass, $account)
-{
-    $m = new $modelClass();
-
-    if ($m->hasAttribute('uid')) {
-        return ['uid' => (int)$account->uid];
-    }
-
-    if ($m->hasAttribute('created_by')) {
-        return ['created_by' => (int)$account->uid];
-    }
-
-    if ($m->hasAttribute('username') && !empty($account->username)) {
-        return ['username' => $account->username];
-    }
-
-    // ❌ ห้ามใช้ ['0'=>1]
-    // ✅ ใช้แบบนี้แทน
-    return '1=0';
-}
-
-
-    /**
-     * ✅ PK ของโมเดล (กันเดาชื่อคอลัมน์ผิด)
-     */
-    private function pkField($modelClass)
-    {
-        $pk = $modelClass::primaryKey();
-        return $pk[0] ?? 'id';
-    }
 }
