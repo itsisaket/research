@@ -128,9 +128,7 @@ $ownerText = !empty($model->ownerFullname) ? $model->ownerFullname : ($model->us
             <span class="input-group-text"><i class="fas fa-user"></i></span>
             <input type="text" class="form-control" value="<?= Html::encode($safe($ownerText)) ?>" readonly>
           </div>
-          <div class="form-text text-muted small">
-            <i class="fas fa-id-badge me-1"></i> username: <?= Html::encode($safe($model->username)) ?>
-          </div>
+
         </div>
 
         <div class="col-12 col-md-6">

@@ -41,17 +41,15 @@ public function behaviors()
                     'allow'   => true,
                     'roles'   => ['?', '@'],
                 ],
-                    [
+                [
                     // ✅ เปิด DepDrop ให้คนที่ล็อกอินใช้ได้ทั้งหมด
                     'actions' => ['get-amphur', 'get-district'],
                     'allow'   => true,
                     'roles'   => ['@'],
                 ],
                 [
-                    // ✅ เพิ่ม get-amphur, get-district
                     'actions' => [
                         'view', 'create', 'update', 'delete',
-                        'add-contributors', 'delete-contributor', 'update-contributor-pct'
                     ],
                     'allow'   => true,
                     'roles'   => [1, 4],
@@ -159,17 +157,19 @@ public function behaviors()
 
     public function actionDelete($projectID)
     {
-        $this->findModel($projectID)->delete();
+        $model = $this->findModel($projectID);
+
         $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
         $isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$model->username);
 
         if (!$isOwner) {
-            throw new \yii\web\ForbiddenHttpException('คุณไม่มีสิทธิ์ลบรายการนี้');
+            throw new ForbiddenHttpException('คุณไม่มีสิทธิ์ลบรายการนี้');
         }
 
-        $model->delete();        
+        $model->delete();
         return $this->redirect(['index']);
     }
+
 
     protected function findModel($projectID)
     {

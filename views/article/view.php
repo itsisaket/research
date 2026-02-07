@@ -49,10 +49,12 @@ $safe = function ($v, $fallback = '-') {
               'class' => 'btn btn-outline-secondary',
               'encode' => false,
           ]) ?>
+            <?php if ($isOwner): ?>
             <?= Html::a('<i class="fas fa-edit me-1"></i> แก้ไขข้อมูล', ['update', 'article_id' => $model->article_id], [
                 'class' => 'btn btn-primary',
                 'encode' => false,
             ]) ?>
+            <?php endif; ?>
         </div>
 
         <div>

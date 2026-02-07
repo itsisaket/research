@@ -9,10 +9,10 @@ use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 
 use app\models\WorkContributor;
-use app\models\Article;        // owner check สำหรับ article
-// use app\models\Researchpro; // ✅ เปิดใช้เมื่อคุณมีโมเดล researchpro แล้ว
-// use app\models\AcademicService;
-// use app\models\Utilization;
+use app\models\Article;    
+use app\models\Researchpro;
+//use app\models\AcademicService;
+use app\models\Utilization;
 
 class WorkContributorController extends Controller
 {
@@ -194,20 +194,20 @@ class WorkContributorController extends Controller
                 break;
 
             // ✅ เปิดใช้เมื่อคุณมีโมเดล/PK ชัดเจน
-            // case 'researchpro':
-            //     $m = Researchpro::findOne((int)$refId);
-            //     $ownerUsername = $m->username ?? null;
-            //     break;
+             case 'researchpro':
+                 $m = Researchpro::findOne((int)$refId);
+                 $ownerUsername = $m->username ?? null;
+                 break;
 
             // case 'academic_service':
             //     $m = AcademicService::findOne((int)$refId);
             //     $ownerUsername = $m->username ?? null;
             //     break;
 
-            // case 'utilization':
-            //     $m = Utilization::findOne((int)$refId);
-            //     $ownerUsername = $m->username ?? null;
-            //     break;
+             case 'utilization':
+                 $m = Utilization::findOne((int)$refId);
+                 $ownerUsername = $m->username ?? null;
+                 break;
 
             default:
                 // ไม่รู้จัก refType → บล็อกไว้ก่อนเพื่อความปลอดภัย
