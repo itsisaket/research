@@ -42,7 +42,8 @@ $pubItems = $pubItems ?? [];
 
         <div class="mt-3">
             <?= Html::submitButton('🔍 ค้นหา', ['class' => 'btn btn-primary']) ?>
-            <?= Html::resetButton('รีเซ็ต', ['class' => 'btn btn-outline-secondary']) ?>
+            <?= Html::a('รีเซ็ต', ['index'], ['class' => 'btn btn-outline-secondary']) ?>
+
         </div>
 
         <?php ActiveForm::end(); ?>

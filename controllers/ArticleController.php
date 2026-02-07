@@ -11,7 +11,7 @@ use yii\web\ForbiddenHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use app\models\Publication;
-
+use yii\helpers\ArrayHelper;
 use app\models\WorkContributor;
 
 class ArticleController extends Controller
@@ -64,7 +64,7 @@ public function actionIndex()
     }
 
     // ✅ ดึงรายการประเภทฐานที่ controller
-    $pubItems = \yii\helpers\ArrayHelper::map(
+    $pubItems = ArrayHelper::map(
         Publication::find()->orderBy(['publication_name' => SORT_ASC])->all(),
         'publication_type',
         'publication_name'
