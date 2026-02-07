@@ -5,17 +5,27 @@ use yii\widgets\DetailView;
 
 /* @var $this yii\web\View */
 /* @var $model app\models\Account */
+/* @var $username string|null */
+/* @var $cntResearch int */
+/* @var $cntArticle int */
+/* @var $cntUtil int */
+/* @var $cntService int */
+/* @var $researchLatest array */
+/* @var $articleLatest array */
+/* @var $utilLatest array */
+/* @var $serviceLatest array */
 
 $this->title = 'โปรไฟล์ผู้ใช้';
 $this->params['breadcrumbs'][] = ['label' => 'Accounts', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 
 // ===== helpers =====
-$fullName = trim(
-    (($model->hasprefix->prefixname ?? '') ? ($model->hasprefix->prefixname.' ') : '') .
-    ($model->uname ?? '') . ' ' . ($model->luname ?? '')
-);
+$prefixName = $model->hasprefix->prefixname ?? '';
+$fullName = trim(($prefixName ? $prefixName.' ' : '').($model->uname ?? '').' '.($model->luname ?? ''));
 $fullName = $fullName !== '' ? $fullName : '-';
+
+$posName = $model->hasposition->positionname ?? '-';
+$orgName = $model->hasorg->org_name ?? '-';
 
 $badge = function($text){
     $text = (string)$text;
@@ -62,7 +72,6 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $pkField, $
         foreach ($items as $m) {
             $id = $m->$pkField ?? null;
 
-            // หา title จากฟิลด์ที่มีจริง
             $t = null;
             foreach ($titleFields as $f) {
                 if (isset($m->$f) && trim((string)$m->$f) !== '') { $t = (string)$m->$f; break; }
@@ -70,12 +79,15 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $pkField, $
             if ($t === null) $t = $m->title ?? $m->project_name ?? $m->topic ?? null;
             if ($t === null) $t = '#'.(string)$id;
 
+            $titleText = "<span class='d-inline-block text-truncate' style='max-width: 92%;'>".Html::encode($t)."</span>";
+
+            // ถ้าไม่มี id → ไม่ทำลิงก์ กัน error route
+            $link = $id
+                ? Html::a($titleText, [$viewRoute, 'id' => $id], ['class' => 'text-decoration-none', 'data-pjax' => 0, 'encode' => false])
+                : $titleText;
+
             $html .= "<li class='list-group-item py-2 d-flex justify-content-between align-items-center'>
-                ".Html::a(
-                    "<span class='d-inline-block text-truncate' style='max-width: 92%;'>".Html::encode($t)."</span>",
-                    [$viewRoute, 'id' => $id],
-                    ['class' => 'text-decoration-none', 'data-pjax' => 0, 'encode' => false]
-                )."
+                {$link}
                 <span class='text-muted'><i class='bi bi-box-arrow-up-right'></i></span>
             </li>";
         }
@@ -99,7 +111,7 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $pkField, $
         <div class="text-muted">
           Username: <span class="font-weight-bold"><?= Html::encode($username ?? '-') ?></span>
           &nbsp;·&nbsp;
-          สถานะ: <?= $badge($model->hasposition->positionname ?? '-') ?>
+          สถานะ: <?= $badge($posName) ?>
         </div>
       </div>
 
@@ -143,8 +155,8 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $pkField, $
                   ['label' => 'Username', 'value' => $username ?? '-'],
                   ['label' => 'อีเมล์', 'value' => $model->email ?? '-'],
                   ['label' => 'เบอร์ติดต่อ', 'value' => $model->tel ?? '-'],
-                  ['label' => 'สังกัด', 'value' => $model->hasorg->org_name ?? '-'],
-                  ['label' => 'สถานะ', 'format' => 'raw', 'value' => $badge($model->hasposition->positionname ?? '-')],
+                  ['label' => 'สังกัด', 'value' => $orgName],
+                  ['label' => 'สถานะ', 'format' => 'raw', 'value' => $badge($posName)],
               ],
           ]) ?>
         </div>
@@ -161,7 +173,7 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $pkField, $
               $researchLatest,
               ['/researchpro/index', 'ResearchproSearch[username]' => $username],
               'researchpro/view',
-              'research_id',                    // ✅ ปรับ PK ให้ตรง
+              \app\models\Researchpro::primaryKey()[0] ?? 'id',   // ✅ ใช้ PK จริง
               ['project_name', 'research_title', 'title']
           ) ?>
         </div>
@@ -173,7 +185,7 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $pkField, $
               $articleLatest,
               ['/article/index', 'ArticleSearch[username]' => $username],
               'article/view',
-              'article_id',                     // ✅ ปรับ PK ให้ตรง
+              \app\models\Article::primaryKey()[0] ?? 'id',
               ['title', 'article_title']
           ) ?>
         </div>
@@ -185,7 +197,7 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $pkField, $
               $utilLatest,
               ['/utilization/index', 'UtilizationSearch[username]' => $username],
               'utilization/view',
-              'util_id',                        // ✅ ปรับ PK ให้ตรง
+              \app\models\Utilization::primaryKey()[0] ?? 'id',
               ['util_title', 'title', 'topic']
           ) ?>
         </div>
@@ -197,7 +209,7 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $pkField, $
               $serviceLatest,
               ['/academic-service/index', 'AcademicServiceSearch[username]' => $username],
               'academic-service/view',
-              'service_id',                     // ✅ ปรับ PK ให้ตรง
+              \app\models\AcademicService::primaryKey()[0] ?? 'id',
               ['title', 'service_title', 'topic']
           ) ?>
         </div>
