@@ -84,55 +84,46 @@ class AccountController extends Controller
      * 2) นับจำนวนเรื่อง (4 ตาราง)
      * 3) ข้อมูลผู้ใช้ (model)
      */
- public function actionView($id)
+public function actionView($id)
 {
-    // 3) ข้อมูลผู้ใช้
     $model = $this->findModel($id);
-    $username = $model->username;
 
-    // 2) นับจำนวนเรื่อง
-    $cntResearch = (int)\app\models\Researchpro::find()
-        ->where(['username' => $username])
-        ->count();
-
-    $cntArticle = (int)\app\models\Article::find()
-        ->where(['username' => $username])
-        ->count();
-
-    $cntUtil = (int)\app\models\Utilization::find()
-        ->where(['username' => $username])
-        ->count();
-
-    $cntService = (int)\app\models\AcademicService::find()
-        ->where(['username' => $username])
-        ->count();
-
-    // 1) ดึงรายชื่อเรื่องของผู้ใช้ (ล่าสุด 10 รายการ)
-    $researchLatest = \app\models\Researchpro::find()
-        ->where(['username' => $username])
+    // ===== งานวิจัย =====
+    $condResearch = $this->ownerCondition(Researchpro::class, $model);
+    $cntResearch = (int)Researchpro::find()->where($condResearch)->count();
+    $researchLatest = Researchpro::find()
+        ->where($condResearch)
         ->orderBy(['research_id' => SORT_DESC])
         ->limit(10)
         ->all();
 
-    $articleLatest = \app\models\Article::find()
-        ->where(['username' => $username])
+    // ===== บทความ =====
+    $condArticle = $this->ownerCondition(Article::class, $model);
+    $cntArticle = (int)Article::find()->where($condArticle)->count();
+    $articleLatest = Article::find()
+        ->where($condArticle)
         ->orderBy(['article_id' => SORT_DESC])
         ->limit(10)
         ->all();
 
-    $utilLatest = \app\models\Utilization::find()
-        ->where(['username' => $username])
+    // ===== การนำไปใช้ =====
+    $condUtil = $this->ownerCondition(Utilization::class, $model);
+    $cntUtil = (int)Utilization::find()->where($condUtil)->count();
+    $utilLatest = Utilization::find()
+        ->where($condUtil)
         ->orderBy(['util_id' => SORT_DESC])
         ->limit(10)
         ->all();
 
-    $serviceLatest = \app\models\AcademicService::find()
-        ->where(['username' => $username])
+    // ===== บริการวิชาการ =====
+    $condService = $this->ownerCondition(AcademicService::class, $model);
+    $cntService = (int)AcademicService::find()->where($condService)->count();
+    $serviceLatest = AcademicService::find()
+        ->where($condService)
         ->orderBy(['service_id' => SORT_DESC])
         ->limit(10)
         ->all();
 
-    // ส่งไป view (ให้ตรงกับไฟล์ view ของคุณ)
     return $this->render('view', [
         'model' => $model,
 
