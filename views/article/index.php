@@ -31,7 +31,8 @@ $this->params['breadcrumbs'][] = $this->title;
           'attribute' => 'การจัดการ',
           'format'=>'raw',
           'value'=>function($model){
-            return  Html::a('จัดการข้อมูล', ['view', 'article_id' => $model->article_id], ['class' => 'btn btn-secondary']);     
+            return  Html::a('<i class="fas fa-eye"></i>', ['view', 'article_id' => $model->article_id], ['class' => 'btn btn-sm btn-outline-secondary']);    
+            
           }
         ],          
         [

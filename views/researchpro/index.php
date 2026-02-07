@@ -71,11 +71,12 @@ $this->params['breadcrumbs'][] = $this->title;
                 'label' => 'การจัดการ',
                 'format' => 'raw',
                 'value' => function ($model) {
-                    return Html::a('จัดการข้อมูล', ['view', 'projectID' => $model->projectID], [
-                        'class' => 'btn btn-secondary btn-sm'
+                    return Html::a('<i class="fas fa-eye"></i>', ['view', 'projectID' => $model->projectID], [
+                        'class' => 'btn btn-sm btn-outline-secondary'
                     ]);
                 },
             ],
+
             [
                 'attribute' => 'projectNameTH',
                 'value' => function ($model) {

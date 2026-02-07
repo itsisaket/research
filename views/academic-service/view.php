@@ -17,9 +17,6 @@ $pos = $me ? (int)($me->position ?? 0) : 0;
 $isAdmin = ($pos === 4);
 $isOwner = ($me && !empty($me->username) && (string)$me->username === (string)$model->username);
 
-// ตาม controller: create/update/delete เฉพาะ position 1 หรือ 4
-$canEdit   = ($isAdmin || ($pos === 1 && $isOwner));
-$canDelete = ($isAdmin || $isOwner);
 
 $safe = function ($v, $fallback='-') {
     return (isset($v) && $v !== '' && $v !== null) ? $v : $fallback;
@@ -98,7 +95,7 @@ $ownerText = !empty($model->ownerFullname) ? $model->ownerFullname : ($model->us
               'encode' => false
           ]) ?>
 
-          <?php if ($canEdit): ?>
+          <?php if ($isOwner): ?>
             <?= Html::a('<i class="fas fa-edit me-1"></i> แก้ไขข้อมูล', ['update', 'service_id' => $model->service_id], [
                 'class' => 'btn btn-primary',
                 'encode' => false
@@ -107,7 +104,7 @@ $ownerText = !empty($model->ownerFullname) ? $model->ownerFullname : ($model->us
         </div>
 
         <div class="d-flex gap-2">
-          <?php if ($canDelete): ?>
+          <?php if ($isOwner): ?>
             <?= Html::a('<i class="fas fa-trash-alt me-1"></i> ลบข้อมูล', ['delete', 'service_id' => $model->service_id], [
               'class' => 'btn btn-danger',
               'encode' => false,

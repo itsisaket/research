@@ -30,7 +30,8 @@ $this->title = 'การนำไปใช้ประโยชน์';
               'attribute' => 'การจัดการ',
               'format'=>'raw',
               'value'=>function($model){
-                return  Html::a('จัดการข้อมูล', ['view', 'utilization_id' => $model->utilization_id], ['class' => 'btn btn-secondary']);     
+                return  Html::a('<i class="fas fa-eye"></i>', ['view', 'utilization_id' => $model->utilization_id], ['class' => 'btn btn-sm btn-outline-secondary']);   
+                 
               }
             ],          
             [
