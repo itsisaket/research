@@ -27,6 +27,8 @@ use app\models\Article;
 use app\models\Utilization;
 use app\models\AcademicService;
 
+
+
 /**
  * AccountController implements the CRUD actions for Account model.
  */
@@ -42,28 +44,20 @@ class AccountController extends Controller
             'access' => [
                 'class' => AccessControl::class,
                 'ruleConfig' => [
-                    'class' => \app\components\HanumanRule::class, // 👈 ใช้ HanumanRule
+                    'class' => \app\components\HanumanRule::class,
                 ],
                 'rules' => [
-                    // ✅ public: ดู index, error, ajax ได้ทุกคน
                     [
                         'actions' => ['index', 'error'],
                         'allow'   => true,
-                        'roles'   => ['?', '@'], // guest + login
+                        'roles'   => ['?', '@'],
                     ],
-
-                    // ✅ เฉพาะ researcher (position = 1) + admin (position = 4) ดู view ได้
                     [
-                        'actions' => ['view'],
+                        'actions' => [
+                            'view', 'create', 'update', 'delete',
+                        ],
                         'allow'   => true,
-                        'roles'   => ['researcher', 'admin'],
-                    ],
-
-                    // ✅ เฉพาะ admin (position = 4) แก้ไข/ลบ/สร้างได้
-                    [
-                        'actions' => ['create', 'update', 'delete'],
-                        'allow'   => true,
-                        'roles'   => ['admin'],
+                        'roles'   => [1, 4],
                     ],
                 ],
             ],
@@ -71,6 +65,8 @@ class AccountController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST'],
+                    'delete-contributor' => ['POST'],
+                    'update-contributor-pct' => ['POST'],
                 ],
             ],
         ];
@@ -107,48 +103,40 @@ class AccountController extends Controller
      * @return mixed
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionView($id)
-    {
-        $model = $this->findModel($id);
+public function actionView($id)
+{
+    $model = $this->findModel($id);
 
-        // ใช้ username เป็น owner (ตามที่คุณต้องการ) — ถ้าใช้ uid ให้เปลี่ยน where เป็น ['uid' => $model->uid]
-        $username = $model->username;
+    $classes = [
+        'research' => \app\models\Researchpro::class,
+        'article'  => \app\models\Article::class,
+        'util'     => \app\models\Utilization::class,
+        'service'  => \app\models\AcademicService::class,
+    ];
 
-        // ===== Counts =====
-        $cntResearch = Researchpro::find()->where(['username' => $username])->count();
-        $cntArticle  = Article::find()->where(['username' => $username])->count();
-        $cntUtil     = Utilization::find()->where(['username' => $username])->count();
-        $cntService  = AcademicService::find()->where(['username' => $username])->count();
+    $cnt = [];
+    $latest = [];
 
-        // ===== Latest items (limit 5) =====
-        // ⚠️ ปรับ orderBy ให้เป็น PK ของตารางจริง เช่น research_id/article_id/...
-        $researchLatest = Researchpro::find()->where(['username' => $username])
-            ->orderBy(['research_id' => SORT_DESC])->limit(5)->all();
+    foreach ($classes as $k => $cls) {
+        $cond = $this->ownerCondition($cls, $model);
+        $pk   = $this->pkField($cls);
 
-        $articleLatest = Article::find()->where(['username' => $username])
-            ->orderBy(['article_id' => SORT_DESC])->limit(5)->all();
-
-        $utilLatest = Utilization::find()->where(['username' => $username])
-            ->orderBy(['util_id' => SORT_DESC])->limit(5)->all();
-
-        $serviceLatest = AcademicService::find()->where(['username' => $username])
-            ->orderBy(['service_id' => SORT_DESC])->limit(5)->all();
-
-        return $this->render('view', [
-            'model' => $model,
-            'username' => $username,
-
-            'cntResearch' => (int)$cntResearch,
-            'cntArticle'  => (int)$cntArticle,
-            'cntUtil'     => (int)$cntUtil,
-            'cntService'  => (int)$cntService,
-
-            'researchLatest' => $researchLatest,
-            'articleLatest'  => $articleLatest,
-            'utilLatest'     => $utilLatest,
-            'serviceLatest'  => $serviceLatest,
-        ]);
+        $cnt[$k] = (int)$cls::find()->where($cond)->count();
+        $latest[$k] = $cls::find()->where($cond)->orderBy([$pk => SORT_DESC])->limit(5)->all();
     }
+
+    return $this->render('view', [
+        'model' => $model,
+        'cntResearch' => $cnt['research'],
+        'cntArticle'  => $cnt['article'],
+        'cntUtil'     => $cnt['util'],
+        'cntService'  => $cnt['service'],
+        'researchLatest' => $latest['research'],
+        'articleLatest'  => $latest['article'],
+        'utilLatest'     => $latest['util'],
+        'serviceLatest'  => $latest['service'],
+    ]);
+}
 
 
 
@@ -299,5 +287,27 @@ class AccountController extends Controller
 
         return $this->goHome();
         //return $this->redirect(['/site/index']);
+    }
+    private function ownerCondition($modelClass, $account)
+    {
+        // เลือกฟิลด์เจ้าของที่มีจริงก่อน
+        $m = new $modelClass();
+        if ($m->hasAttribute('username') && !empty($account->username)) {
+            return ['username' => $account->username];
+        }
+        if ($m->hasAttribute('uid')) {
+            return ['uid' => (int)$account->uid];
+        }
+        if ($m->hasAttribute('created_by')) {
+            return ['created_by' => (int)$account->uid];
+        }
+        // ไม่รู้จะผูกด้วยอะไร → กัน error
+        return ['0' => 1];
+    }
+
+    private function pkField($modelClass)
+    {
+        $pk = $modelClass::primaryKey();
+        return $pk[0] ?? 'id';
     }
 }
