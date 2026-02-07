@@ -51,35 +51,27 @@ class ArticleController extends Controller
         ];
     }
 
-public function actionIndex()
-{
-    $session = Yii::$app->session;
-    $ty = $session['ty'] ?? null;
+    public function actionIndex()
+    {
+        $session = Yii::$app->session;
+        $ty = $session['ty'] ?? null;
 
-    $searchModel  = new ArticleSearch();
-    $dataProvider = $searchModel->search($this->request->queryParams);
+        $searchModel  = new ArticleSearch();
+        $dataProvider = $searchModel->search($this->request->queryParams);
 
-    if (!Yii::$app->user->isGuest && $ty) {
-        $dataProvider->query->andWhere(['a.org_id' => (int)$ty]); // ถ้า query ใช้ alias a
+        if (!Yii::$app->user->isGuest && $ty) {
+            $dataProvider->query->andWhere(['a.org_id' => (int)$ty]);
+        }
+
+        // ✅ ใช้วิธีเดียวกับฟอร์ม create (ชัวร์สุดในระบบคุณ)
+        $pubItems = (new Article())->publication;
+
+        return $this->render('index', [
+            'searchModel'  => $searchModel,
+            'dataProvider' => $dataProvider,
+            'pubItems'     => $pubItems,
+        ]);
     }
-
-    // ✅ ดึงรายการประเภทฐานที่ controller
-        $pubItems = ArrayHelper::map(
-            Publication::find()
-                ->andWhere(['>', 'publication_type', 0])   // ✅ ตัด 0
-                ->orderBy(['publication_name' => SORT_ASC])
-                ->all(),
-            'publication_type',
-            'publication_name'
-        );
-
-
-    return $this->render('index', [
-        'searchModel'  => $searchModel,
-        'dataProvider' => $dataProvider,
-        'pubItems'     => $pubItems,
-    ]);
-}
 
     public function actionView($article_id)
     {
