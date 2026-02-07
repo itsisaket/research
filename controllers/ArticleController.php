@@ -10,6 +10,7 @@ use yii\web\NotFoundHttpException;
 use yii\web\ForbiddenHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
+use app\models\Publication;
 
 use app\models\WorkContributor;
 
@@ -50,23 +51,31 @@ class ArticleController extends Controller
         ];
     }
 
-    public function actionIndex()
-    {
-        $session = Yii::$app->session;
-        $ty = $session['ty'] ?? null;
+public function actionIndex()
+{
+    $session = Yii::$app->session;
+    $ty = $session['ty'] ?? null;
 
-        $searchModel  = new ArticleSearch();
-        $dataProvider = $searchModel->search($this->request->queryParams);
+    $searchModel  = new ArticleSearch();
+    $dataProvider = $searchModel->search($this->request->queryParams);
 
-        if (!Yii::$app->user->isGuest && $ty) {
-            $dataProvider->query->andWhere(['org_id' => $ty]);
-        }
-
-        return $this->render('index', [
-            'searchModel'  => $searchModel,
-            'dataProvider' => $dataProvider,
-        ]);
+    if (!Yii::$app->user->isGuest && $ty) {
+        $dataProvider->query->andWhere(['a.org_id' => (int)$ty]); // ถ้า query ใช้ alias a
     }
+
+    // ✅ ดึงรายการประเภทฐานที่ controller
+    $pubItems = \yii\helpers\ArrayHelper::map(
+        Publication::find()->orderBy(['publication_name' => SORT_ASC])->all(),
+        'publication_type',
+        'publication_name'
+    );
+
+    return $this->render('index', [
+        'searchModel'  => $searchModel,
+        'dataProvider' => $dataProvider,
+        'pubItems'     => $pubItems,
+    ]);
+}
 
     public function actionView($article_id)
     {

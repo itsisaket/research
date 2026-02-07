@@ -4,68 +4,71 @@ namespace app\models;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
+use app\models\Article;
 
+/**
+ * ArticleSearch represents the model behind the search form of `app\models\Article`.
+ */
 class ArticleSearch extends Article
 {
-    public $researcher_name; // ⭐ ค้นหาชื่อ-สกุลนักวิจัย
-
+    /**
+     * {@inheritdoc}
+     */
     public function rules()
     {
         return [
-            [['article_id', 'org_id', 'publication_type'], 'integer'],
-            [['article_th', 'researcher_name'], 'safe'],
+            [['article_id', 'username', 'org_id', 'publication_type'], 'integer'],
+            [['article_th', 'article_eng', 'article_publish', 'journal', 'refer'], 'safe'],
         ];
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function scenarios()
     {
+        // bypass scenarios() implementation in the parent class
         return Model::scenarios();
     }
 
+    /**
+     * Creates data provider instance with search query applied
+     *
+     * @param array $params
+     *
+     * @return ActiveDataProvider
+     */
     public function search($params)
     {
-        $query = Article::find()->alias('a')
-            ->joinWith(['user u', 'publi p']); // user=Account, publi=Publication
+        $query = Article::find();
+
+        // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'sort' => [
-                'defaultOrder' => ['article_id' => SORT_DESC],
-                'attributes' => [
-                    'article_id',
-                    'article_th',
-                    'publication_type',
-                    // sort เพิ่มตามชื่อผู้ใช้ (ถ้าต้องการ)
-                    'researcher_name' => [
-                        'asc' => ['u.uname' => SORT_ASC, 'u.luname' => SORT_ASC],
-                        'desc'=> ['u.uname' => SORT_DESC, 'u.luname' => SORT_DESC],
-                    ],
-                ],
-            ],
-            'pagination' => ['pageSize' => 20],
         ]);
 
         $this->load($params);
 
         if (!$this->validate()) {
+            // uncomment the following line if you do not want to return any records when validation fails
+            // $query->where('0=1');
             return $dataProvider;
         }
 
-        // exact filter
+        // grid filtering conditions
         $query->andFilterWhere([
-            'a.publication_type' => $this->publication_type,
+            'article_id' => $this->article_id,
+            'username' => $this->username,
+            'org_id' => $this->org_id,
+            'publication_type' => $this->publication_type,
+            'article_publish' => $this->article_publish,
         ]);
 
-        // like filters
-        $query->andFilterWhere(['like', 'a.article_th', $this->article_th]);
-
-        // ค้นหานักวิจัยด้วยชื่อ/นามสกุล (Account.uname / Account.luname)
-        if (!empty($this->researcher_name)) {
-            $query->andFilterWhere(['or',
-                ['like', 'u.uname', $this->researcher_name],
-                ['like', 'u.luname', $this->researcher_name],
-            ]);
-        }
+        $query->andFilterWhere(['like', 'article_th', $this->article_th])
+            ->andFilterWhere(['like', 'article_eng', $this->article_eng])
+            ->andFilterWhere(['like', 'journal', $this->journal])
+            ->andFilterWhere(['like', 'refer', $this->refer]);
 
         return $dataProvider;
     }

@@ -6,8 +6,9 @@ use yii\widgets\ActiveForm;
 /* @var $this yii\web\View */
 /* @var $model app\models\ArticleSearch */
 /* @var $form yii\widgets\ActiveForm */
+/* @var $pubItems array */
 
-$pubItems = $model->publication ?? []; // ✅ จาก Article::getPublication()
+$pubItems = $pubItems ?? [];
 ?>
 
 <div class="article-search card shadow-sm mb-3">
@@ -20,13 +21,11 @@ $pubItems = $model->publication ?? []; // ✅ จาก Article::getPublication(
 
         <div class="row g-3">
 
-            <!-- 1) ชื่อบทความ -->
             <div class="col-12 col-md-6">
                 <?= $form->field($model, 'article_th')
                     ->textInput(['placeholder' => 'ชื่อบทความ (ไทย)']) ?>
             </div>
 
-            <!-- 2) ประเภทฐาน -->
             <div class="col-12 col-md-3">
                 <?= $form->field($model, 'publication_type')->dropDownList(
                     $pubItems,
@@ -34,7 +33,6 @@ $pubItems = $model->publication ?? []; // ✅ จาก Article::getPublication(
                 ) ?>
             </div>
 
-            <!-- 3) นักวิจัย (ค้นด้วยชื่อ-สกุล) -->
             <div class="col-12 col-md-3">
                 <?= $form->field($model, 'researcher_name')
                     ->textInput(['placeholder' => 'ชื่อ/นามสกุล นักวิจัย']) ?>
