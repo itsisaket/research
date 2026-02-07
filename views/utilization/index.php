@@ -19,19 +19,22 @@ $this->title = 'การนำไปใช้ประโยชน์';
         <?= Html::a('เพิ่มข้อมูล', ['create'], ['class' => 'btn btn-success']) ?>
     </p>
 
-  <?php echo $this->render('_search', [ 'model' => $searchModel]);?>
+  <?php  echo $this->render('_search', [ 'model' => $searchModel]);?>
 
 <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'columns' => [
             [
-              'attribute' => 'การจัดการ',
-              'format'=>'raw',
-              'value'=>function($model){
-                return  Html::a('<i class="fas fa-eye"></i>', ['view', 'utilization_id' => $model->utilization_id], ['class' => 'btn btn-sm btn-outline-secondary']);   
-                 
+              'label' => 'การจัดการ',
+              'format' => 'raw',
+              'value' => function($model){
+                  return Html::a(
+                      '<i class="fas fa-eye"></i>',
+                      ['view', 'utilization_id' => $model->utilization_id],
+                      ['class' => 'btn btn-sm btn-outline-secondary', 'encode' => false]
+                  );
               }
-            ],          
+            ],         
             [
                 'attribute' => 'project_name',
                 'value'=>function($model){
