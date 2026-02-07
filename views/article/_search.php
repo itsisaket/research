@@ -3,13 +3,7 @@ use yii\helpers\ArrayHelper;
 use app\models\Publication;
 
 $pubItems = $pubItems ?? [];
-if (empty($pubItems)) {
-    $pubItems = ArrayHelper::map(
-        Publication::find()->orderBy(['publication_name' => SORT_ASC])->all(),
-        'publication_type',
-        'publication_name'
-    );
-}
+echo $pubItems ;
 ?>
 
 <div class="article-search card shadow-sm mb-3">
@@ -33,6 +27,8 @@ if (empty($pubItems)) {
                     ->label('ประเภทฐาน') ?>
             </div>
 
+
+            
             <div class="col-12 col-md-3">
                 <?= $form->field($model, 'researcher_name')
                     ->textInput(['placeholder' => 'ชื่อ/นามสกุล นักวิจัย']) ?>

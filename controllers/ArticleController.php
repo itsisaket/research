@@ -70,6 +70,7 @@ public function actionIndex()
         'publication_name'
     );
 
+
     return $this->render('index', [
         'searchModel'  => $searchModel,
         'dataProvider' => $dataProvider,
