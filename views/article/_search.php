@@ -1,14 +1,15 @@
 <?php
-
-use yii\helpers\Html;
-use yii\widgets\ActiveForm;
-
-/* @var $this yii\web\View */
-/* @var $model app\models\ArticleSearch */
-/* @var $form yii\widgets\ActiveForm */
-/* @var $pubItems array */
+use yii\helpers\ArrayHelper;
+use app\models\Publication;
 
 $pubItems = $pubItems ?? [];
+if (empty($pubItems)) {
+    $pubItems = ArrayHelper::map(
+        Publication::find()->orderBy(['publication_name' => SORT_ASC])->all(),
+        'publication_type',
+        'publication_name'
+    );
+}
 ?>
 
 <div class="article-search card shadow-sm mb-3">

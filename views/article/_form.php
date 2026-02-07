@@ -128,7 +128,6 @@ if (empty($model->article_publish)) {
         <?= $form->field($model, 'article_publish', [
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-calendar-check\"></i></span>\n{input}\n</div>\n{error}"
         ])->widget(DatePicker::class, [
-          'name' => 'article_publish',
           'options' => ['placeholder' => 'เลือกวันที่...'],
           'type' => DatePicker::TYPE_INPUT,
           'pickerIcon' => '<i class="fas fa-calendar-alt text-primary"></i>',
