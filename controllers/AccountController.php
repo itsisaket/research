@@ -83,48 +83,86 @@ class AccountController extends Controller
         ]);
     }
 
-    // ✅ actionView ใหม่ (ปลอดภัยทั้งสิทธิ์/คอลัมน์)
-    public function actionView($id)
-    {
-        $model = $this->findModel($id);
+   // ✅ actionView ใหม่ (สมบูรณ์ + ปลอดภัยทั้ง owner/PK + ไม่ใช้ $username ใน view)
+public function actionView($id)
+{
+    $model = $this->findModel($id);
 
-        // ส่งให้ view ใช้
-        $username = $model->username ?? null;
+    // ✅ 4 โมดูลที่จะสรุป
+    $classes = [
+        'research' => Researchpro::class,
+        'article'  => Article::class,
+        'util'     => Utilization::class,
+        'service'  => AcademicService::class,
+    ];
 
-        // ✅ 4 โมดูลที่จะสรุป
-        $classes = [
-            'research' => Researchpro::class,
-            'article'  => Article::class,
-            'util'     => Utilization::class,
-            'service'  => AcademicService::class,
-        ];
+    // ✅ map route หน้า index/view ของแต่ละโมดูล (แก้ชื่อ route ให้ตรงระบบคุณถ้าต่าง)
+    $routes = [
+        'research' => ['index' => '/researchpro/index',     'view' => '/researchpro/view',     'search' => 'ResearchproSearch'],
+        'article'  => ['index' => '/article/index',        'view' => '/article/view',         'search' => 'ArticleSearch'],
+        'util'     => ['index' => '/utilization/index',    'view' => '/utilization/view',     'search' => 'UtilizationSearch'],
+        'service'  => ['index' => '/academic-service/index','view'=> '/academic-service/view', 'search' => 'AcademicServiceSearch'],
+    ];
 
-        $cnt = [];
-        $latest = [];
+    $cnt = [];
+    $latest = [];
+    $indexUrl = [];
 
-        foreach ($classes as $k => $cls) {
-            $cond = $this->ownerCondition($cls, $model);
-            $pk   = $this->pkField($cls);
+    foreach ($classes as $k => $cls) {
+        // ✅ เงื่อนไขเจ้าของ (ดูจากคอลัมน์ที่มีจริง)
+        $cond = $this->ownerCondition($cls, $model);
 
-            $cnt[$k] = (int)$cls::find()->where($cond)->count();
-            $latest[$k] = $cls::find()->where($cond)->orderBy([$pk => SORT_DESC])->limit(5)->all();
+        // ✅ pk ที่มีจริง
+        $pk = $this->pkField($cls);
+
+        // ✅ count + latest
+        $cnt[$k] = (int)$cls::find()->where($cond)->count();
+        $latest[$k] = $cls::find()->where($cond)->orderBy([$pk => SORT_DESC])->limit(5)->all();
+
+        // ✅ สร้าง url ไปหน้า index พร้อม filter อัตโนมัติ
+        // แปลง $cond (เช่น ['uid'=>1]) ให้เป็น param ของ SearchModel (เช่น ResearchproSearch[uid]=1)
+        $searchName = $routes[$k]['search'] ?? null;
+        $params = [$routes[$k]['index']];
+
+        if ($searchName && is_array($cond)) {
+            foreach ($cond as $field => $value) {
+                // เงื่อนไขกัน error (เช่น ['0'=>1]) ไม่ส่งไป
+                if ($field === '0') continue;
+                $params[$searchName . '[' . $field . ']'] = $value;
+            }
         }
 
-        return $this->render('view', [
-            'model' => $model,
-            'username' => $username, // ✅ สำคัญ: กัน Undefined variable ใน view
-
-            'cntResearch' => $cnt['research'] ?? 0,
-            'cntArticle'  => $cnt['article'] ?? 0,
-            'cntUtil'     => $cnt['util'] ?? 0,
-            'cntService'  => $cnt['service'] ?? 0,
-
-            'researchLatest' => $latest['research'] ?? [],
-            'articleLatest'  => $latest['article'] ?? [],
-            'utilLatest'     => $latest['util'] ?? [],
-            'serviceLatest'  => $latest['service'] ?? [],
-        ]);
+        $indexUrl[$k] = $params;
     }
+
+    return $this->render('view', [
+        'model' => $model,
+
+        // counts
+        'cntResearch' => $cnt['research'] ?? 0,
+        'cntArticle'  => $cnt['article'] ?? 0,
+        'cntUtil'     => $cnt['util'] ?? 0,
+        'cntService'  => $cnt['service'] ?? 0,
+
+        // latest lists
+        'researchLatest' => $latest['research'] ?? [],
+        'articleLatest'  => $latest['article'] ?? [],
+        'utilLatest'     => $latest['util'] ?? [],
+        'serviceLatest'  => $latest['service'] ?? [],
+
+        // ✅ ส่ง url ไปหน้า index ที่ filter แล้ว (view ใช้ทำปุ่ม “ดูทั้งหมด”)
+        'indexUrl' => $indexUrl,
+
+        // ✅ ส่ง route view เผื่อ view จะใช้
+        'viewRoute' => [
+            'research' => $routes['research']['view'],
+            'article'  => $routes['article']['view'],
+            'util'     => $routes['util']['view'],
+            'service'  => $routes['service']['view'],
+        ],
+    ]);
+}
+
 
     protected function findModel($id)
     {
