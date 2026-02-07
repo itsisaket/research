@@ -84,70 +84,70 @@ class AccountController extends Controller
      * 2) นับจำนวนเรื่อง (4 ตาราง)
      * 3) ข้อมูลผู้ใช้ (model)
      */
-    public function actionView($id)
-    {
-        $model = $this->findModel($id);
+ public function actionView($id)
+{
+    // 3) ข้อมูลผู้ใช้
+    $model = $this->findModel($id);
+    $username = $model->username;
 
-        // กำหนดโมดูลที่จะดึง
-        $modules = [
-            'research' => [
-                'class' => Researchpro::class,
-                'titleField' => 'projectNameTH', // ชื่อโครงการภาษาไทย
-            ],
-            'article' => [
-                'class' => Article::class,
-                'titleField' => 'article_th',    // ชื่อบทความ(ไทย)
-            ],
-            'util' => [
-                'class' => Utilization::class,
-                'titleField' => 'project_name',  // โครงการวิจัย/งานสร้างสรรค์
-            ],
-            'service' => [
-                'class' => AcademicService::class,
-                'titleField' => 'title',         // เรื่อง
-            ],
-        ];
+    // 2) นับจำนวนเรื่อง
+    $cntResearch = (int)\app\models\Researchpro::find()
+        ->where(['username' => $username])
+        ->count();
 
-        $counts = [];
-        $latest = [];
+    $cntArticle = (int)\app\models\Article::find()
+        ->where(['username' => $username])
+        ->count();
 
-        foreach ($modules as $key => $cfg) {
-            $cls = $cfg['class'];
+    $cntUtil = (int)\app\models\Utilization::find()
+        ->where(['username' => $username])
+        ->count();
 
-            // ✅ owner condition ปลอดภัย (uid/created_by/username ตามที่มีจริง)
-            $cond = $this->ownerCondition($cls, $model);
+    $cntService = (int)\app\models\AcademicService::find()
+        ->where(['username' => $username])
+        ->count();
 
-            // ✅ pk ของตาราง
-            $pk = $this->pkField($cls);
+    // 1) ดึงรายชื่อเรื่องของผู้ใช้ (ล่าสุด 10 รายการ)
+    $researchLatest = \app\models\Researchpro::find()
+        ->where(['username' => $username])
+        ->orderBy(['research_id' => SORT_DESC])
+        ->limit(10)
+        ->all();
 
-            // ✅ นับจำนวน
-            $counts[$key] = (int)$cls::find()->where($cond)->count();
+    $articleLatest = \app\models\Article::find()
+        ->where(['username' => $username])
+        ->orderBy(['article_id' => SORT_DESC])
+        ->limit(10)
+        ->all();
 
-            // ✅ ดึงรายการล่าสุด 10 (ต้องมีฟิลด์ชื่อเรื่องใน view)
-            // ไม่ select เฉพาะคอลัมน์ เพื่อกันปัญหา AR ไม่ครบ/relations (ปลอดภัยสุด)
-            $latest[$key] = $cls::find()
-                ->where($cond)
-                ->orderBy([$pk => SORT_DESC])
-                ->limit(10)
-                ->all();
-        }
+    $utilLatest = \app\models\Utilization::find()
+        ->where(['username' => $username])
+        ->orderBy(['util_id' => SORT_DESC])
+        ->limit(10)
+        ->all();
 
-        return $this->render('view', [
-            'model' => $model,
+    $serviceLatest = \app\models\AcademicService::find()
+        ->where(['username' => $username])
+        ->orderBy(['service_id' => SORT_DESC])
+        ->limit(10)
+        ->all();
 
-            // counts
-            'cntResearch' => $counts['research'] ?? 0,
-            'cntArticle'  => $counts['article'] ?? 0,
-            'cntUtil'     => $counts['util'] ?? 0,
-            'cntService'  => $counts['service'] ?? 0,
+    // ส่งไป view (ให้ตรงกับไฟล์ view ของคุณ)
+    return $this->render('view', [
+        'model' => $model,
 
-            // latest lists
-            'researchLatest' => $latest['research'] ?? [],
-            'articleLatest'  => $latest['article'] ?? [],
-            'utilLatest'     => $latest['util'] ?? [],
-            'serviceLatest'  => $latest['service'] ?? [],
-        ]);
-    }
+        'cntResearch' => $cntResearch,
+        'cntArticle'  => $cntArticle,
+        'cntUtil'     => $cntUtil,
+        'cntService'  => $cntService,
+
+        'researchLatest' => $researchLatest,
+        'articleLatest'  => $articleLatest,
+        'utilLatest'     => $utilLatest,
+        'serviceLatest'  => $serviceLatest,
+    ]);
+}
+
 
     protected function findModel($id)
     {
