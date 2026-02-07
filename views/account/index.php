@@ -75,8 +75,14 @@ $isAdmin = ($identity instanceof \app\models\Account) && ((int)$identity->positi
                         $full   = trim($prefix.' '.$model->uname.' '.$model->luname);
                         $full   = $full !== '' ? $full : '-';
 
-                        $username = !empty($model->username) ? Html::encode($model->username) : '-';
-                        return "<div class='fw-semibold'>{$full}</div><div class='text-muted small'>@{$username}</div>";
+                        return Html::a(
+                            Html::encode($full),
+                            ['view', 'id' => $model->uid],   // 👉 ลิงก์ไปหน้า view
+                            [
+                                'class' => 'fw-semibold text-decoration-none',
+                                'data-pjax' => 0,            // กัน pjax โหลดซ้อน
+                            ]
+                        );
                     }
                 ],
                 [
@@ -102,37 +108,6 @@ $isAdmin = ($identity instanceof \app\models\Account) && ((int)$identity->positi
                         elseif (strpos($p, 'ผู้ตรวจ') !== false || strpos($p, 'review') !== false) $class = 'bg-warning text-dark';
 
                         return "<span class='badge {$class}'>{$pos}</span>";
-                    }
-                ],
-
-                // ===== Actions (เฉพาะ admin) =====
-                [
-                    'header' => '<i class="bi bi-gear"></i>',
-                    'encodeLabel' => false,
-                    'format' => 'raw',
-                    'contentOptions' => ['class' => 'text-end', 'style' => 'width:220px; white-space:nowrap;'],
-                    'value' => function($model) use ($isAdmin){
-                        if (!$isAdmin) return null;
-
-                        return
-                            Html::a(
-                                '<i class="bi bi-pencil-square"></i> แก้ไข',
-                                ['update', 'id' => $model->uid],
-                                ['class' => 'btn btn-outline-warning btn-sm', 'encode' => false]
-                            )
-                            . ' ' .
-                            Html::a(
-                                '<i class="bi bi-trash3"></i> ลบ',
-                                ['delete', 'id' => $model->uid],
-                                [
-                                    'class' => 'btn btn-outline-danger btn-sm',
-                                    'encode' => false,
-                                    'data' => [
-                                        'confirm' => 'ยืนยันการลบรายการนี้ใช่ไหม?',
-                                        'method'  => 'post',
-                                    ],
-                                ]
-                            );
                     }
                 ],
             ],
