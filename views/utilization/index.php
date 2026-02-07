@@ -19,10 +19,8 @@ $this->title = 'การนำไปใช้ประโยชน์';
         <?= Html::a('เพิ่มข้อมูล', ['create'], ['class' => 'btn btn-success']) ?>
     </p>
 
-  <?= $this->render('_search', [
-    'model'    => $searchModel,
-    'pubItems' => $pubItems,
-]) ?>
+  <?php echo $this->render('_search', [ 'model' => $searchModel]);?>
+
 
 <?= GridView::widget([
         'dataProvider' => $dataProvider,

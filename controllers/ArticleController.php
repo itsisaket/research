@@ -60,16 +60,13 @@ public function actionIndex()
     $dataProvider = $searchModel->search($this->request->queryParams);
 
     if (!Yii::$app->user->isGuest && $ty) {
-        $dataProvider->query->andWhere(['a.org_id' => (int)$ty]);
+        $dataProvider->query->andWhere(['a.org_id' => (int)$ty]); // ถ้า query ใช้ alias a
     }
 
-    // ✅ ใช้วิธีเดียวกับฟอร์ม create (ชัวร์สุดในระบบคุณ)
-    $pubItems = (new Article())->publication;
 
     return $this->render('index', [
         'searchModel'  => $searchModel,
         'dataProvider' => $dataProvider,
-        'pubItems'     => $pubItems,
     ]);
 }
 
