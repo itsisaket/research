@@ -10,7 +10,7 @@ use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 
-// ✅ ปรับชื่อโมเดลตามโปรเจกต์คุณ
+// โมดูลที่ต้องดึงข้อมูล
 use app\models\Researchpro;
 use app\models\Article;
 use app\models\Utilization;
@@ -27,21 +27,16 @@ class AccountController extends Controller
                     'class' => \app\components\HanumanRule::class,
                 ],
                 'rules' => [
-                    // ✅ หน้า index ให้ guest/สมาชิกเข้าได้ (ตามที่คุณทำเดิม)
                     [
                         'actions' => ['index', 'error'],
                         'allow'   => true,
                         'roles'   => ['?', '@'],
                     ],
-
-                    // ✅ view ให้ "คนล็อกอิน" เข้าได้ โดยไม่พึ่ง roles เป็นตัวเลข (กัน 403 #2)
                     [
                         'actions' => ['view', 'resetpassword'],
                         'allow'   => true,
                         'roles'   => ['@'],
                     ],
-
-                    // ✅ create/update/delete เฉพาะ position 1,4 (admin/ผู้ดูแล)
                     [
                         'actions' => ['create', 'update', 'delete'],
                         'allow'   => true,
@@ -83,75 +78,76 @@ class AccountController extends Controller
         ]);
     }
 
-public function actionView($id)
-{
-    $model = $this->findModel($id);
-    $username = $model->username;
+    /**
+     * ✅ actionView: แสดง
+     * 1) รายชื่อเรื่องของผู้ใช้ (4 ตาราง)
+     * 2) นับจำนวนเรื่อง (4 ตาราง)
+     * 3) ข้อมูลผู้ใช้ (model)
+     */
+    public function actionView($id)
+    {
+        $model = $this->findModel($id);
 
-    /* =========================
-     * 1) นับจำนวนเรื่อง
-     * ========================= */
-    $cntResearch = (int)\app\models\Researchpro::find()
-        ->where(['username' => $username])->count();
+        // กำหนดโมดูลที่จะดึง
+        $modules = [
+            'research' => [
+                'class' => Researchpro::class,
+                'titleField' => 'projectNameTH', // ชื่อโครงการภาษาไทย
+            ],
+            'article' => [
+                'class' => Article::class,
+                'titleField' => 'article_th',    // ชื่อบทความ(ไทย)
+            ],
+            'util' => [
+                'class' => Utilization::class,
+                'titleField' => 'project_name',  // โครงการวิจัย/งานสร้างสรรค์
+            ],
+            'service' => [
+                'class' => AcademicService::class,
+                'titleField' => 'title',         // เรื่อง
+            ],
+        ];
 
-    $cntArticle = (int)\app\models\Article::find()
-        ->where(['username' => $username])->count();
+        $counts = [];
+        $latest = [];
 
-    $cntUtil = (int)\app\models\Utilization::find()
-        ->where(['username' => $username])->count();
+        foreach ($modules as $key => $cfg) {
+            $cls = $cfg['class'];
 
-    $cntService = (int)\app\models\AcademicService::find()
-        ->where(['username' => $username])->count();
+            // ✅ owner condition ปลอดภัย (uid/created_by/username ตามที่มีจริง)
+            $cond = $this->ownerCondition($cls, $model);
 
-    /* =========================
-     * 2) ดึงรายชื่อเรื่อง (ล่าสุด 10)
-     * ========================= */
-    $researchLatest = \app\models\Researchpro::find()
-        ->select(['research_id','projectNameTH'])
-        ->where(['username' => $username])
-        ->orderBy(['research_id' => SORT_DESC])
-        ->limit(10)
-        ->all();
+            // ✅ pk ของตาราง
+            $pk = $this->pkField($cls);
 
-    $articleLatest = \app\models\Article::find()
-        ->select(['article_id','article_th'])
-        ->where(['username' => $username])
-        ->orderBy(['article_id' => SORT_DESC])
-        ->limit(10)
-        ->all();
+            // ✅ นับจำนวน
+            $counts[$key] = (int)$cls::find()->where($cond)->count();
 
-    $utilLatest = \app\models\Utilization::find()
-        ->select(['util_id','project_name'])
-        ->where(['username' => $username])
-        ->orderBy(['util_id' => SORT_DESC])
-        ->limit(10)
-        ->all();
+            // ✅ ดึงรายการล่าสุด 10 (ต้องมีฟิลด์ชื่อเรื่องใน view)
+            // ไม่ select เฉพาะคอลัมน์ เพื่อกันปัญหา AR ไม่ครบ/relations (ปลอดภัยสุด)
+            $latest[$key] = $cls::find()
+                ->where($cond)
+                ->orderBy([$pk => SORT_DESC])
+                ->limit(10)
+                ->all();
+        }
 
-    $serviceLatest = \app\models\AcademicService::find()
-        ->select(['service_id','title'])
-        ->where(['username' => $username])
-        ->orderBy(['service_id' => SORT_DESC])
-        ->limit(10)
-        ->all();
+        return $this->render('view', [
+            'model' => $model,
 
-    /* =========================
-     * 3) ส่งไป view
-     * ========================= */
-    return $this->render('view', [
-        'model' => $model,
+            // counts
+            'cntResearch' => $counts['research'] ?? 0,
+            'cntArticle'  => $counts['article'] ?? 0,
+            'cntUtil'     => $counts['util'] ?? 0,
+            'cntService'  => $counts['service'] ?? 0,
 
-        'cntResearch' => $cntResearch,
-        'cntArticle'  => $cntArticle,
-        'cntUtil'     => $cntUtil,
-        'cntService'  => $cntService,
-
-        'researchLatest' => $researchLatest,
-        'articleLatest'  => $articleLatest,
-        'utilLatest'     => $utilLatest,
-        'serviceLatest'  => $serviceLatest,
-    ]);
-}
-
+            // latest lists
+            'researchLatest' => $latest['research'] ?? [],
+            'articleLatest'  => $latest['article'] ?? [],
+            'utilLatest'     => $latest['util'] ?? [],
+            'serviceLatest'  => $latest['service'] ?? [],
+        ]);
+    }
 
     protected function findModel($id)
     {
@@ -162,29 +158,29 @@ public function actionView($id)
     }
 
     /**
-     * ✅ เลือกเงื่อนไข owner โดยดูจากคอลัมน์ที่ "มีจริง" ของแต่ละตาราง
-     * - รองรับ: username / uid / created_by
+     * ✅ เลือก owner ที่ปลอดภัยที่สุด
+     * - ให้ uid/created_by มาก่อน เพื่อกันเคสตารางไม่มี username แล้วเกิด #42S22
      */
     private function ownerCondition($modelClass, $account)
     {
         $m = new $modelClass();
 
-        if ($m->hasAttribute('username') && !empty($account->username)) {
-            return ['username' => $account->username];
-        }
         if ($m->hasAttribute('uid')) {
             return ['uid' => (int)$account->uid];
         }
         if ($m->hasAttribute('created_by')) {
             return ['created_by' => (int)$account->uid];
         }
+        if ($m->hasAttribute('username') && !empty($account->username)) {
+            return ['username' => $account->username];
+        }
 
-        // ไม่รู้จะผูกด้วยอะไร → กัน error (คืนผลว่าง)
+        // ไม่รู้จะผูกด้วยอะไร → คืนผลว่าง
         return ['0' => 1];
     }
 
     /**
-     * ✅ หา PK field ของโมเดล เพื่อ orderBy ได้ถูกต้อง ไม่เดาคอลัมน์
+     * ✅ PK ของโมเดล (กันเดาชื่อคอลัมน์ผิด)
      */
     private function pkField($modelClass)
     {
