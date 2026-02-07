@@ -19,7 +19,7 @@ $this->params['breadcrumbs'][] = ['label' => 'Accounts', 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 
 /* ===== helpers ===== */
-$prefix   = $model->hasprefix->prefixname ?? '';
+$prefix = $model->hasprefix->prefixname ?? '';
 $fullName = trim(($prefix ? $prefix.' ' : '').($model->uname ?? '').' '.($model->luname ?? ''));
 $fullName = $fullName ?: '-';
 
@@ -55,18 +55,8 @@ $statCard = function($title, $count, $icon, $url, $bg){
     );
 };
 
-/**
- * Card แสดง "รายการล่าสุด" ของแต่ละโมดูล
- * @param string $title
- * @param string $icon
- * @param array $items ActiveRecord[]
- * @param array $indexUrl
- * @param array $viewRoute ['route/view', 'idField' => 'pk'] -> ส่งแค่ route แล้วใช้ primaryKey อัตโนมัติ
- * @param array $titleFields ฟิลด์ที่เป็นชื่อเรื่อง (วนหา)
- */
-$recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $titleFields = []) {
+$recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $titleField) {
 
-    // หา PK จาก class (ถ้าไม่มี items → ใช้ id)
     $pk = 'id';
     if (!empty($items)) {
         $cls = get_class($items[0]);
@@ -76,11 +66,7 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $titleField
     $head = "
       <div class='card-header bg-white d-flex justify-content-between align-items-center'>
         <strong><i class='{$icon}'></i> {$title}</strong>
-        ".Html::a('<i class="bi bi-list-ul"></i> ดูทั้งหมด', $indexUrl, [
-            'class' => 'btn btn-sm btn-outline-primary',
-            'encode' => false,
-            'data-pjax' => 0,
-        ])."
+        ".Html::a('ดูทั้งหมด', $indexUrl, ['class'=>'btn btn-sm btn-outline-primary','data-pjax'=>0])."
       </div>
     ";
 
@@ -91,22 +77,20 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $titleField
         foreach ($items as $m) {
             $id = $m->$pk ?? null;
 
-            // เลือกชื่อเรื่องจากฟิลด์ที่มีจริงก่อน
+            // ✅ ดึงชื่อเรื่องจากฟิลด์จริง
             $t = null;
-            foreach ($titleFields as $f) {
-                if (isset($m->$f) && trim((string)$m->$f) !== '') { $t = (string)$m->$f; break; }
+            if ($m->hasAttribute($titleField)) {
+                $t = trim((string)$m->$titleField);
             }
-            if ($t === null) $t = $m->title ?? $m->project_name ?? $m->topic ?? null;
-            if ($t === null) $t = '#'.(string)$id;
+            if ($t === '') $t = null;
+
+            // fallback
+            if ($t === null) $t = $id ? ('รายการ #' . $id) : 'รายการ (ไม่ทราบรหัส)';
 
             $label = "<span class='text-truncate d-inline-block' style='max-width:92%;'>".Html::encode($t)."</span>";
 
             $link = $id
-                ? Html::a($label, [$viewRoute, 'id' => $id], [
-                    'class' => 'text-decoration-none',
-                    'encode' => false,
-                    'data-pjax' => 0,
-                ])
+                ? Html::a($label, [$viewRoute, 'id' => $id], ['class'=>'text-decoration-none','encode'=>false,'data-pjax'=>0])
                 : $label;
 
             $body .= "
@@ -182,7 +166,7 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $titleField
           $researchLatest ?? [],
           ['researchpro/index', 'ResearchproSearch[uid]' => $model->uid],
           'researchpro/view',
-          ['project_name', 'research_title', 'title']
+          'projectNameTH'   // ✅ researchpro
       ) ?>
     </div>
 
@@ -193,7 +177,7 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $titleField
           $articleLatest ?? [],
           ['article/index', 'ArticleSearch[uid]' => $model->uid],
           'article/view',
-          ['title', 'article_title', 'topic']
+          'article_th'      // ✅ article
       ) ?>
     </div>
 
@@ -204,7 +188,7 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $titleField
           $utilLatest ?? [],
           ['utilization/index', 'UtilizationSearch[uid]' => $model->uid],
           'utilization/view',
-          ['util_title', 'title', 'topic']
+          'project_name'    // ✅ utilization
       ) ?>
     </div>
 
@@ -215,7 +199,7 @@ $recentCard = function($title, $icon, $items, $indexUrl, $viewRoute, $titleField
           $serviceLatest ?? [],
           ['academic-service/index', 'AcademicServiceSearch[uid]' => $model->uid],
           'academic-service/view',
-          ['title', 'service_title', 'topic']
+          'title'           // ✅ academic-service
       ) ?>
     </div>
   </div>
