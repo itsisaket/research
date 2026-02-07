@@ -38,24 +38,24 @@ $this->title = 'การนำไปใช้ประโยชน์';
                   return $model->project_name;
                 }
               ],
-              [
-                'attribute' => 'username',
-                'value'=>function($model){
-                  return $model->user->uname.' '.$model->user->luname;
-                }
-              ],    
-              [
-                'attribute' => 'org_id',
-                'value'=>function($model){
-                  return $model->hasorg->org_name;
-                }
-              ],                  
-              [
-                'attribute' => 'utilization_type',
-                'value'=>function($model){
-                  return $model->utilization->utilization_type_name;
-                }
-              ],                 
+            [
+              'attribute' => 'username',
+              'value' => function($model){
+                return $model->user ? ($model->user->uname.' '.$model->user->luname) : '-';
+              }
+            ],
+            [
+              'attribute' => 'org_id',
+              'value' => function($model){
+                return $model->hasorg ? $model->hasorg->org_name : '-';
+              }
+            ],
+            [
+              'attribute' => 'utilization_type',
+              'value' => function($model){
+                return $model->utilization ? $model->utilization->utilization_type_name : '-';
+              }
+            ],             
 
         ],
     ]); ?>
