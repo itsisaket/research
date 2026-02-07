@@ -67,7 +67,7 @@ $this->params['breadcrumbs'][] = $this->title;
             <div>
                 <div class="mui-title">บริการวิชาการ</div>
                 <div class="mui-value">
-                    <?= Html::a($counttype3, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 3], ['class' => 'text-decoration-none']) ?>
+                    <?= Html::a($counttype3, ['/academic-service/index', 'ResearchproSearch[researchTypeID]' => 3], ['class' => 'text-decoration-none']) ?>
                 </div>
                 
             </div>
@@ -160,7 +160,7 @@ $this->params['breadcrumbs'][] = $this->title;
                         <div class="inner">
                             <p class="label mb-1">บริการวิชาการ</p>
                             <h4 class="value mb-0">
-                                <?= Html::a($counttype3, ['/researchpro/index', 'ResearchproSearch[researchTypeID]' => 3], ['class' => 'badge badge-light']) ?>
+                                <?= Html::a($counttype3, ['/academic-service/index', 'ResearchproSearch[researchTypeID]' => 3], ['class' => 'badge badge-light']) ?>
                             </h4>
                             
                         </div>

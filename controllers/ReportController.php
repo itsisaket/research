@@ -15,8 +15,10 @@ use app\models\Resstatus;
 use app\models\ResFund;
 use app\models\ResGency;
 
+
 use app\models\Article;
 use app\models\ArticleSearch;
+use app\models\AcademicService;
 
 class ReportController extends Controller
 {
@@ -128,7 +130,7 @@ class ReportController extends Controller
 
             $counttype1 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 1])->count();
             $counttype2 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 2])->count();
-            $counttype3 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 3])->count();
+            $counttype3 = AcademicService::find()->where(['username' => $username])->count();
             $counttype4 = Article::find()->where(['username' => $username])->count();
 
             // บนสุดโชว์ชื่อคน login
@@ -136,7 +138,7 @@ class ReportController extends Controller
         } else {
             $counttype1 = Researchpro::find()->where(['researchTypeID' => 1])->count();
             $counttype2 = Researchpro::find()->where(['researchTypeID' => 2])->count();
-            $counttype3 = Researchpro::find()->where(['researchTypeID' => 3])->count();
+            $counttype3 = AcademicService::find()->count();
             $counttype4 = Article::find()->count();
 
             // นับผู้ใช้ทั้งหมด
