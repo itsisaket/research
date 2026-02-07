@@ -21,6 +21,12 @@ use yii\helpers\Url;
 
 use yii\data\ActiveDataProvider;
 
+// ✅ ปรับชื่อโมเดลตามโปรเจกต์คุณ
+use app\models\Researchpro;
+use app\models\Article;
+use app\models\Utilization;
+use app\models\AcademicService;
+
 /**
  * AccountController implements the CRUD actions for Account model.
  */
@@ -103,10 +109,48 @@ class AccountController extends Controller
      */
     public function actionView($id)
     {
+        $model = $this->findModel($id);
+
+        // ใช้ username เป็น owner (ตามที่คุณต้องการ) — ถ้าใช้ uid ให้เปลี่ยน where เป็น ['uid' => $model->uid]
+        $username = $model->username;
+
+        // ===== Counts =====
+        $cntResearch = Researchpro::find()->where(['username' => $username])->count();
+        $cntArticle  = Article::find()->where(['username' => $username])->count();
+        $cntUtil     = Utilization::find()->where(['username' => $username])->count();
+        $cntService  = AcademicService::find()->where(['username' => $username])->count();
+
+        // ===== Latest items (limit 5) =====
+        // ⚠️ ปรับ orderBy ให้เป็น PK ของตารางจริง เช่น research_id/article_id/...
+        $researchLatest = Researchpro::find()->where(['username' => $username])
+            ->orderBy(['research_id' => SORT_DESC])->limit(5)->all();
+
+        $articleLatest = Article::find()->where(['username' => $username])
+            ->orderBy(['article_id' => SORT_DESC])->limit(5)->all();
+
+        $utilLatest = Utilization::find()->where(['username' => $username])
+            ->orderBy(['util_id' => SORT_DESC])->limit(5)->all();
+
+        $serviceLatest = AcademicService::find()->where(['username' => $username])
+            ->orderBy(['service_id' => SORT_DESC])->limit(5)->all();
+
         return $this->render('view', [
-            'model' => $this->findModel($id),
+            'model' => $model,
+            'username' => $username,
+
+            'cntResearch' => (int)$cntResearch,
+            'cntArticle'  => (int)$cntArticle,
+            'cntUtil'     => (int)$cntUtil,
+            'cntService'  => (int)$cntService,
+
+            'researchLatest' => $researchLatest,
+            'articleLatest'  => $articleLatest,
+            'utilLatest'     => $utilLatest,
+            'serviceLatest'  => $serviceLatest,
         ]);
     }
+
+
 
     /**
      * Creates a new Account model.
@@ -220,12 +264,12 @@ class AccountController extends Controller
      */
     protected function findModel($id)
     {
-        if (($model = Account::findOne($id)) !== null) {
+        if (($model = Account::findOne((int)$id)) !== null) {
             return $model;
         }
-
-        throw new NotFoundHttpException('The requested page does not exist.');
+        throw new NotFoundHttpException('ไม่พบข้อมูลผู้ใช้ที่ต้องการ');
     }
+
 
     public function actionResetpassword($id)
     {
