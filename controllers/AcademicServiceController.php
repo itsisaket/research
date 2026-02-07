@@ -69,8 +69,6 @@ public function behaviors()
     public function actionCreate()
     {
         $model = new AcademicService();
-        $model->loadDefaultValues();
-
         return $this->render('create', [
             'model' => $model,
         ]);
