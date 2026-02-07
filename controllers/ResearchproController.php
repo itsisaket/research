@@ -47,7 +47,10 @@ public function behaviors()
                 ],
                 [
                     // ✅ เพิ่ม get-amphur, get-district
-                    'actions' => ['view', 'create', 'update','delete'],
+                    'actions' => [
+                        'view', 'create', 'update', 'delete',
+                        'add-contributors', 'delete-contributor', 'update-contributor-pct'
+                    ],
                     'allow'   => true,
                     'roles'   => [1, 4],
                 ],
