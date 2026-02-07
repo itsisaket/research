@@ -21,8 +21,11 @@ for ($y = $yNow; $y >= $yNow - 10; $y--) {
 $fundItems = ArrayHelper::map(ResFund::find()->orderBy(['researchFundName' => SORT_ASC])->all(), 'researchFundID', 'researchFundName');
 $typeItems = ArrayHelper::map(Restype::find()->orderBy(['restypename' => SORT_ASC])->all(), 'restypeid', 'restypename');
 
-// ถ้าคุณมีตารางบุคลากร/บัญชีผู้ใช้
-$userItems = ArrayHelper::map(Account::find()->orderBy(['fullname' => SORT_ASC])->all(), 'username', 'fullname');
+$userItems = ArrayHelper::map(Account::find()->orderBy(['uname' => SORT_ASC])->all(),'username',
+    function ($m) {
+        return trim($m->uname . ' ' . $m->luname);
+    }
+);
 ?>
 
 <div class="researchpro-search card shadow-sm mb-3">
