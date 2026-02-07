@@ -19,7 +19,7 @@ $this->title = 'การนำไปใช้ประโยชน์';
         <?= Html::a('เพิ่มข้อมูล', ['create'], ['class' => 'btn btn-success']) ?>
     </p>
 
-  <?php  echo $this->render('_search', [ 'model' => $searchModel]);?>
+  <?php //  echo $this->render('_search', [ 'model' => $searchModel]);?>
 
 <?= GridView::widget([
         'dataProvider' => $dataProvider,
@@ -44,21 +44,21 @@ $this->title = 'การนำไปใช้ประโยชน์';
             [
               'attribute' => 'username',
               'value' => function($model){
-                return $model->user ? ($model->user->uname.' '.$model->user->luname) : '-';
+                  return $model->user ? ($model->user->uname.' '.$model->user->luname) : '-';
               }
             ],
             [
               'attribute' => 'org_id',
               'value' => function($model){
-                return $model->hasorg ? $model->hasorg->org_name : '-';
+                  return $model->hasorg ? $model->hasorg->org_name : '-';
               }
             ],
             [
               'attribute' => 'utilization_type',
               'value' => function($model){
-                return $model->utilization ? $model->utilization->utilization_type_name : '-';
+                  return $model->utilization ? $model->utilization->utilization_type_name : '-';
               }
-            ],             
+            ],            
 
         ],
     ]); ?>
