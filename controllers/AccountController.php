@@ -152,23 +152,27 @@ public function actionView($id)
      * ✅ เลือก owner ที่ปลอดภัยที่สุด
      * - ให้ uid/created_by มาก่อน เพื่อกันเคสตารางไม่มี username แล้วเกิด #42S22
      */
-    private function ownerCondition($modelClass, $account)
-    {
-        $m = new $modelClass();
+private function ownerCondition($modelClass, $account)
+{
+    $m = new $modelClass();
 
-        if ($m->hasAttribute('uid')) {
-            return ['uid' => (int)$account->uid];
-        }
-        if ($m->hasAttribute('created_by')) {
-            return ['created_by' => (int)$account->uid];
-        }
-        if ($m->hasAttribute('username') && !empty($account->username)) {
-            return ['username' => $account->username];
-        }
-
-        // ไม่รู้จะผูกด้วยอะไร → คืนผลว่าง
-        return ['0' => 1];
+    if ($m->hasAttribute('uid')) {
+        return ['uid' => (int)$account->uid];
     }
+
+    if ($m->hasAttribute('created_by')) {
+        return ['created_by' => (int)$account->uid];
+    }
+
+    if ($m->hasAttribute('username') && !empty($account->username)) {
+        return ['username' => $account->username];
+    }
+
+    // ❌ ห้ามใช้ ['0'=>1]
+    // ✅ ใช้แบบนี้แทน
+    return '1=0';
+}
+
 
     /**
      * ✅ PK ของโมเดล (กันเดาชื่อคอลัมน์ผิด)
