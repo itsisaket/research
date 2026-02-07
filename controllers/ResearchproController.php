@@ -111,7 +111,7 @@ public function actionCreate()
     return $this->render('create', [
         'model'       => $model,
         'amphur'      => [],
-        'subDistrict' => [],
+        'subdistrict' => [],
     ]);
 }
 
@@ -140,7 +140,7 @@ public function actionCreate()
         return $this->render('update', [
             'model'       => $model,
             'amphur'      => $amphur,
-            'subDistrict' => $subdistrict,
+            'subdistrict' => $subdistrict,
         ]);
     }
 

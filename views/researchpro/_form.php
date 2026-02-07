@@ -18,7 +18,7 @@ use app\models\Province;
 /* @var $sub_district array|null */
 
 $amphur      = $amphur ?? [];
-$subDistrict = $sub_district ?? [];
+$subdistrict = $sub_district ?? [];
 
 /* =========================
  * DEFAULTS from login user
@@ -244,7 +244,7 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
         <?= $form->field($model, 'sub_district')->widget(DepDrop::class, [
             'type' => DepDrop::TYPE_SELECT2,
             'options' => ['id' => 'ddl-tambon'],
-            'data' => $subDistrict ?? [],
+            'data' => $subdistrict ?? [],
             'select2Options' => [
                 'pluginOptions' => [
                     'allowClear' => true,
