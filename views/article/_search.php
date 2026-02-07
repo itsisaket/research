@@ -2,8 +2,6 @@
 use yii\helpers\ArrayHelper;
 use app\models\Publication;
 
-$pubItems = $pubItems ?? [];
-echo $pubItems ;
 ?>
 
 <div class="article-search card shadow-sm mb-3">
@@ -26,9 +24,10 @@ echo $pubItems ;
                     ->dropDownList($pubItems, ['prompt' => '-- ประเภทฐาน --'])
                     ->label('ประเภทฐาน') ?>
             </div>
+        <?= $form->field($model, 'publication_type', [
+        ])->dropDownList($pubItems, ['prompt' => 'เลือกประเภท..']) ?>
 
 
-            
             <div class="col-12 col-md-3">
                 <?= $form->field($model, 'researcher_name')
                     ->textInput(['placeholder' => 'ชื่อ/นามสกุล นักวิจัย']) ?>
