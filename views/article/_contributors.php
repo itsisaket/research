@@ -39,7 +39,7 @@ if (!empty($usernames)) {
 
 // รายการบุคลากรสำหรับ select2
 $userItems = \app\models\Account::find()
-    ->select(["CONCAT(username,' - ',uname,' ',luname) AS text"])
+    ->select(["CONCAT(uname,' ',luname) AS text"])
     ->indexBy('username')
     ->orderBy(['uname' => SORT_ASC])
     ->column();

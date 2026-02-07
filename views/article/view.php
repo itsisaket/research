@@ -181,10 +181,6 @@ $safe = function ($v, $fallback = '-') {
         ],
     ]) ?>
 
-    <!-- ===== Section: ผู้ร่วมดำเนินงาน/ผู้เขียนร่วม ===== -->
-    <h5 class="mb-2"><i class="fas fa-users me-1"></i> ผู้ร่วมดำเนินงาน/ผู้เขียนร่วม</h5>
-    <hr class="mt-2 mb-3">
-
     <?= $this->render('_contributors', [
         'article' => $model,
         'isOwner' => $isOwner,
