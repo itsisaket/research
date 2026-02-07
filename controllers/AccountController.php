@@ -28,12 +28,12 @@ class AccountController extends Controller
                 ],
                 'rules' => [
                     [
-                        'actions' => ['index', 'error'],
+                        'actions' => ['index', 'error','view', ],
                         'allow'   => true,
                         'roles'   => ['?', '@'],
                     ],
                     [
-                        'actions' => ['view', 'resetpassword'],
+                        'actions' => ['resetpassword'],
                         'allow'   => true,
                         'roles'   => ['@'],
                     ],
