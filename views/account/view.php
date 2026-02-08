@@ -192,7 +192,45 @@ $listCard = function (
 ?>
 
 <div class="container-fluid py-2">
+  <!-- ===== Header Profile (ใช้ bootstrap + สีอ่อน) ===== -->
+  <div class="card border-0 shadow-sm rounded-4 mb-3">
+    <div class="card-body p-4">
+      <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
 
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center text-white shadow"
+               style="width:56px;height:56px;background: linear-gradient(135deg,#7B2FF7,#0A8BCB);">
+            <span class="fw-bold"><?= Html::encode($initials($fullName)) ?></span>
+          </div>
+
+          <div>
+            <div class="h5 mb-0"><?= Html::encode($fullName) ?></div>
+            <div class="text-muted small">
+              <i class="bi bi-diagram-3"></i> <?= Html::encode($orgName) ?>
+              <span class="mx-2">•</span>
+              <i class="bi bi-award"></i> <?= Html::encode($posName) ?>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+          <?= Html::a('<i class="bi bi-arrow-left"></i> กลับ', ['index'], [
+              'class' => 'btn btn-outline-secondary',
+              'encode' => false,
+          ]) ?>
+
+          <?php if ($isAdmin() && $accountPkVal !== null): ?>
+            <?= Html::a('<i class="bi bi-pencil-square"></i> แก้ไข', ['update', 'id' => $accountPkVal], [
+                'class' => 'btn btn-primary',
+                'encode' => false,
+                'data-pjax' => 0,
+            ]) ?>
+          <?php endif; ?>
+        </div>
+
+      </div>
+    </div>
+  </div>
   <!-- ===== Top KPI Row (สีตามภาพตัวอย่าง) ===== -->
   <div class="row g-3 mb-3">
 
@@ -226,47 +264,6 @@ $listCard = function (
 
   </div>
 
-  <!-- ===== Header Profile (ใช้ bootstrap + สีอ่อน) ===== -->
-  <div class="card border-0 shadow-sm rounded-4 mb-3">
-    <div class="card-body p-4">
-      <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
-
-        <div class="d-flex align-items-center gap-3">
-          <div class="rounded-circle d-flex align-items-center justify-content-center text-white shadow"
-               style="width:56px;height:56px;background: linear-gradient(135deg,#7B2FF7,#0A8BCB);">
-            <span class="fw-bold"><?= Html::encode($initials($fullName)) ?></span>
-          </div>
-
-          <div>
-            <div class="h5 mb-0"><?= Html::encode($fullName) ?></div>
-            <div class="text-muted small">
-              <i class="bi bi-person-badge"></i> <?= Html::encode((string)($model->username ?? '-')) ?>
-              <span class="mx-2">•</span>
-              <i class="bi bi-diagram-3"></i> <?= Html::encode($orgName) ?>
-              <span class="mx-2">•</span>
-              <i class="bi bi-award"></i> <?= Html::encode($posName) ?>
-            </div>
-          </div>
-        </div>
-
-        <div class="d-flex flex-wrap gap-2">
-          <?= Html::a('<i class="bi bi-arrow-left"></i> กลับ', ['index'], [
-              'class' => 'btn btn-outline-secondary',
-              'encode' => false,
-          ]) ?>
-
-          <?php if ($isAdmin() && $accountPkVal !== null): ?>
-            <?= Html::a('<i class="bi bi-pencil-square"></i> แก้ไข', ['update', 'id' => $accountPkVal], [
-                'class' => 'btn btn-primary',
-                'encode' => false,
-                'data-pjax' => 0,
-            ]) ?>
-          <?php endif; ?>
-        </div>
-
-      </div>
-    </div>
-  </div>
 
   <!-- ===== User Detail ===== -->
   <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
