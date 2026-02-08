@@ -203,7 +203,7 @@ $listCard = function (
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <div class="small text-muted"><i class="bi bi-journal-text"></i> งานวิจัย</div>
-              <div class="h4 mb-0"><?= (int)$cntResearch ?></div>
+              <div class=" mb-0"><?= (int)$cntResearch ?></div>
             </div>
             <i class="bi bi-journal-text fs-2 text-muted"></i>
           </div>
@@ -217,7 +217,7 @@ $listCard = function (
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <div class="small text-muted"><i class="bi bi-file-earmark-text"></i> บทความ</div>
-              <div class="h4 mb-0"><?= (int)$cntArticle ?></div>
+              <div class=" mb-0"><?= (int)$cntArticle ?></div>
             </div>
             <i class="bi bi-file-earmark-text fs-2 text-muted"></i>
           </div>
@@ -231,7 +231,7 @@ $listCard = function (
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <div class="small text-muted"><i class="bi bi-lightbulb"></i> การนำไปใช้</div>
-              <div class="h4 mb-0"><?= (int)$cntUtil ?></div>
+              <div class=" mb-0"><?= (int)$cntUtil ?></div>
             </div>
             <i class="bi bi-lightbulb fs-2 text-muted"></i>
           </div>
@@ -245,7 +245,7 @@ $listCard = function (
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <div class="small text-muted"><i class="bi bi-people"></i> บริการวิชาการ</div>
-              <div class="h4 mb-0"><?= (int)$cntService ?></div>
+              <div class=" mb-0"><?= (int)$cntService ?></div>
             </div>
             <i class="bi bi-people fs-2 text-muted"></i>
           </div>
