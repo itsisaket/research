@@ -57,7 +57,6 @@ $initials = function ($name) {
 
 $orgObj = $safeRel($model, 'hasorg');
 $posObj = $safeRel($model, 'hasposition');
-
 $orgName = (is_object($orgObj) && isset($orgObj->org_name)) ? $orgObj->org_name : '-';
 $posName = (is_object($posObj) && isset($posObj->positionname)) ? $posObj->positionname : '-';
 
@@ -65,11 +64,41 @@ $posName = (is_object($posObj) && isset($posObj->positionname)) ? $posObj->posit
 $accountPkVal = $model->uid ?? null;
 
 /**
- * Card List Builder (Bootstrap only, no custom CSS file)
+ * KPI Card (Bootstrap utilities + inline gradient only)
+ */
+$kpiCard = function (
+    $title,
+    $value,
+    $icon,
+    $g1,
+    $g2,
+    $iconBg = 'rgba(255,255,255,.22)',
+    $textColor = '#fff'
+) {
+    $style = "background: linear-gradient(135deg, {$g1}, {$g2}); color: {$textColor};";
+    return "
+    <div class='card border-0 shadow-sm rounded-4 overflow-hidden' style='{$style}'>
+      <div class='card-body p-4'>
+        <div class='d-flex align-items-start justify-content-between'>
+          <div>
+            <div class='fw-semibold' style='opacity:.9'>{$title}</div>
+            <div class='display-6 fw-bold mb-0'>{$value}</div>
+          </div>
+          <div class='rounded-4 p-3' style='background: {$iconBg};'>
+            <i class='{$icon} fs-3'></i>
+          </div>
+        </div>
+      </div>
+    </div>";
+};
+
+/**
+ * Card List Builder (สีสันตามภาพตัวอย่าง)
+ * - ไม่เพิ่มไฟล์ CSS ใหม่
+ * - ใช้ Bootstrap + inline gradient เฉพาะที่จำเป็น
  * - ชื่อแสดงเต็ม ไม่จำกัดบรรทัด
  * - รองรับ pk หลายชื่อ (fallback)
  * - ส่ง param name ให้ตรงกับ controller จริง
- * - เพิ่มสีสันด้วยธีม Bootstrap
  */
 $listCard = function (
     $title,
@@ -81,26 +110,31 @@ $listCard = function (
     array $titleFields,
     $indexRoute = null,
     array $indexParams = [],
-    $theme = 'primary' // primary, success, warning, info, danger, secondary
+    $g1 = '#6f42c1',
+    $g2 = '#0d6efd'
 ) use ($getFirstNonEmpty) {
 
-    $headerClass = "bg-{$theme}-subtle";
-    $btnClass    = "btn btn-sm btn-outline-{$theme}";
-    $borderClass = "border-start border-4 border-{$theme}";
+    $headStyle = "background: linear-gradient(90deg, {$g1}, {$g2});";
+    $headerRight = "<span class='text-white-50 small'>ล่าสุด 10 รายการ</span>";
 
-    $headerRight = "<span class='text-muted small'>ล่าสุด 10 รายการ</span>";
     if ($indexRoute) {
         $headerRight = Html::a(
             "<i class='bi bi-list-ul'></i> ดูทั้งหมด",
             array_merge([$indexRoute], $indexParams),
-            ['class' => $btnClass, 'encode' => false, 'data-pjax' => 0]
+            [
+                'class' => 'btn btn-sm btn-light bg-white bg-opacity-25 border-0 text-white',
+                'encode' => false,
+                'data-pjax' => 0
+            ]
         );
     }
 
-    $html = "<div class='card shadow-sm border-0 {$borderClass}'>
-        <div class='card-header {$headerClass} d-flex justify-content-between align-items-center'>
-            <div class='fw-semibold'><i class='{$icon}'></i> {$title}</div>
-            {$headerRight}
+    $html = "<div class='card border-0 shadow-sm rounded-4 overflow-hidden'>
+        <div class='card-header border-0 py-3' style='{$headStyle}'>
+          <div class='d-flex justify-content-between align-items-center'>
+            <div class='fw-semibold text-white'><i class='{$icon}'></i> {$title}</div>
+            <div>{$headerRight}</div>
+          </div>
         </div>
         <div class='card-body p-0'>";
 
@@ -110,7 +144,6 @@ $listCard = function (
         $html .= "<div class='list-group list-group-flush'>";
 
         foreach ($items as $m) {
-            // pk fallback
             $id = null;
             if (is_object($m)) {
                 foreach ($pkFields as $pk) {
@@ -158,16 +191,49 @@ $listCard = function (
 };
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid py-2">
 
-  <!-- ===== Header Profile ===== -->
-  <div class="card shadow-sm border-0 mb-3">
-    <div class="card-body bg-primary-subtle rounded">
+  <!-- ===== Top KPI Row (สีตามภาพตัวอย่าง) ===== -->
+  <div class="row g-3 mb-3">
+
+    <div class="col-12 col-md-3">
+      <?= $kpiCard('นักวิจัยทั้งหมด', (int)$cntResearch, 'bi bi-people-fill', '#7B2FF7', '#9B40FF') ?>
+    </div>
+
+    <div class="col-12 col-md-3">
+      <?= $kpiCard('โครงการวิจัย', (int)$cntResearch, 'bi bi-flask', '#0A8BCB', '#0067B8') ?>
+    </div>
+
+    <div class="col-12 col-md-3">
+      <?= $kpiCard('บทความวิจัย', (int)$cntArticle, 'bi bi-file-earmark-text', '#F04646', '#C81D1D') ?>
+    </div>
+
+    <div class="col-12 col-md-3">
+      <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start justify-content-between">
+            <div>
+              <div class="fw-semibold text-muted">บริการวิชาการ</div>
+              <div class="display-6 fw-bold mb-0 text-primary"><?= (int)$cntService ?></div>
+            </div>
+            <div class="rounded-4 p-3 bg-success-subtle">
+              <i class="bi bi-arrow-repeat fs-3 text-success"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== Header Profile (ใช้ bootstrap + สีอ่อน) ===== -->
+  <div class="card border-0 shadow-sm rounded-4 mb-3">
+    <div class="card-body p-4">
       <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
 
         <div class="d-flex align-items-center gap-3">
-          <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white shadow"
-               style="width:56px;height:56px;">
+          <div class="rounded-circle d-flex align-items-center justify-content-center text-white shadow"
+               style="width:56px;height:56px;background: linear-gradient(135deg,#7B2FF7,#0A8BCB);">
             <span class="fw-bold"><?= Html::encode($initials($fullName)) ?></span>
           </div>
 
@@ -202,71 +268,11 @@ $listCard = function (
     </div>
   </div>
 
-  <!-- ===== 1) Summary Counters ===== -->
-  <div class="row g-3 mb-3">
-
-    <div class="col-12 col-md-3">
-      <div class="card shadow-sm border-0 border-start border-4 border-info">
-        <div class="card-body bg-info-subtle">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <div class="fw-semibold"><i class="bi bi-journal-text"></i> งานวิจัย</div>
-              <div class="display-6 fw-bold mb-0"><?= (int)$cntResearch ?></div>
-            </div>
-            <i class="bi bi-journal-text fs-2 text-muted"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-3">
-      <div class="card shadow-sm border-0 border-start border-4 border-success">
-        <div class="card-body bg-success-subtle">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <div class="fw-semibold"><i class="bi bi-file-earmark-text"></i> บทความ</div>
-              <div class="display-6 fw-bold mb-0"><?= (int)$cntArticle ?></div>
-            </div>
-            <i class="bi bi-file-earmark-text fs-2 text-muted"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-3">
-      <div class="card shadow-sm border-0 border-start border-4 border-warning">
-        <div class="card-body bg-warning-subtle">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <div class="fw-semibold"><i class="bi bi-lightbulb"></i> การนำไปใช้</div>
-              <div class="display-6 fw-bold mb-0"><?= (int)$cntUtil ?></div>
-            </div>
-            <i class="bi bi-lightbulb fs-2 text-muted"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-3">
-      <div class="card shadow-sm border-0 border-start border-4 border-primary">
-        <div class="card-body bg-primary-subtle">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <div class="fw-semibold"><i class="bi bi-people"></i> บริการวิชาการ</div>
-              <div class="display-6 fw-bold mb-0"><?= (int)$cntService ?></div>
-            </div>
-            <i class="bi bi-people fs-2 text-muted"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ===== 2) User Detail ===== -->
-  <div class="card border-0 shadow-sm mb-3">
-    <div class="card-header bg-light">
-      <strong><i class="bi bi-info-circle"></i> ข้อมูลผู้ใช้</strong>
+  <!-- ===== User Detail ===== -->
+  <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
+    <div class="card-header border-0 text-white"
+         style="background: linear-gradient(90deg,#7B2FF7,#0A8BCB);">
+      <div class="fw-semibold"><i class="bi bi-info-circle"></i> ข้อมูลผู้ใช้</div>
     </div>
     <div class="card-body">
       <?= DetailView::widget([
@@ -283,7 +289,7 @@ $listCard = function (
     </div>
   </div>
 
-  <!-- ===== 3) Latest Lists (เต็มแถว ไม่แบ่ง 2 คอลัมน์) ===== -->
+  <!-- ===== Latest Lists (สีตามภาพตัวอย่าง) ===== -->
   <div class="row g-3">
 
     <div class="col-12">
@@ -297,7 +303,8 @@ $listCard = function (
           ['projectNameTH', 'projectNameEN', 'projectName', 'title'],
           'researchpro/index',
           ['ResearchproSearch' => ['username' => (string)($model->username ?? '')]],
-          'info'
+          '#7B2FF7',
+          '#0A8BCB'
       ) ?>
     </div>
 
@@ -312,7 +319,8 @@ $listCard = function (
           ['article_th', 'article_en', 'title'],
           'article/index',
           ['ArticleSearch' => ['username' => (string)($model->username ?? '')]],
-          'success'
+          '#F04646',
+          '#C81D1D'
       ) ?>
     </div>
 
@@ -327,7 +335,8 @@ $listCard = function (
           ['project_name', 'title', 'util_title'],
           'utilization/index',
           ['UtilizationSearch' => ['username' => (string)($model->username ?? '')]],
-          'warning'
+          '#10B981',
+          '#059669'
       ) ?>
     </div>
 
@@ -342,7 +351,8 @@ $listCard = function (
           ['title', 'service_title', 'topic'],
           'academic-service/index',
           ['AcademicServiceSearch' => ['username' => (string)($model->username ?? '')]],
-          'primary'
+          '#0A8BCB',
+          '#0067B8'
       ) ?>
     </div>
 
