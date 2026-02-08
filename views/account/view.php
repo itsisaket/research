@@ -21,7 +21,7 @@ $this->params['breadcrumbs'][] = $this->title;
 $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
 
 $isAdmin = function () use ($me) {
-    return ($me instanceof \app\models\Account) && in_array((int)$me->position, [1, 4], true);
+    return ($me instanceof \app\models\Account) && in_array((int)($me->position ?? 0), [1, 4], true);
 };
 
 $safeRel = function ($obj, $relName) {
@@ -31,6 +31,16 @@ $safeRel = function ($obj, $relName) {
     } catch (\Throwable $e) {
         return null;
     }
+};
+
+$getFirstNonEmpty = function ($obj, array $fields, $fallback = '-') {
+    if (!is_object($obj)) return $fallback;
+    foreach ($fields as $f) {
+        if (isset($obj->$f) && trim((string)$obj->$f) !== '') {
+            return (string)$obj->$f;
+        }
+    }
+    return $fallback;
 };
 
 $fullName = trim((string)($model->uname ?? '') . ' ' . (string)($model->luname ?? ''));
@@ -51,25 +61,28 @@ $posObj = $safeRel($model, 'hasposition');
 $orgName = (is_object($orgObj) && isset($orgObj->org_name)) ? $orgObj->org_name : '-';
 $posName = (is_object($posObj) && isset($posObj->positionname)) ? $posObj->positionname : '-';
 
-// Account PK ของคุณคือ uid
-$accountPk = 'uid';
-$accountPkVal = $model->$accountPk ?? null;
+// ✅ Account PK ของคุณคือ uid
+$accountPkVal = $model->uid ?? null;
 
 /**
- * Card List Builder (รองรับ param name ของแต่ละโมดูล)
+ * Card List Builder
+ * - ชื่อแสดงเต็ม ไม่จำกัดบรรทัด
+ * - รองรับ pk หลายชื่อ (fallback) กัน field ไม่ตรง
+ * - ส่ง param name ให้ตรงกับ controller จริง
  */
 $listCard = function (
     $title,
     $icon,
     $items,
     $viewRoute,
-    $pkField,
-    $paramName,
+    array $pkFields,              // ✅ ให้เป็น array รองรับ fallback
+    $paramName,                   // ✅ ชื่อพารามิเตอร์ของ actionView
     array $titleFields,
     $indexRoute = null,
     array $indexParams = [],
     $accentBg = null
-) {
+) use ($getFirstNonEmpty) {
+
     $headerRight = "<span class='text-muted small'>ล่าสุด 10 รายการ</span>";
     if ($indexRoute) {
         $headerRight = Html::a(
@@ -80,6 +93,7 @@ $listCard = function (
     }
 
     $accentStyle = $accentBg ? "style='border-left:6px solid {$accentBg};'" : '';
+
     $html = "<div class='card border-0 shadow-sm h-100' {$accentStyle}>
         <div class='card-header bg-white d-flex justify-content-between align-items-center'>
             <strong><i class='{$icon}'></i> {$title}</strong>
@@ -91,18 +105,24 @@ $listCard = function (
         $html .= "<div class='p-3 text-muted small'>ไม่มีข้อมูล</div>";
     } else {
         $html .= "<ul class='list-group list-group-flush'>";
-        foreach ($items as $m) {
-            $id = (is_object($m) && isset($m->$pkField)) ? $m->$pkField : null;
 
-            $name = '-';
-            foreach ($titleFields as $f) {
-                if (is_object($m) && isset($m->$f) && trim((string)$m->$f) !== '') {
-                    $name = (string)$m->$f;
-                    break;
+        foreach ($items as $m) {
+            // ✅ pk fallback
+            $id = null;
+            if (is_object($m)) {
+                foreach ($pkFields as $pk) {
+                    if (isset($m->$pk) && $m->$pk !== null && $m->$pk !== '') {
+                        $id = $m->$pk;
+                        break;
+                    }
                 }
             }
 
-            $label = "<span class='text-truncate d-inline-block' style='max-width:92%;'>"
+            // ✅ title fallback
+            $name = $getFirstNonEmpty($m, $titleFields, '-');
+
+            // ✅ ชื่อเต็ม ไม่จำกัดบรรทัด
+            $label = "<span class='d-block' style='white-space:normal; overflow:visible; text-overflow:clip; line-height:1.45; word-break:break-word;'>"
                 . Html::encode($name) .
                 "</span>";
 
@@ -111,15 +131,23 @@ $listCard = function (
                 continue;
             }
 
-            $html .= "<li class='list-group-item py-2 d-flex justify-content-between align-items-center'>
-                " . Html::a($label, [$viewRoute, $paramName => $id], [
-                    'class' => 'text-decoration-none',
-                    'data-pjax' => 0,
-                    'title' => 'เปิดดูรายละเอียด',
-                ]) . "
-                <span class='text-muted'><i class='bi bi-box-arrow-up-right'></i></span>
+            // ✅ ทำให้ทั้งแถวคลิกง่าย + hover สวย
+            $url = [$viewRoute, $paramName => $id];
+            $html .= "<li class='list-group-item py-2'>
+                <div class='d-flex align-items-start gap-2'>
+                    " . Html::a($label, $url, [
+                        'class' => 'text-decoration-none flex-grow-1',
+                        'data-pjax' => 0,
+                        'title' => $name,
+                        'style' => 'color: inherit;',
+                    ]) . "
+                    <span class='text-muted ms-auto flex-shrink-0 pt-1'>
+                        <i class='bi bi-box-arrow-up-right'></i>
+                    </span>
+                </div>
             </li>";
         }
+
         $html .= "</ul>";
     }
 
@@ -142,8 +170,6 @@ $listCard = function (
           <div>
             <div class="h5 mb-0"><?= Html::encode($fullName) ?></div>
             <div class="text-muted small">
-              <i class="bi bi-person-badge"></i> <?= Html::encode((string)($model->username ?? '-')) ?>
-              <span class="mx-2">•</span>
               <i class="bi bi-diagram-3"></i> <?= Html::encode($orgName) ?>
               <span class="mx-2">•</span>
               <i class="bi bi-award"></i> <?= Html::encode($posName) ?>
@@ -238,26 +264,11 @@ $listCard = function (
           'model' => $model,
           'options' => ['class' => 'table table-sm table-striped mb-0'],
           'attributes' => [
-              [
-                  'label' => 'ชื่อ - สกุล',
-                  'value' => $fullName,
-              ],
-              [
-                  'label' => 'อีเมล',
-                  'value' => (string)($model->email ?? '-'),
-              ],
-              [
-                  'label' => 'โทรศัพท์',
-                  'value' => (string)($model->tel ?? '-'),
-              ],
-              [
-                  'label' => 'สังกัด',
-                  'value' => $orgName,
-              ],
-              [
-                  'label' => 'สถานะ',
-                  'value' => $posName,
-              ],
+              ['label' => 'ชื่อ - สกุล', 'value' => $fullName],
+              ['label' => 'อีเมล', 'value' => (string)($model->email ?? '-')],
+              ['label' => 'โทรศัพท์', 'value' => (string)($model->tel ?? '-')],
+              ['label' => 'สังกัด', 'value' => $orgName],
+              ['label' => 'สถานะ', 'value' => $posName],
           ],
       ]) ?>
     </div>
@@ -272,7 +283,7 @@ $listCard = function (
           'bi bi-journal-text',
           $researchLatest ?? [],
           'researchpro/view',
-          'projectID',
+          ['projectID', 'research_id', 'id'],
           'projectID',
           ['projectNameTH', 'projectNameEN', 'projectName', 'title'],
           'researchpro/index',
@@ -287,7 +298,7 @@ $listCard = function (
           'bi bi-file-earmark-text',
           $articleLatest ?? [],
           'article/view',
-          'article_id',
+          ['article_id', 'id'],
           'article_id',
           ['article_th', 'article_en', 'title'],
           'article/index',
@@ -302,7 +313,7 @@ $listCard = function (
           'bi bi-lightbulb',
           $utilLatest ?? [],
           'utilization/view',
-          'utilization_id',
+          ['utilization_id', 'util_id', 'id'],
           'utilization_id',
           ['project_name', 'title', 'util_title'],
           'utilization/index',
@@ -317,7 +328,7 @@ $listCard = function (
           'bi bi-people',
           $serviceLatest ?? [],
           'academic-service/view',
-          'service_id',
+          ['service_id', 'id'],
           'service_id',
           ['title', 'service_title', 'topic'],
           'academic-service/index',
