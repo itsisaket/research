@@ -135,9 +135,21 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
       <div class="col-12 col-md-3">
         <?= $form->field($model, 'branch')->dropDownList($model->Branch ?? [], ['prompt' => 'เลือกสาขา..']) ?>
       </div>
-      <div class="col-12 col-md-3">
-        <?= $form->field($model, 'projectYearsubmit')->dropDownList($model->years ?? [], ['prompt' => 'เลือกปีเสนอ..']) ?>
-      </div>
+        <?php
+        $currentYearBE = (int)date('Y') + 543;   // ปีปัจจุบัน (พ.ศ.)
+        $years = [];
+
+        // ย้อนหลัง 5 ปี (รวมปีปัจจุบัน = 6 ปี)
+        for ($y = $currentYearBE; $y >= $currentYearBE - 5; $y--) {
+            $years[$y] = $y;
+        }
+        ?>
+
+        <div class="col-12 col-md-3">
+            <?= $form->field($model, 'projectYearsubmit')
+                ->dropDownList($years, ['prompt' => 'เลือกปีเสนอ (พ.ศ.)']) ?>
+        </div>
+
       <div class="col-12 col-md-3">
         <?= $form->field($model, 'budgets', [
           'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-money-bill-wave\"></i></span>\n{input}\n<span class=\"input-group-text\">บาท</span>\n</div>\n{error}"

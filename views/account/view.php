@@ -65,38 +65,41 @@ $posName = (is_object($posObj) && isset($posObj->positionname)) ? $posObj->posit
 $accountPkVal = $model->uid ?? null;
 
 /**
- * Card List Builder
+ * Card List Builder (Bootstrap only, no custom CSS file)
  * - ชื่อแสดงเต็ม ไม่จำกัดบรรทัด
- * - รองรับ pk หลายชื่อ (fallback) กัน field ไม่ตรง
+ * - รองรับ pk หลายชื่อ (fallback)
  * - ส่ง param name ให้ตรงกับ controller จริง
+ * - เพิ่มสีสันด้วยธีม Bootstrap
  */
 $listCard = function (
     $title,
     $icon,
     $items,
     $viewRoute,
-    array $pkFields,              // ✅ ให้เป็น array รองรับ fallback
-    $paramName,                   // ✅ ชื่อพารามิเตอร์ของ actionView
+    array $pkFields,
+    $paramName,
     array $titleFields,
     $indexRoute = null,
     array $indexParams = [],
-    $accentBg = null
+    $theme = 'primary' // primary, success, warning, info, danger, secondary
 ) use ($getFirstNonEmpty) {
+
+    $headerClass = "bg-{$theme}-subtle";
+    $btnClass    = "btn btn-sm btn-outline-{$theme}";
+    $borderClass = "border-start border-4 border-{$theme}";
 
     $headerRight = "<span class='text-muted small'>ล่าสุด 10 รายการ</span>";
     if ($indexRoute) {
         $headerRight = Html::a(
             "<i class='bi bi-list-ul'></i> ดูทั้งหมด",
             array_merge([$indexRoute], $indexParams),
-            ['class' => 'btn btn-sm btn-outline-secondary', 'encode' => false, 'data-pjax' => 0]
+            ['class' => $btnClass, 'encode' => false, 'data-pjax' => 0]
         );
     }
 
-    $accentStyle = $accentBg ? "style='border-left:6px solid {$accentBg};'" : '';
-
-    $html = "<div class='card border-0 shadow-sm h-100' {$accentStyle}>
-        <div class='card-header bg-white d-flex justify-content-between align-items-center'>
-            <strong><i class='{$icon}'></i> {$title}</strong>
+    $html = "<div class='card shadow-sm border-0 {$borderClass}'>
+        <div class='card-header {$headerClass} d-flex justify-content-between align-items-center'>
+            <div class='fw-semibold'><i class='{$icon}'></i> {$title}</div>
             {$headerRight}
         </div>
         <div class='card-body p-0'>";
@@ -104,10 +107,10 @@ $listCard = function (
     if (empty($items)) {
         $html .= "<div class='p-3 text-muted small'>ไม่มีข้อมูล</div>";
     } else {
-        $html .= "<ul class='list-group list-group-flush'>";
+        $html .= "<div class='list-group list-group-flush'>";
 
         foreach ($items as $m) {
-            // ✅ pk fallback
+            // pk fallback
             $id = null;
             if (is_object($m)) {
                 foreach ($pkFields as $pk) {
@@ -118,37 +121,36 @@ $listCard = function (
                 }
             }
 
-            // ✅ title fallback
             $name = $getFirstNonEmpty($m, $titleFields, '-');
 
-            // ✅ ชื่อเต็ม ไม่จำกัดบรรทัด
+            // ชื่อเต็ม ไม่จำกัดบรรทัด
             $label = "<span class='d-block' style='white-space:normal; overflow:visible; text-overflow:clip; line-height:1.45; word-break:break-word;'>"
                 . Html::encode($name) .
                 "</span>";
 
             if (!$id) {
-                $html .= "<li class='list-group-item py-2 text-muted'>{$label}</li>";
+                $html .= "<div class='list-group-item py-2 text-muted'>{$label}</div>";
                 continue;
             }
 
-            // ✅ ทำให้ทั้งแถวคลิกง่าย + hover สวย
             $url = [$viewRoute, $paramName => $id];
-            $html .= "<li class='list-group-item py-2'>
-                <div class='d-flex align-items-start gap-2'>
-                    " . Html::a($label, $url, [
-                        'class' => 'text-decoration-none flex-grow-1',
-                        'data-pjax' => 0,
-                        'title' => $name,
-                        'style' => 'color: inherit;',
-                    ]) . "
-                    <span class='text-muted ms-auto flex-shrink-0 pt-1'>
-                        <i class='bi bi-box-arrow-up-right'></i>
-                    </span>
-                </div>
-            </li>";
+
+            $html .= Html::a(
+                "<div class='d-flex gap-2 align-items-start'>
+                    <div class='flex-grow-1'>{$label}</div>
+                    <div class='text-muted flex-shrink-0 pt-1'><i class='bi bi-box-arrow-up-right'></i></div>
+                 </div>",
+                $url,
+                [
+                    'class' => 'list-group-item list-group-item-action py-2',
+                    'encode' => false,
+                    'data-pjax' => 0,
+                    'title' => $name,
+                ]
+            );
         }
 
-        $html .= "</ul>";
+        $html .= "</div>";
     }
 
     $html .= "</div></div>";
@@ -159,17 +161,21 @@ $listCard = function (
 <div class="container-fluid">
 
   <!-- ===== Header Profile ===== -->
-  <div class="card border-0 shadow-sm mb-3">
-    <div class="card-body">
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-body bg-primary-subtle rounded">
       <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+
         <div class="d-flex align-items-center gap-3">
-          <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-               style="width:56px;height:56px;background:#f3f4f6;">
+          <div class="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white shadow"
+               style="width:56px;height:56px;">
             <span class="fw-bold"><?= Html::encode($initials($fullName)) ?></span>
           </div>
+
           <div>
             <div class="h5 mb-0"><?= Html::encode($fullName) ?></div>
             <div class="text-muted small">
+              <i class="bi bi-person-badge"></i> <?= Html::encode((string)($model->username ?? '-')) ?>
+              <span class="mx-2">•</span>
               <i class="bi bi-diagram-3"></i> <?= Html::encode($orgName) ?>
               <span class="mx-2">•</span>
               <i class="bi bi-award"></i> <?= Html::encode($posName) ?>
@@ -191,19 +197,21 @@ $listCard = function (
             ]) ?>
           <?php endif; ?>
         </div>
+
       </div>
     </div>
   </div>
 
   <!-- ===== 1) Summary Counters ===== -->
   <div class="row g-3 mb-3">
+
     <div class="col-12 col-md-3">
-      <div class="card border-0 shadow-sm h-100" style="background:#f8fafc;">
-        <div class="card-body">
+      <div class="card shadow-sm border-0 border-start border-4 border-info">
+        <div class="card-body bg-info-subtle">
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <div class=""><i class="bi bi-journal-text"></i> งานวิจัย</div>
-              <div class=" mb-0"><?= (int)$cntResearch ?></div>
+              <div class="fw-semibold"><i class="bi bi-journal-text"></i> งานวิจัย</div>
+              <div class="display-6 fw-bold mb-0"><?= (int)$cntResearch ?></div>
             </div>
             <i class="bi bi-journal-text fs-2 text-muted"></i>
           </div>
@@ -212,12 +220,12 @@ $listCard = function (
     </div>
 
     <div class="col-12 col-md-3">
-      <div class="card border-0 shadow-sm h-100" style="background:#f7fdf9;">
-        <div class="card-body">
+      <div class="card shadow-sm border-0 border-start border-4 border-success">
+        <div class="card-body bg-success-subtle">
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <div class=""><i class="bi bi-file-earmark-text"></i> บทความ</div>
-              <div class=" mb-0"><?= (int)$cntArticle ?></div>
+              <div class="fw-semibold"><i class="bi bi-file-earmark-text"></i> บทความ</div>
+              <div class="display-6 fw-bold mb-0"><?= (int)$cntArticle ?></div>
             </div>
             <i class="bi bi-file-earmark-text fs-2 text-muted"></i>
           </div>
@@ -226,12 +234,12 @@ $listCard = function (
     </div>
 
     <div class="col-12 col-md-3">
-      <div class="card border-0 shadow-sm h-100" style="background:#fff7ed;">
-        <div class="card-body">
+      <div class="card shadow-sm border-0 border-start border-4 border-warning">
+        <div class="card-body bg-warning-subtle">
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <div class=""><i class="bi bi-lightbulb"></i> การนำไปใช้</div>
-              <div class=" mb-0"><?= (int)$cntUtil ?></div>
+              <div class="fw-semibold"><i class="bi bi-lightbulb"></i> การนำไปใช้</div>
+              <div class="display-6 fw-bold mb-0"><?= (int)$cntUtil ?></div>
             </div>
             <i class="bi bi-lightbulb fs-2 text-muted"></i>
           </div>
@@ -240,23 +248,24 @@ $listCard = function (
     </div>
 
     <div class="col-12 col-md-3">
-      <div class="card border-0 shadow-sm h-100" style="background:#f5f3ff;">
-        <div class="card-body">
+      <div class="card shadow-sm border-0 border-start border-4 border-primary">
+        <div class="card-body bg-primary-subtle">
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <div class=""><i class="bi bi-people"></i> บริการวิชาการ</div>
-              <div class=" mb-0"><?= (int)$cntService ?></div>
+              <div class="fw-semibold"><i class="bi bi-people"></i> บริการวิชาการ</div>
+              <div class="display-6 fw-bold mb-0"><?= (int)$cntService ?></div>
             </div>
             <i class="bi bi-people fs-2 text-muted"></i>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 
   <!-- ===== 2) User Detail ===== -->
   <div class="card border-0 shadow-sm mb-3">
-    <div class="card-header bg-white">
+    <div class="card-header bg-light">
       <strong><i class="bi bi-info-circle"></i> ข้อมูลผู้ใช้</strong>
     </div>
     <div class="card-body">
@@ -288,7 +297,7 @@ $listCard = function (
           ['projectNameTH', 'projectNameEN', 'projectName', 'title'],
           'researchpro/index',
           ['ResearchproSearch' => ['username' => (string)($model->username ?? '')]],
-          '#0ea5e9'
+          'info'
       ) ?>
     </div>
 
@@ -303,7 +312,7 @@ $listCard = function (
           ['article_th', 'article_en', 'title'],
           'article/index',
           ['ArticleSearch' => ['username' => (string)($model->username ?? '')]],
-          '#22c55e'
+          'success'
       ) ?>
     </div>
 
@@ -318,7 +327,7 @@ $listCard = function (
           ['project_name', 'title', 'util_title'],
           'utilization/index',
           ['UtilizationSearch' => ['username' => (string)($model->username ?? '')]],
-          '#f97316'
+          'warning'
       ) ?>
     </div>
 
@@ -333,7 +342,7 @@ $listCard = function (
           ['title', 'service_title', 'topic'],
           'academic-service/index',
           ['AcademicServiceSearch' => ['username' => (string)($model->username ?? '')]],
-          '#8b5cf6'
+          'primary'
       ) ?>
     </div>
 
