@@ -197,13 +197,19 @@ $workCard = function (
            style="width:56px;height:56px;background:linear-gradient(135deg,#7B2FF7,#0A8BCB)">
         <strong><?= Html::encode($initials($fullName)) ?></strong>
       </div>
-      <div>
-        <div class="h5 mb-0"><?= Html::encode($fullName) ?></div>
-        <div class="small text-muted">
-          <i class="bi bi-envelope"></i> <?= Html::encode($email) ?>
-          • <i class="bi bi-telephone"></i> <?= Html::encode($tel) ?>
-        </div>
-      </div>
+          <div>
+            <div class="h5 mb-0"><?= Html::encode($fullName) ?></div>
+            <div class="text-muted small">
+              <i class="bi bi-diagram-3"></i> <?= Html::encode($orgName) ?>
+              <span class="mx-2">•</span>
+              <i class="bi bi-award"></i> <?= Html::encode($posName) ?>
+            </div>
+            <div class="text-muted small">
+              <i class="bi bi-envelope"></i> <?= Html::encode((string)$email) ?>
+              <span class="mx-2">•</span>
+              <i class="bi bi-telephone"></i> <?= Html::encode((string)$tel) ?>
+            </div>
+          </div>
     </div>
     <?= Html::a('<i class="bi bi-arrow-left"></i> กลับ',['index'],['class'=>'btn btn-outline-secondary','encode'=>false]) ?>
   </div>
