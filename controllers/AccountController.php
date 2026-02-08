@@ -89,57 +89,153 @@ public function actionView($id)
     $model = $this->findModel($id);
     $username = (string)$model->username;
 
-    /* ================= งานเจ้าของ (ของเดิม) ================= */
+    /* =========================================================
+     * 1) Latest (เจ้าของ) — เหมือนเดิม
+     * ========================================================= */
 
-    // งานวิจัย
-    $cntResearch = (int)Researchpro::find()->where(['username' => $username])->count();
+    // งานวิจัย (เจ้าของล่าสุด)
     $researchLatest = Researchpro::find()
         ->where(['username' => $username])
         ->orderBy([Researchpro::primaryKey()[0] => SORT_DESC])
         ->limit(10)
         ->all();
 
-    // บทความ
-    $cntArticle = (int)Article::find()->where(['username' => $username])->count();
+    // บทความ (เจ้าของล่าสุด)
     $articleLatest = Article::find()
         ->where(['username' => $username])
         ->orderBy([Article::primaryKey()[0] => SORT_DESC])
         ->limit(10)
         ->all();
 
-    // การนำไปใช้
-    $cntUtil = (int)Utilization::find()->where(['username' => $username])->count();
+    // การนำไปใช้ (เจ้าของล่าสุด)
     $utilLatest = Utilization::find()
         ->where(['username' => $username])
         ->orderBy([Utilization::primaryKey()[0] => SORT_DESC])
         ->limit(10)
         ->all();
 
-    // บริการวิชาการ
-    $cntService = (int)AcademicService::find()->where(['username' => $username])->count();
+    // บริการวิชาการ (เจ้าของล่าสุด)
     $serviceLatest = AcademicService::find()
         ->where(['username' => $username])
         ->orderBy([AcademicService::primaryKey()[0] => SORT_DESC])
         ->limit(10)
         ->all();
 
-    /* ================= ผู้ร่วมงาน (ใหม่) ================= */
+    /* =========================================================
+     * 2) KPI รวม (เจ้าของ + ผู้ร่วม) แบบกันซ้ำ
+     * ========================================================= */
 
-    // ดึงรายการที่ user เป็น contributor
+    // --- งานวิจัย ---
+    $researchPk = Researchpro::primaryKey()[0];
+
+    $ownResearchIds = Researchpro::find()
+        ->select($researchPk)
+        ->where(['username' => $username]);
+
+    $contribResearchIds = WorkContributor::find()
+        ->select('ref_id')
+        ->where([
+            'username'  => $username,
+            'ref_type'  => 'researchpro',
+        ]);
+
+    $cntResearch = (int)Researchpro::find()
+        ->where(['or',
+            ['in', $researchPk, $ownResearchIds],
+            ['in', $researchPk, $contribResearchIds],
+        ])
+        ->distinct()
+        ->count();
+
+
+    // --- บทความ ---
+    $articlePk = Article::primaryKey()[0];
+
+    $ownArticleIds = Article::find()
+        ->select($articlePk)
+        ->where(['username' => $username]);
+
+    $contribArticleIds = WorkContributor::find()
+        ->select('ref_id')
+        ->where([
+            'username' => $username,
+            'ref_type' => 'article',
+        ]);
+
+    $cntArticle = (int)Article::find()
+        ->where(['or',
+            ['in', $articlePk, $ownArticleIds],
+            ['in', $articlePk, $contribArticleIds],
+        ])
+        ->distinct()
+        ->count();
+
+
+    // --- การนำไปใช้ ---
+    $utilPk = Utilization::primaryKey()[0];
+
+    $ownUtilIds = Utilization::find()
+        ->select($utilPk)
+        ->where(['username' => $username]);
+
+    $contribUtilIds = WorkContributor::find()
+        ->select('ref_id')
+        ->where([
+            'username' => $username,
+            'ref_type' => 'utilization',
+        ]);
+
+    $cntUtil = (int)Utilization::find()
+        ->where(['or',
+            ['in', $utilPk, $ownUtilIds],
+            ['in', $utilPk, $contribUtilIds],
+        ])
+        ->distinct()
+        ->count();
+
+
+    // --- บริการวิชาการ ---
+    $servicePk = AcademicService::primaryKey()[0];
+
+    $ownServiceIds = AcademicService::find()
+        ->select($servicePk)
+        ->where(['username' => $username]);
+
+    $contribServiceIds = WorkContributor::find()
+        ->select('ref_id')
+        ->where([
+            'username' => $username,
+            'ref_type' => 'academic_service', // ✅ ต้องให้ตรงกับ ref_type ที่คุณใช้จริง
+        ]);
+
+    $cntService = (int)AcademicService::find()
+        ->where(['or',
+            ['in', $servicePk, $ownServiceIds],
+            ['in', $servicePk, $contribServiceIds],
+        ])
+        ->distinct()
+        ->count();
+
+
+    /* =========================================================
+     * 3) ดึงรายการผู้ร่วม (ไว้แสดงใน view) — เหมือนเดิม
+     * ========================================================= */
+
     $contributors = WorkContributor::find()
         ->where(['username' => $username])
         ->orderBy(['ref_type' => SORT_ASC, 'sort_order' => SORT_ASC])
         ->all();
 
-    // แยกตามประเภทงาน (ง่ายต่อ view)
     $contribResearch = [];
     $contribArticle  = [];
     $contribUtil     = [];
+    $contribService  = [];
 
     foreach ($contributors as $wc) {
         switch ($wc->ref_type) {
+
             case 'researchpro':
-                if ($m = Researchpro::findOne($wc->ref_id)) {
+                if ($m = Researchpro::findOne((int)$wc->ref_id)) {
                     $contribResearch[] = [
                         'model' => $m,
                         'role'  => $wc->role_code,
@@ -149,7 +245,7 @@ public function actionView($id)
                 break;
 
             case 'article':
-                if ($m = Article::findOne($wc->ref_id)) {
+                if ($m = Article::findOne((int)$wc->ref_id)) {
                     $contribArticle[] = [
                         'model' => $m,
                         'role'  => $wc->role_code,
@@ -159,8 +255,18 @@ public function actionView($id)
                 break;
 
             case 'utilization':
-                if ($m = Utilization::findOne($wc->ref_id)) {
+                if ($m = Utilization::findOne((int)$wc->ref_id)) {
                     $contribUtil[] = [
+                        'model' => $m,
+                        'role'  => $wc->role_code,
+                        'pct'   => $wc->contribution_pct,
+                    ];
+                }
+                break;
+
+            case 'academic_service':
+                if ($m = AcademicService::findOne((int)$wc->ref_id)) {
+                    $contribService[] = [
                         'model' => $m,
                         'role'  => $wc->role_code,
                         'pct'   => $wc->contribution_pct,
@@ -174,8 +280,7 @@ public function actionView($id)
         'model',
         'cntResearch','cntArticle','cntUtil','cntService',
         'researchLatest','articleLatest','utilLatest','serviceLatest',
-        // 👇 ส่งข้อมูลผู้ร่วมไป view
-        'contribResearch','contribArticle','contribUtil'
+        'contribResearch','contribArticle','contribUtil','contribService'
     ));
 }
 

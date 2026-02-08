@@ -112,9 +112,9 @@ $workCard = function (
     $viewRoute,
     $paramName,
     array $pkFields,
-    array $titleFields,
     $indexRoute = null,
     array $indexParams = [],
+    callable $metaCb = null,          // ✅ เพิ่ม: สร้างบรรทัดข้อมูลประกอบ
     $g1 = '#6f42c1',
     $g2 = '#0d6efd'
 ) use ($getFirstNonEmpty) {
@@ -134,18 +134,6 @@ $workCard = function (
         );
     }
 
-    $html = "<div class='card border-0 shadow-sm rounded-4 overflow-hidden'>
-        <div class='card-header border-0 py-3' style='{$headStyle}'>
-          <div class='d-flex justify-content-between align-items-center'>
-            <div class='fw-semibold text-white'>
-              <i class='{$icon}'></i> {$title}
-            </div>
-            <div>{$btnAll}</div>
-          </div>
-        </div>
-        <div class='card-body p-0'>";
-
-    // helper get id
     $getId = function ($obj) use ($pkFields) {
         if (!is_object($obj)) return null;
         foreach ($pkFields as $pk) {
@@ -156,49 +144,58 @@ $workCard = function (
         return null;
     };
 
-    // helper label (full text, no truncation)
     $labelHtml = function ($text) {
-        return "<span class='d-block' style='white-space:normal; overflow:visible; text-overflow:clip; line-height:1.45; word-break:break-word;'>"
-            . Html::encode((string)$text) .
-            "</span>";
+        return "<div class='fw-semibold'>"
+            . Html::encode((string)$text)
+            . "</div>";
     };
+
+    $html = "<div class='card border-0 shadow-sm rounded-4 overflow-hidden'>
+        <div class='card-header border-0 py-3' style='{$headStyle}'>
+          <div class='d-flex justify-content-between align-items-center'>
+            <div class='fw-semibold text-white'><i class='{$icon}'></i> {$title}</div>
+            <div>{$btnAll}</div>
+          </div>
+        </div>
+        <div class='card-body p-0'>";
 
     $hasAny = false;
 
-    /* ===== เจ้าของ ===== */
+    // ===== เจ้าของ =====
     if (!empty($ownerItems)) {
         $hasAny = true;
         $html .= "<div class='px-3 pt-3 fw-semibold text-muted'>เจ้าของผลงาน</div>";
         $html .= "<div class='list-group list-group-flush'>";
 
         foreach ($ownerItems as $m) {
-            $id = $getId($m);
-            $name = $getFirstNonEmpty($m, $titleFields, '-');
-            $label = $labelHtml($name);
+            $id   = $getId($m);
+            $name = $getFirstNonEmpty($m, ['title','name','projectNameTH','article_th','project_name','topic'], '-');
+            $meta = ($metaCb && is_object($m)) ? (string)call_user_func($metaCb, $m) : '';
+
+            $content = "<div class='d-flex gap-2 align-items-start'>
+                <div class='flex-grow-1'>
+                    {$labelHtml($name)}
+                    " . ($meta ? "<div class='small text-muted mt-1'>{$meta}</div>" : "") . "
+                </div>
+                <i class='bi bi-box-arrow-up-right text-muted'></i>
+            </div>";
 
             if (!$id) {
-                $html .= "<div class='list-group-item py-2 text-muted'>{$label}</div>";
+                $html .= "<div class='list-group-item py-2'>{$content}</div>";
                 continue;
             }
 
-            $html .= Html::a(
-                "<div class='d-flex gap-2 align-items-start'>
-                    <div class='flex-grow-1'>{$label}</div>
-                    <i class='bi bi-box-arrow-up-right text-muted'></i>
-                 </div>",
-                [$viewRoute, $paramName => $id],
-                [
-                    'class' => 'list-group-item list-group-item-action py-2',
-                    'encode' => false,
-                    'data-pjax' => 0,
-                    'title' => $name,
-                ]
-            );
+            $html .= Html::a($content, [$viewRoute, $paramName => $id], [
+                'class' => 'list-group-item list-group-item-action py-2',
+                'encode' => false,
+                'data-pjax' => 0,
+                'title' => strip_tags((string)$name),
+            ]);
         }
         $html .= "</div>";
     }
 
-    /* ===== ผู้ร่วม ===== */
+    // ===== ผู้ร่วม =====
     if (!empty($contribItems)) {
         $hasAny = true;
         $html .= "<div class='px-3 pt-3 fw-semibold text-muted'>ผู้ร่วมผลงาน</div>";
@@ -209,42 +206,36 @@ $workCard = function (
             $role = $row['role'] ?? null;
             $pct  = $row['pct']  ?? null;
 
-            if (!is_object($m)) {
-                continue;
-            }
+            if (!is_object($m)) continue;
 
-            $id = $getId($m);
-            $name = $getFirstNonEmpty($m, $titleFields, '-');
-            $label = $labelHtml($name);
+            $id   = $getId($m);
+            $name = $getFirstNonEmpty($m, ['title','name','projectNameTH','article_th','project_name','topic'], '-');
+            $meta = ($metaCb) ? (string)call_user_func($metaCb, $m) : '';
 
             $badge = "<span class='badge bg-secondary'>ผู้ร่วม</span>";
             if ($role) $badge .= " <span class='badge bg-info'>" . Html::encode((string)$role) . "</span>";
             if ($pct !== null && $pct !== '') $badge .= " <span class='badge bg-success'>" . Html::encode((string)$pct) . "%</span>";
 
-            if (!$id) {
-                $html .= "<div class='list-group-item py-2 text-muted'>
-                    {$label}
+            $content = "<div class='d-flex justify-content-between align-items-start gap-2'>
+                <div class='flex-grow-1'>
+                    {$labelHtml($name)}
                     <div class='mt-1'>{$badge}</div>
-                </div>";
+                    " . ($meta ? "<div class='small text-muted mt-1'>{$meta}</div>" : "") . "
+                </div>
+                <i class='bi bi-box-arrow-up-right text-muted'></i>
+            </div>";
+
+            if (!$id) {
+                $html .= "<div class='list-group-item py-2'>{$content}</div>";
                 continue;
             }
 
-            $html .= Html::a(
-                "<div class='d-flex justify-content-between align-items-start gap-2'>
-                    <div class='flex-grow-1'>
-                      {$label}
-                      <div class='mt-1'>{$badge}</div>
-                    </div>
-                    <i class='bi bi-box-arrow-up-right text-muted'></i>
-                 </div>",
-                [$viewRoute, $paramName => $id],
-                [
-                    'class' => 'list-group-item list-group-item-action py-2',
-                    'encode' => false,
-                    'data-pjax' => 0,
-                    'title' => $name,
-                ]
-            );
+            $html .= Html::a($content, [$viewRoute, $paramName => $id], [
+                'class' => 'list-group-item list-group-item-action py-2',
+                'encode' => false,
+                'data-pjax' => 0,
+                'title' => strip_tags((string)$name),
+            ]);
         }
         $html .= "</div>";
     }
@@ -256,6 +247,7 @@ $workCard = function (
     $html .= "</div></div>";
     return $html;
 };
+
 ?>
 
 <div class="container-fluid py-2">
@@ -336,77 +328,128 @@ $workCard = function (
     </div>
   </div>
 
+<?php
+  // งานวิจัย: ชื่อโครงการภาษาไทย, หน่วยงานทุน, ปีเสนอ
+$metaResearch = function($m) use ($getVal, $getRelVal) {
+    $fund = $getRelVal($m, 'fundingAgency', ['name','agency_name','fundingAgencyName'], null);
+    if ($fund === null) $fund = $getVal($m, ['fundingAgencyName','funding_agency','agency_name'], '-');
+
+    $year = $getVal($m, ['projectYearsubmit','year_submit','project_year'], '-');
+
+    return "<span class='badge bg-light text-dark border me-1'>หน่วยงานทุน: ".Html::encode($fund)."</span>"
+        . "<span class='badge bg-light text-dark border'>ปีเสนอ: ".Html::encode($year)."</span>";
+};
+
+// บทความ: ชื่อบทความ(ไทย), ประเภทฐาน, วันที่เผยแพร่
+$metaArticle = function($m) use ($getVal, $getRelVal, $fmtDate) {
+    $db = $getRelVal($m, 'publication', ['name','pub_name','title'], null);
+    if ($db === null) $db = $getVal($m, ['db_type','database_type','index_type','publication_type','publication'], '-');
+
+    $dt = $getVal($m, ['publish_date','published_at','public_date','article_date','date_publish'], null);
+    $dt = $fmtDate($dt);
+
+    return "<span class='badge bg-light text-dark border me-1'>ประเภทฐาน: ".Html::encode($db)."</span>"
+        . "<span class='badge bg-light text-dark border'>เผยแพร่: ".Html::encode($dt)."</span>";
+};
+
+// การนำไปใช้: ชื่อโครงการ/ผลงาน, ประเภทการใช้ประโยชน์, วันที่ใช้ประโยชน์
+$metaUtil = function($m) use ($getVal, $getRelVal, $fmtDate) {
+    $type = $getRelVal($m, 'utilType', ['name','type_name'], null);
+    if ($type === null) $type = $getVal($m, ['util_type','type_name','utilization_type','util_type_name'], '-');
+
+    $dt = $getVal($m, ['util_date','use_date','utilization_date','date_use'], null);
+    $dt = $fmtDate($dt);
+
+    return "<span class='badge bg-light text-dark border me-1'>ประเภท: ".Html::encode($type)."</span>"
+        . "<span class='badge bg-light text-dark border'>วันที่ใช้: ".Html::encode($dt)."</span>";
+};
+
+// บริการวิชาการ: เรื่อง, ประเภท, ชั่วโมง, วันที่
+$metaService = function($m) use ($getVal, $getRelVal, $fmtDate) {
+    $type = $getRelVal($m, 'serviceType', ['type_name','name'], null);
+    if ($type === null) $type = $getVal($m, ['type_name','service_type','serviceTypeName'], '-');
+
+    $hrs = $getVal($m, ['hours','hour','service_hour','total_hours'], '-');
+
+    $dt = $getVal($m, ['service_date','date','serviceDate'], null);
+    $dt = $fmtDate($dt);
+
+    return "<span class='badge bg-light text-dark border me-1'>ประเภท: ".Html::encode($type)."</span>"
+        . "<span class='badge bg-light text-dark border me-1'>ชั่วโมง: ".Html::encode($hrs)."</span>"
+        . "<span class='badge bg-light text-dark border'>วันที่: ".Html::encode($dt)."</span>";
+};
+?>
   <!-- ===== Combined Cards: เจ้าของ/ผู้ร่วม ===== -->
-  <div class="row g-3">
+<div class="row g-3">
 
-    <div class="col-12">
-      <?= $workCard(
-          'งานวิจัย (เจ้าของ / ผู้ร่วม)',
-          'bi bi-journal-text',
-          $researchLatest ?? [],
-          $contribResearch ?? [],
-          'researchpro/view',
-          'projectID',
-          ['projectID','research_id','id'],
-          ['projectNameTH','projectNameEN','projectName','title'],
-          'researchpro/index',
-          ['ResearchproSearch' => ['username' => (string)($model->username ?? '')]],
-          '#7B2FF7',
-          '#0A8BCB'
-      ) ?>
-    </div>
-
-    <div class="col-12">
-      <?= $workCard(
-          'บทความ (เจ้าของ / ผู้ร่วม)',
-          'bi bi-file-earmark-text',
-          $articleLatest ?? [],
-          $contribArticle ?? [],
-          'article/view',
-          'article_id',
-          ['article_id','id'],
-          ['article_th','article_en','title'],
-          'article/index',
-          ['ArticleSearch' => ['username' => (string)($model->username ?? '')]],
-          '#F04646',
-          '#C81D1D'
-      ) ?>
-    </div>
-
-    <div class="col-12">
-      <?= $workCard(
-          'การนำไปใช้ (เจ้าของ / ผู้ร่วม)',
-          'bi bi-lightbulb',
-          $utilLatest ?? [],
-          $contribUtil ?? [],
-          'utilization/view',
-          'utilization_id',
-          ['utilization_id','util_id','id'],
-          ['project_name','title','util_title'],
-          'utilization/index',
-          ['UtilizationSearch' => ['username' => (string)($model->username ?? '')]],
-          '#10B981',
-          '#059669'
-      ) ?>
-    </div>
-
-    <div class="col-12">
-      <?= $workCard(
-          'บริการวิชาการ (เจ้าของ / ผู้ร่วม)',
-          'bi bi-people',
-          $serviceLatest ?? [],
-          [], // ถ้ายังไม่มี contributor ของบริการวิชาการ
-          'academic-service/view',
-          'service_id',
-          ['service_id','id'],
-          ['title','service_title','topic'],
-          'academic-service/index',
-          ['AcademicServiceSearch' => ['username' => (string)($model->username ?? '')]],
-          '#0A8BCB',
-          '#0067B8'
-      ) ?>
-    </div>
-
+  <div class="col-12">
+    <?= $workCard(
+        'งานวิจัย (เจ้าของ / ผู้ร่วม)',
+        'bi bi-journal-text',
+        $researchLatest ?? [],
+        $contribResearch ?? [],
+        'researchpro/view',
+        'projectID',
+        ['projectID','research_id','id'],
+        'researchpro/index',
+        ['ResearchproSearch'=>['username'=>(string)($model->username ?? '')]],
+        $metaResearch,
+        '#7B2FF7',
+        '#0A8BCB'
+    ) ?>
   </div>
+
+  <div class="col-12">
+    <?= $workCard(
+        'บทความ (เจ้าของ / ผู้ร่วม)',
+        'bi bi-file-earmark-text',
+        $articleLatest ?? [],
+        $contribArticle ?? [],
+        'article/view',
+        'article_id',
+        ['article_id','id'],
+        'article/index',
+        ['ArticleSearch'=>['username'=>(string)($model->username ?? '')]],
+        $metaArticle,
+        '#F04646',
+        '#C81D1D'
+    ) ?>
+  </div>
+
+  <div class="col-12">
+    <?= $workCard(
+        'การนำไปใช้ (เจ้าของ / ผู้ร่วม)',
+        'bi bi-lightbulb',
+        $utilLatest ?? [],
+        $contribUtil ?? [],
+        'utilization/view',
+        'utilization_id',
+        ['utilization_id','util_id','id'],
+        'utilization/index',
+        ['UtilizationSearch'=>['username'=>(string)($model->username ?? '')]],
+        $metaUtil,
+        '#10B981',
+        '#059669'
+    ) ?>
+  </div>
+
+  <div class="col-12">
+    <?= $workCard(
+        'บริการวิชาการ (เจ้าของ / ผู้ร่วม)',
+        'bi bi-people',
+        $serviceLatest ?? [],
+        [], // ถ้ายังไม่ทำ contributor ของบริการวิชาการ
+        'academic-service/view',
+        'service_id',
+        ['service_id','id'],
+        'academic-service/index',
+        ['AcademicServiceSearch'=>['username'=>(string)($model->username ?? '')]],
+        $metaService,
+        '#0A8BCB',
+        '#0067B8'
+    ) ?>
+  </div>
+
+</div>
 
 </div>
