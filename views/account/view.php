@@ -145,8 +145,6 @@ $listCard = function(
           <div>
             <div class="h5 mb-0"><?= Html::encode($fullName) ?></div>
             <div class="text-muted small">
-              <i class="bi bi-person-badge"></i> <?= Html::encode((string)($model->username ?? '-')) ?>
-              <span class="mx-2">•</span>
               <i class="bi bi-diagram-3"></i> <?= Html::encode($orgName) ?>
               <span class="mx-2">•</span>
               <i class="bi bi-award"></i> <?= Html::encode($posName) ?>
@@ -159,19 +157,10 @@ $listCard = function(
               'class' => 'btn btn-outline-secondary',
               'encode' => false,
           ]) ?>
-
           <?php if ($isAdmin()): ?>
             <?= Html::a('<i class="bi bi-pencil-square"></i> แก้ไข', ['update', 'id' => $model->id], [
                 'class' => 'btn btn-primary',
                 'encode' => false,
-            ]) ?>
-            <?= Html::a('<i class="bi bi-key"></i> รีเซ็ตรหัสผ่าน', ['resetpassword', 'id' => $model->id], [
-                'class' => 'btn btn-outline-danger',
-                'encode' => false,
-                'data' => [
-                    'confirm' => 'ยืนยันการรีเซ็ตรหัสผ่านของผู้ใช้นี้?',
-                    'method' => 'post',
-                ],
             ]) ?>
           <?php endif; ?>
         </div>
@@ -274,60 +263,65 @@ $listCard = function(
   </div>
 
   <!-- ===== 3) Latest Lists ===== -->
-  <div class="row g-3">
+<div class="row g-3">
 
-    <div class="col-12 col-md-6">
-      <?= $listCard(
-          'งานวิจัย',
-          'bi bi-journal-text',
-          $researchLatest ?? [],
-          'researchpro/view',
-          'research_id',
-          ['projectNameTH', 'projectNameEN', 'projectName', 'title'],
-          'researchpro/index',
-          ['ResearchproSearch' => ['username' => (string)($model->username ?? '')]]
-      ) ?>
-    </div>
-
-    <div class="col-12 col-md-6">
-      <?= $listCard(
-          'บทความ',
-          'bi bi-file-earmark-text',
-          $articleLatest ?? [],
-          'article/view',
-          'article_id',
-          ['article_th', 'article_en', 'title'],
-          'article/index',
-          ['ArticleSearch' => ['username' => (string)($model->username ?? '')]]
-      ) ?>
-    </div>
-
-    <div class="col-12 col-md-6">
-      <?= $listCard(
-          'การนำไปใช้',
-          'bi bi-lightbulb',
-          $utilLatest ?? [],
-          'utilization/view',
-          'util_id',
-          ['project_name', 'title', 'util_title'],
-          'utilization/index',
-          ['UtilizationSearch' => ['username' => (string)($model->username ?? '')]]
-      ) ?>
-    </div>
-
-    <div class="col-12 col-md-6">
-      <?= $listCard(
-          'บริการวิชาการ',
-          'bi bi-people',
-          $serviceLatest ?? [],
-          'academic-service/view',
-          'service_id',
-          ['title', 'service_title', 'topic'],
-          'academic-service/index',
-          ['AcademicServiceSearch' => ['username' => (string)($model->username ?? '')]]
-      ) ?>
-    </div>
-
+  <div class="col-12">
+    <?= $listCard(
+        'งานวิจัย',
+        'bi bi-journal-text',
+        $researchLatest ?? [],
+        'researchpro/view',
+        'projectID',                 // ✅ PK field ในข้อมูล
+        'projectID',                 // ✅ param name ของ actionView
+        ['projectNameTH', 'projectNameEN', 'projectName', 'title'],
+        'researchpro/index',
+        ['ResearchproSearch' => ['username' => (string)($model->username ?? '')]]
+    ) ?>
   </div>
+
+  <div class="col-12">
+    <?= $listCard(
+        'บทความ',
+        'bi bi-file-earmark-text',
+        $articleLatest ?? [],
+        'article/view',
+        'article_id',                // ✅ PK
+        'article_id',                // ✅ param name
+        ['article_th', 'article_en', 'title'],
+        'article/index',
+        ['ArticleSearch' => ['username' => (string)($model->username ?? '')]]
+    ) ?>
+  </div>
+
+  <div class="col-12">
+    <?= $listCard(
+        'การนำไปใช้',
+        'bi bi-lightbulb',
+        $utilLatest ?? [],
+        'utilization/view',
+        'utilization_id',            // ✅ PK
+        'utilization_id',            // ✅ param name
+        ['project_name', 'title', 'util_title'],
+        'utilization/index',
+        ['UtilizationSearch' => ['username' => (string)($model->username ?? '')]]
+    ) ?>
+  </div>
+
+  <div class="col-12">
+    <?= $listCard(
+        'บริการวิชาการ',
+        'bi bi-people',
+        $serviceLatest ?? [],
+        'academic-service/view',
+        'service_id',                // ✅ PK
+        'service_id',                // ✅ param name
+        ['title', 'service_title', 'topic'],
+        'academic-service/index',
+        ['AcademicServiceSearch' => ['username' => (string)($model->username ?? '')]]
+    ) ?>
+  </div>
+
+</div>
+
 
 </div>

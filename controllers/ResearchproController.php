@@ -37,7 +37,7 @@ public function behaviors()
             ],
             'rules' => [
                 [
-                    'actions' => ['index', 'error'],
+                    'actions' => ['index', 'error', 'view'],
                     'allow'   => true,
                     'roles'   => ['?', '@'],
                 ],
@@ -49,7 +49,7 @@ public function behaviors()
                 ],
                 [
                     'actions' => [
-                        'view', 'create', 'update', 'delete',
+                        'create', 'update', 'delete',
                     ],
                     'allow'   => true,
                     'roles'   => [1, 4],
