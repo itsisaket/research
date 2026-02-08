@@ -14,6 +14,7 @@ use app\models\Researchpro;
 use app\models\Article;
 use app\models\Utilization;
 use app\models\AcademicService;
+use app\models\WorkContributor;
 
 class AccountController extends Controller
 {
@@ -88,16 +89,17 @@ public function actionView($id)
     $model = $this->findModel($id);
     $username = (string)$model->username;
 
-    // ===== งานวิจัย =====
-    $rp = Researchpro::find()->where(['username' => $username]);
-    $cntResearch = (int)$rp->count();
+    /* ================= งานเจ้าของ (ของเดิม) ================= */
+
+    // งานวิจัย
+    $cntResearch = (int)Researchpro::find()->where(['username' => $username])->count();
     $researchLatest = Researchpro::find()
         ->where(['username' => $username])
-        ->orderBy([Researchpro::primaryKey()[0] => SORT_DESC]) // ใช้ PK จริง
+        ->orderBy([Researchpro::primaryKey()[0] => SORT_DESC])
         ->limit(10)
         ->all();
 
-    // ===== บทความ =====
+    // บทความ
     $cntArticle = (int)Article::find()->where(['username' => $username])->count();
     $articleLatest = Article::find()
         ->where(['username' => $username])
@@ -105,7 +107,7 @@ public function actionView($id)
         ->limit(10)
         ->all();
 
-    // ===== การนำไปใช้ =====
+    // การนำไปใช้
     $cntUtil = (int)Utilization::find()->where(['username' => $username])->count();
     $utilLatest = Utilization::find()
         ->where(['username' => $username])
@@ -113,7 +115,7 @@ public function actionView($id)
         ->limit(10)
         ->all();
 
-    // ===== บริการวิชาการ =====
+    // บริการวิชาการ
     $cntService = (int)AcademicService::find()->where(['username' => $username])->count();
     $serviceLatest = AcademicService::find()
         ->where(['username' => $username])
@@ -121,10 +123,59 @@ public function actionView($id)
         ->limit(10)
         ->all();
 
+    /* ================= ผู้ร่วมงาน (ใหม่) ================= */
+
+    // ดึงรายการที่ user เป็น contributor
+    $contributors = WorkContributor::find()
+        ->where(['username' => $username])
+        ->orderBy(['ref_type' => SORT_ASC, 'sort_order' => SORT_ASC])
+        ->all();
+
+    // แยกตามประเภทงาน (ง่ายต่อ view)
+    $contribResearch = [];
+    $contribArticle  = [];
+    $contribUtil     = [];
+
+    foreach ($contributors as $wc) {
+        switch ($wc->ref_type) {
+            case 'researchpro':
+                if ($m = Researchpro::findOne($wc->ref_id)) {
+                    $contribResearch[] = [
+                        'model' => $m,
+                        'role'  => $wc->role_code,
+                        'pct'   => $wc->contribution_pct,
+                    ];
+                }
+                break;
+
+            case 'article':
+                if ($m = Article::findOne($wc->ref_id)) {
+                    $contribArticle[] = [
+                        'model' => $m,
+                        'role'  => $wc->role_code,
+                        'pct'   => $wc->contribution_pct,
+                    ];
+                }
+                break;
+
+            case 'utilization':
+                if ($m = Utilization::findOne($wc->ref_id)) {
+                    $contribUtil[] = [
+                        'model' => $m,
+                        'role'  => $wc->role_code,
+                        'pct'   => $wc->contribution_pct,
+                    ];
+                }
+                break;
+        }
+    }
+
     return $this->render('view', compact(
         'model',
         'cntResearch','cntArticle','cntUtil','cntService',
-        'researchLatest','articleLatest','utilLatest','serviceLatest'
+        'researchLatest','articleLatest','utilLatest','serviceLatest',
+        // 👇 ส่งข้อมูลผู้ร่วมไป view
+        'contribResearch','contribArticle','contribUtil'
     ));
 }
 

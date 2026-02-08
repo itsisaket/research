@@ -12,6 +12,9 @@ use yii\widgets\DetailView;
 /* @var $articleLatest app\models\Article[] */
 /* @var $utilLatest app\models\Utilization[] */
 /* @var $serviceLatest app\models\AcademicService[] */
+/* @var $contribResearch array */
+/* @var $contribArticle array */
+/* @var $contribUtil array */
 
 $this->title = 'โปรไฟล์ผู้ใช้';
 $this->params['breadcrumbs'][] = ['label' => 'Accounts', 'url' => ['index']];
@@ -60,11 +63,14 @@ $posObj = $safeRel($model, 'hasposition');
 $orgName = (is_object($orgObj) && isset($orgObj->org_name)) ? $orgObj->org_name : '-';
 $posName = (is_object($posObj) && isset($posObj->positionname)) ? $posObj->positionname : '-';
 
+$email = $model->email ?? '-';
+$tel   = $model->tel ?? '-';
+
 // ✅ Account PK ของคุณคือ uid
 $accountPkVal = $model->uid ?? null;
 
 /**
- * KPI Card (Bootstrap utilities + inline gradient only)
+ * KPI Card (gradient inline; no external css)
  */
 $kpiCard = function (
     $title,
@@ -93,20 +99,19 @@ $kpiCard = function (
 };
 
 /**
- * Card List Builder (สีสันตามภาพตัวอย่าง)
- * - ไม่เพิ่มไฟล์ CSS ใหม่
- * - ใช้ Bootstrap + inline gradient เฉพาะที่จำเป็น
- * - ชื่อแสดงเต็ม ไม่จำกัดบรรทัด
- * - รองรับ pk หลายชื่อ (fallback)
- * - ส่ง param name ให้ตรงกับ controller จริง
+ * Combined Card: Owner + Contributor
+ * - แสดง "เจ้าของผลงาน" + "ผู้ร่วมผลงาน" ในการ์ดเดียว
+ * - ใช้ bootstrap + inline gradient เฉพาะ header
+ * - ชื่อแสดงเต็ม (ไม่จำกัดบรรทัด) + encode ปลอดภัย
  */
-$listCard = function (
+$workCard = function (
     $title,
     $icon,
-    $items,
+    array $ownerItems,
+    array $contribItems,
     $viewRoute,
-    array $pkFields,
     $paramName,
+    array $pkFields,
     array $titleFields,
     $indexRoute = null,
     array $indexParams = [],
@@ -115,16 +120,16 @@ $listCard = function (
 ) use ($getFirstNonEmpty) {
 
     $headStyle = "background: linear-gradient(90deg, {$g1}, {$g2});";
-    $headerRight = "<span class='text-white-50 small'>ล่าสุด 10 รายการ</span>";
 
+    $btnAll = "<span class='text-white-50 small'>ล่าสุด 10 รายการ</span>";
     if ($indexRoute) {
-        $headerRight = Html::a(
+        $btnAll = Html::a(
             "<i class='bi bi-list-ul'></i> ดูทั้งหมด",
             array_merge([$indexRoute], $indexParams),
             [
                 'class' => 'btn btn-sm btn-light bg-white bg-opacity-25 border-0 text-white',
                 'encode' => false,
-                'data-pjax' => 0
+                'data-pjax' => 0,
             ]
         );
     }
@@ -132,48 +137,56 @@ $listCard = function (
     $html = "<div class='card border-0 shadow-sm rounded-4 overflow-hidden'>
         <div class='card-header border-0 py-3' style='{$headStyle}'>
           <div class='d-flex justify-content-between align-items-center'>
-            <div class='fw-semibold text-white'><i class='{$icon}'></i> {$title}</div>
-            <div>{$headerRight}</div>
+            <div class='fw-semibold text-white'>
+              <i class='{$icon}'></i> {$title}
+            </div>
+            <div>{$btnAll}</div>
           </div>
         </div>
         <div class='card-body p-0'>";
 
-    if (empty($items)) {
-        $html .= "<div class='p-3 text-muted small'>ไม่มีข้อมูล</div>";
-    } else {
+    // helper get id
+    $getId = function ($obj) use ($pkFields) {
+        if (!is_object($obj)) return null;
+        foreach ($pkFields as $pk) {
+            if (isset($obj->$pk) && $obj->$pk !== null && $obj->$pk !== '') {
+                return $obj->$pk;
+            }
+        }
+        return null;
+    };
+
+    // helper label (full text, no truncation)
+    $labelHtml = function ($text) {
+        return "<span class='d-block' style='white-space:normal; overflow:visible; text-overflow:clip; line-height:1.45; word-break:break-word;'>"
+            . Html::encode((string)$text) .
+            "</span>";
+    };
+
+    $hasAny = false;
+
+    /* ===== เจ้าของ ===== */
+    if (!empty($ownerItems)) {
+        $hasAny = true;
+        $html .= "<div class='px-3 pt-3 fw-semibold text-muted'>เจ้าของผลงาน</div>";
         $html .= "<div class='list-group list-group-flush'>";
 
-        foreach ($items as $m) {
-            $id = null;
-            if (is_object($m)) {
-                foreach ($pkFields as $pk) {
-                    if (isset($m->$pk) && $m->$pk !== null && $m->$pk !== '') {
-                        $id = $m->$pk;
-                        break;
-                    }
-                }
-            }
-
+        foreach ($ownerItems as $m) {
+            $id = $getId($m);
             $name = $getFirstNonEmpty($m, $titleFields, '-');
-
-            // ชื่อเต็ม ไม่จำกัดบรรทัด
-            $label = "<span class='d-block' style='white-space:normal; overflow:visible; text-overflow:clip; line-height:1.45; word-break:break-word;'>"
-                . Html::encode($name) .
-                "</span>";
+            $label = $labelHtml($name);
 
             if (!$id) {
                 $html .= "<div class='list-group-item py-2 text-muted'>{$label}</div>";
                 continue;
             }
 
-            $url = [$viewRoute, $paramName => $id];
-
             $html .= Html::a(
                 "<div class='d-flex gap-2 align-items-start'>
                     <div class='flex-grow-1'>{$label}</div>
-                    <div class='text-muted flex-shrink-0 pt-1'><i class='bi bi-box-arrow-up-right'></i></div>
+                    <i class='bi bi-box-arrow-up-right text-muted'></i>
                  </div>",
-                $url,
+                [$viewRoute, $paramName => $id],
                 [
                     'class' => 'list-group-item list-group-item-action py-2',
                     'encode' => false,
@@ -182,8 +195,62 @@ $listCard = function (
                 ]
             );
         }
-
         $html .= "</div>";
+    }
+
+    /* ===== ผู้ร่วม ===== */
+    if (!empty($contribItems)) {
+        $hasAny = true;
+        $html .= "<div class='px-3 pt-3 fw-semibold text-muted'>ผู้ร่วมผลงาน</div>";
+        $html .= "<div class='list-group list-group-flush'>";
+
+        foreach ($contribItems as $row) {
+            $m    = $row['model'] ?? null;
+            $role = $row['role'] ?? null;
+            $pct  = $row['pct']  ?? null;
+
+            if (!is_object($m)) {
+                continue;
+            }
+
+            $id = $getId($m);
+            $name = $getFirstNonEmpty($m, $titleFields, '-');
+            $label = $labelHtml($name);
+
+            $badge = "<span class='badge bg-secondary'>ผู้ร่วม</span>";
+            if ($role) $badge .= " <span class='badge bg-info'>" . Html::encode((string)$role) . "</span>";
+            if ($pct !== null && $pct !== '') $badge .= " <span class='badge bg-success'>" . Html::encode((string)$pct) . "%</span>";
+
+            if (!$id) {
+                $html .= "<div class='list-group-item py-2 text-muted'>
+                    {$label}
+                    <div class='mt-1'>{$badge}</div>
+                </div>";
+                continue;
+            }
+
+            $html .= Html::a(
+                "<div class='d-flex justify-content-between align-items-start gap-2'>
+                    <div class='flex-grow-1'>
+                      {$label}
+                      <div class='mt-1'>{$badge}</div>
+                    </div>
+                    <i class='bi bi-box-arrow-up-right text-muted'></i>
+                 </div>",
+                [$viewRoute, $paramName => $id],
+                [
+                    'class' => 'list-group-item list-group-item-action py-2',
+                    'encode' => false,
+                    'data-pjax' => 0,
+                    'title' => $name,
+                ]
+            );
+        }
+        $html .= "</div>";
+    }
+
+    if (!$hasAny) {
+        $html .= "<div class='p-3 text-muted small'>ไม่มีข้อมูล</div>";
     }
 
     $html .= "</div></div>";
@@ -192,7 +259,8 @@ $listCard = function (
 ?>
 
 <div class="container-fluid py-2">
-  <!-- ===== Header Profile (ใช้ bootstrap + สีอ่อน) ===== -->
+
+  <!-- ===== Header Profile ===== -->
   <div class="card border-0 shadow-sm rounded-4 mb-3">
     <div class="card-body p-4">
       <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
@@ -209,6 +277,11 @@ $listCard = function (
               <i class="bi bi-diagram-3"></i> <?= Html::encode($orgName) ?>
               <span class="mx-2">•</span>
               <i class="bi bi-award"></i> <?= Html::encode($posName) ?>
+            </div>
+            <div class="text-muted small">
+              <i class="bi bi-envelope"></i> <?= Html::encode((string)$email) ?>
+              <span class="mx-2">•</span>
+              <i class="bi bi-telephone"></i> <?= Html::encode((string)$tel) ?>
             </div>
           </div>
         </div>
@@ -231,18 +304,22 @@ $listCard = function (
       </div>
     </div>
   </div>
-  <!-- ===== Top KPI Row (สีตามภาพตัวอย่าง) ===== -->
-  <div class="row g-3 mb-3">
 
+  <!-- ===== Top KPI Row ===== -->
+  <div class="row g-3 mb-3">
     <div class="col-12 col-md-4">
       <?= $kpiCard('โครงการวิจัย', (int)$cntResearch, 'bi bi-flask', '#0A8BCB', '#0067B8') ?>
     </div>
-
     <div class="col-12 col-md-4">
       <?= $kpiCard('บทความวิจัย', (int)$cntArticle, 'bi bi-file-earmark-text', '#F04646', '#C81D1D') ?>
     </div>
-
     <div class="col-12 col-md-4">
+      <?= $kpiCard('การนำไปใช้', (int)$cntUtil, 'bi bi-lightbulb', '#10B981', '#059669') ?>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-12">
       <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-body p-4">
           <div class="d-flex align-items-start justify-content-between">
@@ -257,43 +334,21 @@ $listCard = function (
         </div>
       </div>
     </div>
-
   </div>
 
-
-  <!-- ===== User Detail ===== -->
-  <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden">
-    <div class="card-header border-0 text-white"
-         style="background: linear-gradient(90deg,#7B2FF7,#0A8BCB);">
-      <div class="fw-semibold"><i class="bi bi-info-circle"></i> ข้อมูลผู้ใช้</div>
-    </div>
-    <div class="card-body">
-      <?= DetailView::widget([
-          'model' => $model,
-          'options' => ['class' => 'table table-sm table-striped mb-0'],
-          'attributes' => [
-              ['label' => 'ชื่อ - สกุล', 'value' => $fullName],
-              ['label' => 'อีเมล', 'value' => (string)($model->email ?? '-')],
-              ['label' => 'โทรศัพท์', 'value' => (string)($model->tel ?? '-')],
-              ['label' => 'สังกัด', 'value' => $orgName],
-              ['label' => 'สถานะ', 'value' => $posName],
-          ],
-      ]) ?>
-    </div>
-  </div>
-
-  <!-- ===== Latest Lists (สีตามภาพตัวอย่าง) ===== -->
+  <!-- ===== Combined Cards: เจ้าของ/ผู้ร่วม ===== -->
   <div class="row g-3">
 
     <div class="col-12">
-      <?= $listCard(
-          'งานวิจัย',
+      <?= $workCard(
+          'งานวิจัย (เจ้าของ / ผู้ร่วม)',
           'bi bi-journal-text',
           $researchLatest ?? [],
+          $contribResearch ?? [],
           'researchpro/view',
-          ['projectID', 'research_id', 'id'],
           'projectID',
-          ['projectNameTH', 'projectNameEN', 'projectName', 'title'],
+          ['projectID','research_id','id'],
+          ['projectNameTH','projectNameEN','projectName','title'],
           'researchpro/index',
           ['ResearchproSearch' => ['username' => (string)($model->username ?? '')]],
           '#7B2FF7',
@@ -302,14 +357,15 @@ $listCard = function (
     </div>
 
     <div class="col-12">
-      <?= $listCard(
-          'บทความ',
+      <?= $workCard(
+          'บทความ (เจ้าของ / ผู้ร่วม)',
           'bi bi-file-earmark-text',
           $articleLatest ?? [],
+          $contribArticle ?? [],
           'article/view',
-          ['article_id', 'id'],
           'article_id',
-          ['article_th', 'article_en', 'title'],
+          ['article_id','id'],
+          ['article_th','article_en','title'],
           'article/index',
           ['ArticleSearch' => ['username' => (string)($model->username ?? '')]],
           '#F04646',
@@ -318,14 +374,15 @@ $listCard = function (
     </div>
 
     <div class="col-12">
-      <?= $listCard(
-          'การนำไปใช้',
+      <?= $workCard(
+          'การนำไปใช้ (เจ้าของ / ผู้ร่วม)',
           'bi bi-lightbulb',
           $utilLatest ?? [],
+          $contribUtil ?? [],
           'utilization/view',
-          ['utilization_id', 'util_id', 'id'],
           'utilization_id',
-          ['project_name', 'title', 'util_title'],
+          ['utilization_id','util_id','id'],
+          ['project_name','title','util_title'],
           'utilization/index',
           ['UtilizationSearch' => ['username' => (string)($model->username ?? '')]],
           '#10B981',
@@ -334,14 +391,15 @@ $listCard = function (
     </div>
 
     <div class="col-12">
-      <?= $listCard(
-          'บริการวิชาการ',
+      <?= $workCard(
+          'บริการวิชาการ (เจ้าของ / ผู้ร่วม)',
           'bi bi-people',
           $serviceLatest ?? [],
+          [], // ถ้ายังไม่มี contributor ของบริการวิชาการ
           'academic-service/view',
-          ['service_id', 'id'],
           'service_id',
-          ['title', 'service_title', 'topic'],
+          ['service_id','id'],
+          ['title','service_title','topic'],
           'academic-service/index',
           ['AcademicServiceSearch' => ['username' => (string)($model->username ?? '')]],
           '#0A8BCB',
