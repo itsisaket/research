@@ -234,19 +234,15 @@ $listCard = function (
   <!-- ===== Top KPI Row (สีตามภาพตัวอย่าง) ===== -->
   <div class="row g-3 mb-3">
 
-    <div class="col-12 col-md-3">
-      <?= $kpiCard('นักวิจัยทั้งหมด', (int)$cntResearch, 'bi bi-people-fill', '#7B2FF7', '#9B40FF') ?>
-    </div>
-
-    <div class="col-12 col-md-3">
+    <div class="col-12 col-md-4">
       <?= $kpiCard('โครงการวิจัย', (int)$cntResearch, 'bi bi-flask', '#0A8BCB', '#0067B8') ?>
     </div>
 
-    <div class="col-12 col-md-3">
+    <div class="col-12 col-md-4">
       <?= $kpiCard('บทความวิจัย', (int)$cntArticle, 'bi bi-file-earmark-text', '#F04646', '#C81D1D') ?>
     </div>
 
-    <div class="col-12 col-md-3">
+    <div class="col-12 col-md-4">
       <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-body p-4">
           <div class="d-flex align-items-start justify-content-between">
