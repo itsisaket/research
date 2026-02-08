@@ -83,63 +83,57 @@ class AccountController extends Controller
      * 3) ข้อมูลผู้ใช้ (model)
      * ✅ ค้นจาก username เท่านั้น
      */
-    public function actionView($id)
-    {
-        $model = $this->findModel($id);
-        $username = (string)$model->username;
+public function actionView($id)
+{
+    $model = $this->findModel($id);
+    $username = (string)$model->username;
 
-        // ===== งานวิจัย =====
-        $cntResearch = (int)Researchpro::find()->where(['username' => $username])->count();
-        $researchLatest = Researchpro::find()
-            ->where(['username' => $username])
-            ->orderBy(['research_id' => SORT_DESC])
-            ->limit(10)
-            ->all();
+    // ===== งานวิจัย =====
+    $rp = Researchpro::find()->where(['username' => $username]);
+    $cntResearch = (int)$rp->count();
+    $researchLatest = Researchpro::find()
+        ->where(['username' => $username])
+        ->orderBy([Researchpro::primaryKey()[0] => SORT_DESC]) // ใช้ PK จริง
+        ->limit(10)
+        ->all();
 
-        // ===== บทความ =====
-        $cntArticle = (int)Article::find()->where(['username' => $username])->count();
-        $articleLatest = Article::find()
-            ->where(['username' => $username])
-            ->orderBy(['article_id' => SORT_DESC])
-            ->limit(10)
-            ->all();
+    // ===== บทความ =====
+    $cntArticle = (int)Article::find()->where(['username' => $username])->count();
+    $articleLatest = Article::find()
+        ->where(['username' => $username])
+        ->orderBy([Article::primaryKey()[0] => SORT_DESC])
+        ->limit(10)
+        ->all();
 
-        // ===== การนำไปใช้ =====
-        $cntUtil = (int)Utilization::find()->where(['username' => $username])->count();
-        $utilLatest = Utilization::find()
-            ->where(['username' => $username])
-            ->orderBy(['util_id' => SORT_DESC])
-            ->limit(10)
-            ->all();
+    // ===== การนำไปใช้ =====
+    $cntUtil = (int)Utilization::find()->where(['username' => $username])->count();
+    $utilLatest = Utilization::find()
+        ->where(['username' => $username])
+        ->orderBy([Utilization::primaryKey()[0] => SORT_DESC])
+        ->limit(10)
+        ->all();
 
-        // ===== บริการวิชาการ =====
-        $cntService = (int)AcademicService::find()->where(['username' => $username])->count();
-        $serviceLatest = AcademicService::find()
-            ->where(['username' => $username])
-            ->orderBy(['service_id' => SORT_DESC])
-            ->limit(10)
-            ->all();
+    // ===== บริการวิชาการ =====
+    $cntService = (int)AcademicService::find()->where(['username' => $username])->count();
+    $serviceLatest = AcademicService::find()
+        ->where(['username' => $username])
+        ->orderBy([AcademicService::primaryKey()[0] => SORT_DESC])
+        ->limit(10)
+        ->all();
 
-        return $this->render('view', [
-            'model' => $model,
+    return $this->render('view', compact(
+        'model',
+        'cntResearch','cntArticle','cntUtil','cntService',
+        'researchLatest','articleLatest','utilLatest','serviceLatest'
+    ));
+}
 
-            'cntResearch' => $cntResearch,
-            'cntArticle'  => $cntArticle,
-            'cntUtil'     => $cntUtil,
-            'cntService'  => $cntService,
 
-            'researchLatest' => $researchLatest,
-            'articleLatest'  => $articleLatest,
-            'utilLatest'     => $utilLatest,
-            'serviceLatest'  => $serviceLatest,
-        ]);
+protected function findModel($id)
+{
+    if (($model = Account::findOne(['uid' => (int)$id])) !== null) {
+        return $model;
     }
-
-    protected function findModel($id)
-    {
-        if (($model = Account::findOne((int)$id)) !== null) {
-            return $model;
-        }
-        throw new NotFoundHttpException('ไม่พบข้อมูลผู้ใช้ที่ต้องการ');
-    }
+    throw new NotFoundHttpException('ไม่พบข้อมูลผู้ใช้ที่ต้องการ');
+}
 }
