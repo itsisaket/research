@@ -26,7 +26,6 @@ $isAdmin = function () use ($me) {
 
 $safeRel = function ($obj, $relName) {
     if (!is_object($obj)) return null;
-    // try property (relation loaded / magic getter)
     try {
         return $obj->$relName ?? null;
     } catch (\Throwable $e) {
@@ -37,14 +36,13 @@ $safeRel = function ($obj, $relName) {
 $fullName = trim((string)($model->uname ?? '') . ' ' . (string)($model->luname ?? ''));
 if ($fullName === '') $fullName = (string)($model->username ?? '-');
 
-$initials = function($name){
+$initials = function ($name) {
     $name = trim((string)$name);
     if ($name === '') return '?';
-    // เอาอักษร 1-2 ตัวแรกแบบง่าย ๆ
     $chars = preg_split('//u', $name, -1, PREG_SPLIT_NO_EMPTY);
     $a = $chars[0] ?? '?';
     $b = $chars[1] ?? '';
-    return mb_strtoupper($a.$b, 'UTF-8');
+    return mb_strtoupper($a . $b, 'UTF-8');
 };
 
 $orgObj = $safeRel($model, 'hasorg');
@@ -53,27 +51,25 @@ $posObj = $safeRel($model, 'hasposition');
 $orgName = (is_object($orgObj) && isset($orgObj->org_name)) ? $orgObj->org_name : '-';
 $posName = (is_object($posObj) && isset($posObj->positionname)) ? $posObj->positionname : '-';
 
+// Account PK ของคุณคือ uid
+$accountPk = 'uid';
+$accountPkVal = $model->$accountPk ?? null;
+
 /**
- * Card List Builder
- * @param string $title
- * @param string $icon  bootstrap icon class
- * @param array  $items
- * @param string $viewRoute   e.g. 'researchpro/view'
- * @param string $pkField     primary key field name
- * @param array  $titleFields candidate title fields (try in order)
- * @param string|null $indexRoute optional "ดูทั้งหมด" route e.g. 'researchpro/index'
- * @param array  $indexParams optional params for index link
+ * Card List Builder (รองรับ param name ของแต่ละโมดูล)
  */
-$listCard = function(
+$listCard = function (
     $title,
     $icon,
     $items,
     $viewRoute,
     $pkField,
+    $paramName,
     array $titleFields,
     $indexRoute = null,
-    array $indexParams = []
-){
+    array $indexParams = [],
+    $accentBg = null
+) {
     $headerRight = "<span class='text-muted small'>ล่าสุด 10 รายการ</span>";
     if ($indexRoute) {
         $headerRight = Html::a(
@@ -83,7 +79,8 @@ $listCard = function(
         );
     }
 
-    $html = "<div class='card border-0 shadow-sm h-100'>
+    $accentStyle = $accentBg ? "style='border-left:6px solid {$accentBg};'" : '';
+    $html = "<div class='card border-0 shadow-sm h-100' {$accentStyle}>
         <div class='card-header bg-white d-flex justify-content-between align-items-center'>
             <strong><i class='{$icon}'></i> {$title}</strong>
             {$headerRight}
@@ -115,7 +112,7 @@ $listCard = function(
             }
 
             $html .= "<li class='list-group-item py-2 d-flex justify-content-between align-items-center'>
-                " . Html::a($label, [$viewRoute, 'id' => $id], [
+                " . Html::a($label, [$viewRoute, $paramName => $id], [
                     'class' => 'text-decoration-none',
                     'data-pjax' => 0,
                     'title' => 'เปิดดูรายละเอียด',
@@ -145,6 +142,8 @@ $listCard = function(
           <div>
             <div class="h5 mb-0"><?= Html::encode($fullName) ?></div>
             <div class="text-muted small">
+              <i class="bi bi-person-badge"></i> <?= Html::encode((string)($model->username ?? '-')) ?>
+              <span class="mx-2">•</span>
               <i class="bi bi-diagram-3"></i> <?= Html::encode($orgName) ?>
               <span class="mx-2">•</span>
               <i class="bi bi-award"></i> <?= Html::encode($posName) ?>
@@ -157,10 +156,12 @@ $listCard = function(
               'class' => 'btn btn-outline-secondary',
               'encode' => false,
           ]) ?>
-          <?php if ($isAdmin()): ?>
-            <?= Html::a('<i class="bi bi-pencil-square"></i> แก้ไข', ['update', 'id' => $model->id], [
+
+          <?php if ($isAdmin() && $accountPkVal !== null): ?>
+            <?= Html::a('<i class="bi bi-pencil-square"></i> แก้ไข', ['update', 'id' => $accountPkVal], [
                 'class' => 'btn btn-primary',
                 'encode' => false,
+                'data-pjax' => 0,
             ]) ?>
           <?php endif; ?>
         </div>
@@ -235,7 +236,7 @@ $listCard = function(
     <div class="card-body">
       <?= DetailView::widget([
           'model' => $model,
-          'options' => ['class'=>'table table-sm table-striped mb-0'],
+          'options' => ['class' => 'table table-sm table-striped mb-0'],
           'attributes' => [
               [
                   'label' => 'ชื่อ - สกุล',
@@ -262,66 +263,69 @@ $listCard = function(
     </div>
   </div>
 
-  <!-- ===== 3) Latest Lists ===== -->
-<div class="row g-3">
+  <!-- ===== 3) Latest Lists (เต็มแถว ไม่แบ่ง 2 คอลัมน์) ===== -->
+  <div class="row g-3">
 
-  <div class="col-12">
-    <?= $listCard(
-        'งานวิจัย',
-        'bi bi-journal-text',
-        $researchLatest ?? [],
-        'researchpro/view',
-        'projectID',                 // ✅ PK field ในข้อมูล
-        'projectID',                 // ✅ param name ของ actionView
-        ['projectNameTH', 'projectNameEN', 'projectName', 'title'],
-        'researchpro/index',
-        ['ResearchproSearch' => ['username' => (string)($model->username ?? '')]]
-    ) ?>
+    <div class="col-12">
+      <?= $listCard(
+          'งานวิจัย',
+          'bi bi-journal-text',
+          $researchLatest ?? [],
+          'researchpro/view',
+          'projectID',
+          'projectID',
+          ['projectNameTH', 'projectNameEN', 'projectName', 'title'],
+          'researchpro/index',
+          ['ResearchproSearch' => ['username' => (string)($model->username ?? '')]],
+          '#0ea5e9'
+      ) ?>
+    </div>
+
+    <div class="col-12">
+      <?= $listCard(
+          'บทความ',
+          'bi bi-file-earmark-text',
+          $articleLatest ?? [],
+          'article/view',
+          'article_id',
+          'article_id',
+          ['article_th', 'article_en', 'title'],
+          'article/index',
+          ['ArticleSearch' => ['username' => (string)($model->username ?? '')]],
+          '#22c55e'
+      ) ?>
+    </div>
+
+    <div class="col-12">
+      <?= $listCard(
+          'การนำไปใช้',
+          'bi bi-lightbulb',
+          $utilLatest ?? [],
+          'utilization/view',
+          'utilization_id',
+          'utilization_id',
+          ['project_name', 'title', 'util_title'],
+          'utilization/index',
+          ['UtilizationSearch' => ['username' => (string)($model->username ?? '')]],
+          '#f97316'
+      ) ?>
+    </div>
+
+    <div class="col-12">
+      <?= $listCard(
+          'บริการวิชาการ',
+          'bi bi-people',
+          $serviceLatest ?? [],
+          'academic-service/view',
+          'service_id',
+          'service_id',
+          ['title', 'service_title', 'topic'],
+          'academic-service/index',
+          ['AcademicServiceSearch' => ['username' => (string)($model->username ?? '')]],
+          '#8b5cf6'
+      ) ?>
+    </div>
+
   </div>
-
-  <div class="col-12">
-    <?= $listCard(
-        'บทความ',
-        'bi bi-file-earmark-text',
-        $articleLatest ?? [],
-        'article/view',
-        'article_id',                // ✅ PK
-        'article_id',                // ✅ param name
-        ['article_th', 'article_en', 'title'],
-        'article/index',
-        ['ArticleSearch' => ['username' => (string)($model->username ?? '')]]
-    ) ?>
-  </div>
-
-  <div class="col-12">
-    <?= $listCard(
-        'การนำไปใช้',
-        'bi bi-lightbulb',
-        $utilLatest ?? [],
-        'utilization/view',
-        'utilization_id',            // ✅ PK
-        'utilization_id',            // ✅ param name
-        ['project_name', 'title', 'util_title'],
-        'utilization/index',
-        ['UtilizationSearch' => ['username' => (string)($model->username ?? '')]]
-    ) ?>
-  </div>
-
-  <div class="col-12">
-    <?= $listCard(
-        'บริการวิชาการ',
-        'bi bi-people',
-        $serviceLatest ?? [],
-        'academic-service/view',
-        'service_id',                // ✅ PK
-        'service_id',                // ✅ param name
-        ['title', 'service_title', 'topic'],
-        'academic-service/index',
-        ['AcademicServiceSearch' => ['username' => (string)($model->username ?? '')]]
-    ) ?>
-  </div>
-
-</div>
-
 
 </div>

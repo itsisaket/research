@@ -26,13 +26,13 @@ class ArticleController extends Controller
                 ],
                 'rules' => [
                     [
-                        'actions' => ['index', 'error', 'view'],
+                        'actions' => ['index', 'error'],
                         'allow'   => true,
                         'roles'   => ['?', '@'],
                     ],
                     [
                         'actions' => [
-                            'create', 'update', 'delete',
+                            'view', 'create', 'update', 'delete',
                             'add-contributors', 'delete-contributor', 'update-contributor-pct'
                         ],
                         'allow'   => true,

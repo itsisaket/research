@@ -28,7 +28,7 @@ class UtilizationController extends Controller
                 ],
                 'rules' => [
                     [
-                        'actions' => ['index', 'error', 'view'],
+                        'actions' => ['index', 'error'],
                         'allow'   => true,
                         'roles'   => ['?', '@'],
                     ],
@@ -38,7 +38,7 @@ class UtilizationController extends Controller
                         'roles'   => ['@'],
                     ],
                     [
-                        'actions' => ['create', 'update','delete'],
+                        'actions' => ['view', 'create', 'update','delete'],
                         'allow'   => true,
                         'roles'   => [1, 4],
                     ],

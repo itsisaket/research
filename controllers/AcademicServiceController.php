@@ -19,13 +19,13 @@ class AcademicServiceController extends Controller
                 'rules' => [
                     // ทุกคนดูได้
                     [
-                        'actions' => ['index', 'view', 'error'],
+                        'actions' => ['index',  'error'],
                         'allow'   => true,
                         'roles'   => ['?', '@'],
                     ],
                     // ต้อง login และเป็น position 1 หรือ 4
                     [
-                        'actions' => ['create', 'update', 'delete'],
+                        'actions' => ['view','create', 'update', 'delete'],
                         'allow'   => true,
                         'roles'   => ['@'],
                         'matchCallback' => function () {
