@@ -36,7 +36,22 @@ class AccountSearch extends Account
             'query' => $query,
             'pagination' => ['pageSize' => 20],
             'sort' => [
-                'defaultOrder' => ['dayup' => SORT_DESC],
+                'defaultOrder' => [
+                    'org_id'    => SORT_ASC,
+                    'uname'  => SORT_ASC,
+                ],
+                'attributes' => [
+                    'uid',
+                    'username',
+                    'uname',
+                    'luname',
+                    'org_id',
+                    'dept_code',
+                    'position',
+                    'email',
+                    'tel',
+                    'dayup',
+                ],
             ],
         ]);
 

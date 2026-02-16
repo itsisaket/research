@@ -70,40 +70,37 @@ $profileMap = $profileMap ?? [];
                         return $start + $index + 1;
                     }
                 ],
+                
                 [
-                  'label' => 'ชื่อ - สกุล',
-                  'format' => 'raw',
-                  'value' => function($model) use ($profileMap){
+                'attribute' => 'uname',   // ✅ ทำให้คลิกหัวตารางเพื่อ sort ได้
+                'label' => 'ชื่อ - สกุล',
+                'format' => 'raw',
+                'value' => function($model) use ($profileMap){
+                    $p = $profileMap[$model->username] ?? null;
 
-                      $p = $profileMap[$model->username] ?? null;
+                    $academic = '';
+                    $name = '';
 
-                      $full = '';
+                    if (is_array($p)) {
+                        $academic = trim((string)($p['academic_type_name'] ?? ''));
+                        $name     = trim(($p['first_name'] ?? '').' '.($p['last_name'] ?? ''));
+                    }
 
-                      if (is_array($p)) {
-                          $academic = trim((string)($p['academic_type_name'] ?? ''));
-                          $name     = trim(($p['first_name'] ?? '').' '.($p['last_name'] ?? ''));
+                    $full = ($name !== '') ? trim($academic.' '.$name) : '';
 
-                          if ($name !== '') {
-                              $full = trim($academic.' '.$name);
-                          }
-                      }
+                    // fallback ใช้ uname + luname
+                    if ($full === '') {
+                        $name2 = trim($model->uname.' '.$model->luname);
+                        $full  = $name2 !== '' ? $name2 : '-';
+                    }
 
-                      // 🔁 fallback ใช้ uname + luname (ไม่มี prefix)
-                      if ($full === '') {
-                          $name2 = trim($model->uname.' '.$model->luname);
-                          $full  = $name2 !== '' ? $name2 : '-';
-                      }
+                    return Html::a(Html::encode($full), ['view','id'=>$model->uid], [
+                        'class'=>'fw-semibold text-decoration-none',
+                        'data-pjax'=>0
+                    ]);
+                }
+              ],
 
-                      return Html::a(
-                          Html::encode($full),
-                          ['view','id'=>$model->uid],
-                          [
-                              'class'=>'fw-semibold text-decoration-none',
-                              'data-pjax'=>0
-                          ]
-                      );
-                  }
-                ],
 
 
                 [
