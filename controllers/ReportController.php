@@ -15,7 +15,7 @@ use app\models\Utilization;
 use app\models\AcademicService;
 use app\models\WorkContributor;
 
-// ใช้ใน actionIndex เดิมของคุณ
+// สำหรับ actionIndex เดิมของคุณ (ถ้าคุณใช้)
 use app\models\Organize;
 use app\models\Restype;
 use app\models\Resstatus;
@@ -29,7 +29,7 @@ class ReportController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                // ✅ เปิดให้เรียกได้ทุกคน แต่คุมด้วย HMAC ใน actionLascApi()
+                // ✅ เปิดให้ทุกคนเรียกได้ แต่คุมด้วย HMAC ใน actionLascApi()
                 'rules' => [
                     [
                         'actions' => ['index', 'lasc-api'],
@@ -50,13 +50,13 @@ class ReportController extends Controller
         ];
     }
 
-    // =========================
-    // (เดิม) actionIndex ของคุณ
-    // =========================
+    /**
+     * actionIndex: คง logic เดิมของคุณไว้ได้เลย
+     * (ถ้าคุณมี actionIndex ยาวอยู่แล้ว ให้คงของเดิมไว้)
+     */
     public function actionIndex()
     {
-        // ✅ คุณใช้ actionIndex ยาวมากอยู่แล้ว ให้คงของเดิมได้
-        // ที่นี่ผมไม่แตะ เพื่อไม่ทำให้กราฟ/สรุปเสีย
+        // ✅ ใส่โค้ด actionIndex เดิมของคุณไว้ตรงนี้ (กราฟ/สรุป ฯลฯ)
         return $this->render('index');
     }
 
@@ -74,10 +74,11 @@ class ReportController extends Controller
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $s)) return $s;                 // yyyy-mm-dd
         if (preg_match('/^\d{2}-\d{2}-\d{4}$/', $s)) {                          // dd-mm-yyyy
             [$d, $m, $y] = explode('-', $s);
-            return "$y-$m-$d";
+            return $y . '-' . $m . '-' . $d;
         }
         if (preg_match('/^\d{4}-\d{2}-\d{2}\s+/', $s)) return substr($s, 0, 10); // datetime -> date
-        return $s; // fallback
+
+        return $s;
     }
 
     /** rate limit กันยิงถี่ (ต่อ IP) */
@@ -85,40 +86,44 @@ class ReportController extends Controller
     {
         $cacheKey = 'lasc_api_' . $key;
         $n = (int)Yii::$app->cache->get($cacheKey);
+
         if ($n <= 0) {
             Yii::$app->cache->set($cacheKey, 1, $seconds);
             return true;
         }
         if ($n >= $limit) return false;
+
         Yii::$app->cache->set($cacheKey, $n + 1, $seconds);
         return true;
     }
 
-    /** คืน array ของ model relation แบบ “เต็ม” (ทุกคอลัมน์) หรือ null */
+    /** แปลง ActiveRecord relation -> attributes(full row) */
     private function relToArray($rel): ?array
     {
         if (!$rel) return null;
-        // ActiveRecord -> attributes ทั้งหมด
+
         if (is_object($rel) && method_exists($rel, 'getAttributes')) {
             return $rel->getAttributes();
         }
-        // asArray() แล้วอาจได้เป็น array อยู่แล้ว
         if (is_array($rel)) return $rel;
+
         return null;
     }
 
     /**
      * LASC API (JSON) - FULL RELATIONS
      *
-     * - HMAC: sig = HMAC_SHA256(username|ts, params['lascApiKey'])
-     * - field หลักตามสเปกของคุณ + แนบ relation objects แบบเต็ม
+     * รับ:
+     *  - username|personal_id|id
+     *  - ts (unix time)
+     *  - sig = HMAC_SHA256(username|ts, params['lascApiKey'])
      *
-     * Output:
-     * account: username, uname, luname + org(full)
-     * latest.research: fields ที่กำหนด + fundingAgency(full) + researchType(full) + researchFund(full) + role/pct
-     * latest.article:  fields ที่กำหนด + publication(full) + role/pct
-     * latest.utilization: fields ที่กำหนด + utilizationType(full)
-     * latest.academic_service: fields ที่กำหนด + serviceType(full)
+     * ส่ง:
+     *  - account: username, uname, luname, org_id + org(full)
+     *  - latest.research: fields ตามสเปก + fundingAgency(full) + researchType(full) + researchFund(full) + role/pct
+     *  - latest.article: fields ตามสเปก + publication(full) + role/pct
+     *  - latest.utilization: fields ตามสเปก + utilizationType(full)
+     *  - latest.academic_service: fields ตามสเปก + serviceType(full)
      */
     public function actionLascApi($username = null, $personal_id = null, $id = null)
     {
@@ -138,9 +143,11 @@ class ReportController extends Controller
 
         // ---------- resolve username ----------
         $u = null;
+
         if ($username !== null && trim($username) !== '') {
             $u = trim((string)$username);
         } elseif ($personal_id !== null && trim($personal_id) !== '') {
+            // ในระบบคุณ personal_id = username
             $u = trim((string)$personal_id);
         } elseif ($id !== null) {
             $acc = Account::findOne((int)$id);
@@ -180,7 +187,7 @@ class ReportController extends Controller
             return ['success' => false, 'message' => 'Unauthorized: signature expired'];
         }
 
-        $payload  = $u . '|' . $tsInt;
+        $payload  = $u . '|' . $tsInt; // MUST match client
         $expected = hash_hmac('sha256', $payload, $secret);
 
         if (!hash_equals($expected, $sig)) {
@@ -189,10 +196,10 @@ class ReportController extends Controller
         }
 
         // =========================================================
-        // 1) Account + Org(full)
+        // 1) Account + Org(full)  (Account relation: hasorg)
         // =========================================================
         $accountAR = Account::find()
-            ->with(['hasorg']) // Organize
+            ->with(['hasorg'])
             ->where(['username' => $u])
             ->one();
 
@@ -210,8 +217,8 @@ class ReportController extends Controller
         ];
 
         // =========================================================
-        // 2) ดึง WorkContributor ของ "คนนี้" เฉพาะ ref_type ที่ต้องใช้
-        //     ทำ map สำหรับ research/article: [ref_type][ref_id] => role/pct
+        // 2) WorkContributor map (เฉพาะ role/pct ของ “คนที่ query”)
+        //    ทำไว้สำหรับ research/article
         // =========================================================
         $wcRows = WorkContributor::find()
             ->select(['ref_type', 'ref_id', 'role_code', 'contribution_pct', 'sort_order'])
@@ -227,11 +234,11 @@ class ReportController extends Controller
         ];
 
         foreach ($wcRows as $wc) {
-            $t = (string)($wc['ref_type'] ?? '');
+            $t   = (string)($wc['ref_type'] ?? '');
             $rid = (int)($wc['ref_id'] ?? 0);
             if ($rid <= 0 || !isset($wcMap[$t])) continue;
 
-            // เอาแถวแรกเป็นค่า (กันซ้ำ)
+            // เอาแถวแรกเป็นค่า (ถ้ามีหลายแถว)
             if (!isset($wcMap[$t][$rid])) {
                 $wcMap[$t][$rid] = [
                     'role_code_form' => $wc['role_code'] ?? null,
@@ -242,10 +249,10 @@ class ReportController extends Controller
 
         // =========================================================
         // 3) latest.research + relations full
-        //    ใช้ relations ที่คุณมีแล้วใน Researchpro:
-        //      - getAgencys()   => ResGency
-        //      - getRestypes()  => Restype
-        //      - getResFunds()  => ResFund
+        //    Researchpro relations ที่มีอยู่จริงในไฟล์คุณ:
+        //      - agencys   (ResGency)
+        //      - restypes  (Restype)
+        //      - resFunds  (ResFund)
         // =========================================================
         $researchARs = Researchpro::find()
             ->with(['agencys', 'restypes', 'resFunds'])
@@ -273,7 +280,7 @@ class ReportController extends Controller
                 'role_code_form'    => $wcMap['researchpro'][$rid]['role_code_form'] ?? null,
                 'pct_form'          => $wcMap['researchpro'][$rid]['pct_form'] ?? null,
 
-                // ✅ FULL RELATIONS
+                // ✅ FULL RELATIONS (ทั้งแถว)
                 'fundingAgency' => $this->relToArray($m->agencys),
                 'researchType'  => $this->relToArray($m->restypes),
                 'researchFund'  => $this->relToArray($m->resFunds),
@@ -282,7 +289,7 @@ class ReportController extends Controller
 
         // =========================================================
         // 4) latest.article + publication(full)
-        //    Article มี relation: getPubli() => Publication
+        //    Article relation ที่มีอยู่จริงในไฟล์คุณ: publi (Publication)
         // =========================================================
         $articleARs = Article::find()
             ->with(['publi'])
@@ -314,7 +321,7 @@ class ReportController extends Controller
 
         // =========================================================
         // 5) latest.utilization + utilizationType(full)
-        //    Utilization มี relation: getUtilization() => Utilization_type
+        //    Utilization relation ที่มีอยู่จริงในไฟล์คุณ: utilization (Utilization_type)
         // =========================================================
         $utilARs = Utilization::find()
             ->with(['utilization'])
@@ -341,7 +348,7 @@ class ReportController extends Controller
 
         // =========================================================
         // 6) latest.academic_service + serviceType(full)
-        //    AcademicService มี relation: getServiceType() => AcademicServiceType
+        //    AcademicService relation ที่มีอยู่จริงในไฟล์คุณ: serviceType (AcademicServiceType)
         // =========================================================
         $serviceARs = AcademicService::find()
             ->with(['serviceType'])
