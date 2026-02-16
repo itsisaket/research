@@ -35,7 +35,7 @@ class ReportController extends Controller
                     [
                         'actions' => ['index', 'lasc-api'],
                         'allow'   => true,
-                        'roles'   => ['@', '?'], // @ = login แล้ว, ? = guest
+                        'roles'   => ['?'], // @ = login แล้ว, ? = guest
                     ],
                 ],
 
