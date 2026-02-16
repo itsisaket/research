@@ -418,14 +418,12 @@ class ReportController extends Controller
             'message' => 'LASC API profile retrieved successfully',
             'query' => ['username' => $u, 'ts' => $tsInt],
             'account' => [
-                'uid'       => (int)$account->uid,
                 'username'  => (string)$account->username,
                 'uname'     => (string)$account->uname,
                 'luname'    => (string)$account->luname,
                 'org_id'    => (int)$account->org_id,
                 'dept_code' => (int)$account->dept_code,
                 'position'  => (int)$account->position,
-                'dayup'     => (string)$account->dayup,
             ],
             'kpi' => [
                 'research' => $cntResearch,
