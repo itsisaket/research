@@ -157,7 +157,7 @@ class AcademicService extends ActiveRecord
     {
         $u = $this->user;
         if (!$u) return $this->username;
-        $name = trim(($u->prefix ?? '') . ($u->uname ?? '') . ' ' . ($u->luname ?? ''));
+        $name = trim(($u->uname ?? '') . ' ' . ($u->luname ?? ''));
         return $name !== '' ? $name : $this->username;
     }
     public function getUser()
