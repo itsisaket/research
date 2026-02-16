@@ -242,4 +242,26 @@ public function rules()
     {
         return $this->hasOne(Position::className(), ['positionid' => 'position']);
     }
+
+    public function syncProfileFromAuthen(): bool
+    {
+        $pid = (string)$this->personal_id;
+        if ($pid === '') return false;
+
+        $p = Yii::$app->sciAuthen->getProfileByPersonalId($pid);
+        if (!$p) return false;
+
+        // map เฉพาะที่ต้องการ
+        $this->academic_type_name = $p['academic_type_name'] ?? $this->academic_type_name;
+        $this->first_name         = $p['first_name'] ?? $this->first_name;
+        $this->last_name          = $p['last_name'] ?? $this->last_name;
+        $this->dept_name          = $p['dept_name'] ?? $this->dept_name;
+        $this->faculty_name       = $p['faculty_name'] ?? $this->faculty_name;
+
+        // ถ้าคุณอยาก sync title ด้วยก็เพิ่มได้
+        // $this->title_name = $p['title_name'] ?? $this->title_name;
+
+        return true;
+    }
+
 }

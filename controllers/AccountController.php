@@ -9,6 +9,7 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
+use yii\web\Response;;
 
 use app\models\Researchpro;
 use app\models\Article;
@@ -60,6 +61,21 @@ class AccountController extends Controller
         ];
     }
 
+    public function actionSyncProfile($id)
+    {
+        $model = Account::findOne($id);
+        if (!$model) throw new NotFoundHttpException('ไม่พบผู้ใช้');
+
+        if ($model->syncProfileFromAuthen()) {
+            // save เฉพาะฟิลด์ที่ sync (กันกระทบ validation อื่น)
+            $ok = $model->save(false, ['academic_type_name','first_name','last_name','dept_name','faculty_name']);
+            Yii::$app->session->setFlash($ok ? 'success' : 'error', $ok ? 'Sync สำเร็จ' : 'Sync แล้วแต่บันทึกไม่สำเร็จ');
+        } else {
+            Yii::$app->session->setFlash('warning', 'ไม่พบข้อมูลจาก API หรือ personal_id ว่าง');
+        }
+
+        return $this->redirect(['index']);
+    }
 
     public function actionIndex()
     {
