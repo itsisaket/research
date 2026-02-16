@@ -7,6 +7,10 @@ use yii\web\Controller;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 
+use yii\web\Response;
+use app\models\WorkContributor;
+use app\models\Utilization;
+
 use app\models\Researchpro;
 use app\models\Account;
 use app\models\Organize;
@@ -29,11 +33,12 @@ class ReportController extends Controller
                 'class' => AccessControl::class,
                 'rules' => [
                     [
-                        'actions' => ['index'],
+                        'actions' => ['index', 'lasc-api'],
                         'allow'   => true,
                         'roles'   => ['@', '?'], // @ = login แล้ว, ? = guest
                     ],
                 ],
+
             ],
             'verbs' => [
                 'class'   => VerbFilter::class,
@@ -322,4 +327,134 @@ class ReportController extends Controller
             'fundingTotalNonZero' => $fundingTotalNonZero,
         ]);
     }
+
+    public function actionLascApi($username = null, $personal_id = null, $id = null)
+{
+    Yii::$app->response->format = Response::FORMAT_JSON;
+
+    // -----------------------------
+    // 1) resolve username/personal_id
+    // -----------------------------
+    $u = null;
+
+    if ($username !== null && trim($username) !== '') {
+        $u = trim((string)$username);
+    } elseif ($personal_id !== null && trim($personal_id) !== '') {
+        $u = trim((string)$personal_id); // ในระบบคุณ personal_id = username
+    } elseif ($id !== null) {
+        $acc = Account::findOne((int)$id);
+        if (!$acc) {
+            Yii::$app->response->statusCode = 404;
+            return ['success' => false, 'message' => 'Account not found'];
+        }
+        $u = (string)$acc->username;
+    }
+
+    if ($u === null || $u === '') {
+        Yii::$app->response->statusCode = 400;
+        return ['success' => false, 'message' => 'Missing parameter: username or personal_id or id'];
+    }
+
+    // -----------------------------
+    // 2) ตรวจว่า account มีจริง
+    // -----------------------------
+    $account = Account::find()->where(['username' => $u])->one();
+    if (!$account) {
+        Yii::$app->response->statusCode = 404;
+        return ['success' => false, 'message' => 'Account not found for username/personal_id'];
+    }
+
+    // -----------------------------
+    // 3) Latest (เจ้าของล่าสุด)
+    // -----------------------------
+    $researchLatest = Researchpro::find()
+        ->where(['username' => $u])
+        ->orderBy([Researchpro::primaryKey()[0] => SORT_DESC])
+        ->limit(10)->asArray()->all();
+
+    $articleLatest = Article::find()
+        ->where(['username' => $u])
+        ->orderBy([Article::primaryKey()[0] => SORT_DESC])
+        ->limit(10)->asArray()->all();
+
+    $utilLatest = Utilization::find()
+        ->where(['username' => $u])
+        ->orderBy([Utilization::primaryKey()[0] => SORT_DESC])
+        ->limit(10)->asArray()->all();
+
+    $serviceLatest = AcademicService::find()
+        ->where(['username' => $u])
+        ->orderBy([AcademicService::primaryKey()[0] => SORT_DESC])
+        ->limit(10)->asArray()->all();
+
+    // -----------------------------
+    // 4) KPI รวม (เจ้าของ + ผู้ร่วม) แบบกันซ้ำ
+    // -----------------------------
+    $researchPk = Researchpro::primaryKey()[0];
+    $articlePk  = Article::primaryKey()[0];
+    $utilPk     = Utilization::primaryKey()[0];
+    $servicePk  = AcademicService::primaryKey()[0];
+
+    $ownResearchIds = Researchpro::find()->select($researchPk)->where(['username' => $u]);
+    $contribResearchIds = WorkContributor::find()->select('ref_id')->where(['username'=>$u,'ref_type'=>'researchpro']);
+    $cntResearch = (int)Researchpro::find()->where(['or',
+        ['in', $researchPk, $ownResearchIds],
+        ['in', $researchPk, $contribResearchIds],
+    ])->distinct()->count();
+
+    $ownArticleIds = Article::find()->select($articlePk)->where(['username' => $u]);
+    $contribArticleIds = WorkContributor::find()->select('ref_id')->where(['username'=>$u,'ref_type'=>'article']);
+    $cntArticle = (int)Article::find()->where(['or',
+        ['in', $articlePk, $ownArticleIds],
+        ['in', $articlePk, $contribArticleIds],
+    ])->distinct()->count();
+
+    $ownUtilIds = Utilization::find()->select($utilPk)->where(['username' => $u]);
+    $contribUtilIds = WorkContributor::find()->select('ref_id')->where(['username'=>$u,'ref_type'=>'utilization']);
+    $cntUtil = (int)Utilization::find()->where(['or',
+        ['in', $utilPk, $ownUtilIds],
+        ['in', $utilPk, $contribUtilIds],
+    ])->distinct()->count();
+
+    $ownServiceIds = AcademicService::find()->select($servicePk)->where(['username' => $u]);
+    $contribServiceIds = WorkContributor::find()->select('ref_id')->where(['username'=>$u,'ref_type'=>'academic_service']);
+    $cntService = (int)AcademicService::find()->where(['or',
+        ['in', $servicePk, $ownServiceIds],
+        ['in', $servicePk, $contribServiceIds],
+    ])->distinct()->count();
+
+    // -----------------------------
+    // 5) Return JSON
+    // -----------------------------
+    return [
+        'success' => true,
+        'message' => 'LASC API profile retrieved successfully',
+        'query' => ['username' => $u],
+        'account' => [
+            'uid'       => (int)$account->uid,
+            'username'  => (string)$account->username,
+            'uname'     => (string)$account->uname,
+            'luname'    => (string)$account->luname,
+            'org_id'    => (int)$account->org_id,
+            'dept_code' => (int)$account->dept_code,
+            'position'  => (int)$account->position,
+            'email'     => (string)$account->email,
+            'tel'       => (string)$account->tel,
+            'dayup'     => (string)$account->dayup,
+        ],
+        'kpi' => [
+            'research' => $cntResearch,
+            'article'  => $cntArticle,
+            'utilization' => $cntUtil,
+            'academic_service' => $cntService,
+        ],
+        'latest' => [
+            'research' => $researchLatest,
+            'article'  => $articleLatest,
+            'utilization' => $utilLatest,
+            'academic_service' => $serviceLatest,
+        ],
+    ];
+}
+
 }
