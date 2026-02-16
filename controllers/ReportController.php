@@ -31,22 +31,27 @@ class ReportController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
+                'ruleConfig' => [
+                    'class' => \app\components\HanumanRule::class,
+                ],
                 'rules' => [
                     [
-                        'actions' => ['index', 'lasc-api'],
+                        'actions' => ['index','lasc-api', 'LascApi'],
                         'allow'   => true,
-                        'roles'   => ['?'], // @ = login แล้ว, ? = guest
+                        'roles'   => ['?', '@'],
                     ],
                 ],
-
             ],
             'verbs' => [
-                'class'   => VerbFilter::class,
-                'actions' => [],
+                'class' => VerbFilter::class,
+                'actions' => [
+                    'delete' => ['POST'],
+                    'delete-contributor' => ['POST'],
+                    'update-contributor-pct' => ['POST'],
+                ],
             ],
         ];
     }
-
     public function actionIndex()
     {
         $user        = Yii::$app->user->identity;
