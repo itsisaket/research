@@ -101,6 +101,11 @@ $config = [
             'class' => \app\components\ApiAuthService::class,
         ],
 
+        //
+        'sciProfile' => [
+            'class' => \app\components\SciProfileService::class,
+            'ttl' => 86400,
+        ],
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],

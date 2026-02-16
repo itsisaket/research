@@ -11,6 +11,9 @@ $this->params['breadcrumbs'][] = $this->title;
 $identity = Yii::$app->user->identity;
 $isAdmin = ($identity instanceof \app\models\Account) && ((int)$identity->position === 4);
 
+/* @var $profileMap array */
+$profileMap = $profileMap ?? [];
+
 ?>
 <div class="account-index container-fluid">
 
@@ -68,30 +71,61 @@ $isAdmin = ($identity instanceof \app\models\Account) && ((int)$identity->positi
                     }
                 ],
                 [
-                    'label' => 'ชื่อ - สกุล',
-                    'format' => 'raw',
-                    'value' => function($model){
-                        $prefix = $model->hasprefix ? $model->hasprefix->prefixname : '';
-                        $full   = trim($prefix.' '.$model->uname.' '.$model->luname);
-                        $full   = $full !== '' ? $full : '-';
+                  'label' => 'ชื่อ - สกุล',
+                  'format' => 'raw',
+                  'value' => function($model) use ($profileMap){
 
-                        return Html::a(
-                            Html::encode($full),
-                            ['view', 'id' => $model->uid],   // 👉 ลิงก์ไปหน้า view
-                            [
-                                'class' => 'fw-semibold text-decoration-none',
-                                'data-pjax' => 0,            // กัน pjax โหลดซ้อน
-                            ]
-                        );
-                    }
+                      $p = $profileMap[$model->username] ?? null;
+
+                      $full = '';
+
+                      if (is_array($p)) {
+                          $academic = trim((string)($p['academic_type_name'] ?? ''));
+                          $name     = trim(($p['first_name'] ?? '').' '.($p['last_name'] ?? ''));
+
+                          if ($name !== '') {
+                              $full = trim($academic.' '.$name);
+                          }
+                      }
+
+                      // 🔁 fallback ใช้ uname + luname (ไม่มี prefix)
+                      if ($full === '') {
+                          $name2 = trim($model->uname.' '.$model->luname);
+                          $full  = $name2 !== '' ? $name2 : '-';
+                      }
+
+                      return Html::a(
+                          Html::encode($full),
+                          ['view','id'=>$model->uid],
+                          [
+                              'class'=>'fw-semibold text-decoration-none',
+                              'data-pjax'=>0
+                          ]
+                      );
+                  }
                 ],
+
+
                 [
-                    'label' => 'สังกัด',
-                    'format' => 'raw',
-                    'value' => function($model){
-                        $org = $model->hasorg ? $model->hasorg->org_name : '-';
-                        return "<span class='text-body'>{$org}</span>";
-                    }
+                  'label' => 'สังกัด',
+                  'format' => 'raw',
+                  'value' => function($model) use ($profileMap){
+                      $p = $profileMap[$model->username] ?? null;
+
+                      if (is_array($p)) {
+                          $fac = trim((string)($p['faculty_name'] ?? ''));
+                          $dep = trim((string)($p['dept_name'] ?? ''));
+                          if ($fac !== '' || $dep !== '') {
+                              $html = '';
+                              if ($fac !== '') $html .= "<div class='fw-semibold'>".Html::encode($fac)."</div>";
+                              if ($dep !== '') $html .= "<div class='text-muted small'>".Html::encode($dep)."</div>";
+                              return $html;
+                          }
+                      }
+
+                      $org = $model->hasorg ? $model->hasorg->org_name : '-';
+                      return "<span class='text-body'>".Html::encode($org)."</span>";
+                  }
                 ],
                 [
                     'label' => 'สถานะ',

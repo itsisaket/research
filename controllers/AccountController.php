@@ -60,6 +60,7 @@ class AccountController extends Controller
         ];
     }
 
+
     public function actionIndex()
     {
         $session = Yii::$app->session;
@@ -72,11 +73,22 @@ class AccountController extends Controller
             $dataProvider->query->andWhere(['org_id' => $ty]);
         }
 
+        // ✅ username = personal_id
+        $models = $dataProvider->getModels();
+        $ids = [];
+        foreach ($models as $m) {
+            if (!empty($m->username)) $ids[] = (string)$m->username;
+        }
+
+        $profileMap = Yii::$app->sciProfile->getMap($ids);
+
         return $this->render('index', [
             'searchModel'  => $searchModel,
             'dataProvider' => $dataProvider,
+            'profileMap'   => $profileMap,
         ]);
     }
+
 
     /**
      * 1) รายชื่อเรื่องของผู้ใช้ (4 ตาราง)
