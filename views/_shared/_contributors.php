@@ -97,8 +97,9 @@ $returnUrl = Yii::$app->request->url;
           <!-- ซ้าย: บรรทัดเดียว -->
           <div class="text-truncate">
             <span class="fw-semibold"><?= Html::encode($fullName) ?></span>
+            <!-- รหัสบัตร 
             <span class="text-muted small">(<?= Html::encode($uname) ?>)</span>
-
+            -->
             <span class="badge bg-secondary ms-1"><?= Html::encode($roleText) ?></span>
 
             <?php if ($c->contribution_pct !== null && $c->contribution_pct !== ''): ?>
