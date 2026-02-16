@@ -142,7 +142,9 @@ $config = [
         'hrmApiBase' => 'https://sci-sskru.com/authen',
         'ssoLoginUrl'   => 'https://sci-sskru.com/hrm/login',
         'ssoProfileUrl' => 'https://sci-sskru.com/authen/profile', // POST + Bearer + {personal_id}
+        'lascApiKey' => 'lasc_keyAPI2569',
     ]),
+    
 ];
 
 

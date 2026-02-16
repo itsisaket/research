@@ -27,31 +27,7 @@ use app\models\AcademicService;
 class ReportController extends Controller
 {
     public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::class,
-                'ruleConfig' => [
-                    'class' => \app\components\HanumanRule::class,
-                ],
-                'rules' => [
-                    [
-                        'actions' => ['index','lasc-api', 'LascApi'],
-                        'allow'   => true,
-                        'roles'   => ['?', '@'],
-                    ],
-                ],
-            ],
-            'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'delete' => ['POST'],
-                    'delete-contributor' => ['POST'],
-                    'update-contributor-pct' => ['POST'],
-                ],
-            ],
-        ];
-    }
+
     public function actionIndex()
     {
         $user        = Yii::$app->user->identity;
@@ -337,15 +313,22 @@ class ReportController extends Controller
 {
     Yii::$app->response->format = Response::FORMAT_JSON;
 
-    // -----------------------------
-    // 1) resolve username/personal_id
-    // -----------------------------
+    // =========================================================
+    // 0) อ่านพารามิเตอร์ลายเซ็น (HMAC)
+    // =========================================================
+    $req = Yii::$app->request;
+    $ts  = (string)$req->get('ts', '');
+    $sig = (string)$req->get('sig', '');
+
+    // =========================================================
+    // 1) resolve username (personal_id = username ในระบบคุณ)
+    // =========================================================
     $u = null;
 
     if ($username !== null && trim($username) !== '') {
         $u = trim((string)$username);
     } elseif ($personal_id !== null && trim($personal_id) !== '') {
-        $u = trim((string)$personal_id); // ในระบบคุณ personal_id = username
+        $u = trim((string)$personal_id);
     } elseif ($id !== null) {
         $acc = Account::findOne((int)$id);
         if (!$acc) {
@@ -360,18 +343,53 @@ class ReportController extends Controller
         return ['success' => false, 'message' => 'Missing parameter: username or personal_id or id'];
     }
 
-    // -----------------------------
-    // 2) ตรวจว่า account มีจริง
-    // -----------------------------
+    // =========================================================
+    // 2) ตรวจ signature (ต้องมี ts + sig)
+    // =========================================================
+    $secret = (string)(Yii::$app->params['lascApiKey'] ?? '');
+    if ($secret === '') {
+        Yii::$app->response->statusCode = 500;
+        return ['success' => false, 'message' => 'Server misconfigured: missing lascApiKey'];
+    }
+
+    if ($ts === '' || $sig === '') {
+        Yii::$app->response->statusCode = 401;
+        return ['success' => false, 'message' => 'Unauthorized: missing ts or sig'];
+    }
+
+    $tsInt = (int)$ts;
+    if ($tsInt <= 0) {
+        Yii::$app->response->statusCode = 401;
+        return ['success' => false, 'message' => 'Unauthorized: invalid ts'];
+    }
+
+    // หมดอายุ 5 นาที (กัน replay)
+    if (abs(time() - $tsInt) > 300) {
+        Yii::$app->response->statusCode = 401;
+        return ['success' => false, 'message' => 'Unauthorized: signature expired'];
+    }
+
+    // payload ต้องตรงกับฝั่ง client: username|ts
+    $payload  = $u . '|' . $tsInt;
+    $expected = hash_hmac('sha256', $payload, $secret);
+
+    if (!hash_equals($expected, $sig)) {
+        Yii::$app->response->statusCode = 401;
+        return ['success' => false, 'message' => 'Unauthorized: invalid signature'];
+    }
+
+    // =========================================================
+    // 3) ตรวจว่า account มีจริง
+    // =========================================================
     $account = Account::find()->where(['username' => $u])->one();
     if (!$account) {
         Yii::$app->response->statusCode = 404;
         return ['success' => false, 'message' => 'Account not found for username/personal_id'];
     }
 
-    // -----------------------------
-    // 3) Latest (เจ้าของล่าสุด)
-    // -----------------------------
+    // =========================================================
+    // 4) Latest (เจ้าของล่าสุด)
+    // =========================================================
     $researchLatest = Researchpro::find()
         ->where(['username' => $u])
         ->orderBy([Researchpro::primaryKey()[0] => SORT_DESC])
@@ -392,9 +410,9 @@ class ReportController extends Controller
         ->orderBy([AcademicService::primaryKey()[0] => SORT_DESC])
         ->limit(10)->asArray()->all();
 
-    // -----------------------------
-    // 4) KPI รวม (เจ้าของ + ผู้ร่วม) แบบกันซ้ำ
-    // -----------------------------
+    // =========================================================
+    // 5) KPI รวม (เจ้าของ + ผู้ร่วม) แบบกันซ้ำ
+    // =========================================================
     $researchPk = Researchpro::primaryKey()[0];
     $articlePk  = Article::primaryKey()[0];
     $utilPk     = Utilization::primaryKey()[0];
@@ -428,13 +446,16 @@ class ReportController extends Controller
         ['in', $servicePk, $contribServiceIds],
     ])->distinct()->count();
 
-    // -----------------------------
-    // 5) Return JSON
-    // -----------------------------
+    // =========================================================
+    // 6) Return JSON (แนะนำ: ตัด email/tel ถ้าเป็น public)
+    // =========================================================
     return [
         'success' => true,
         'message' => 'LASC API profile retrieved successfully',
-        'query' => ['username' => $u],
+        'query' => [
+            'username' => $u,
+            'ts' => $tsInt,
+        ],
         'account' => [
             'uid'       => (int)$account->uid,
             'username'  => (string)$account->username,
@@ -443,9 +464,10 @@ class ReportController extends Controller
             'org_id'    => (int)$account->org_id,
             'dept_code' => (int)$account->dept_code,
             'position'  => (int)$account->position,
-            'email'     => (string)$account->email,
-            'tel'       => (string)$account->tel,
             'dayup'     => (string)$account->dayup,
+            // ถ้าต้องการคืน email/tel ให้ปลดคอมเมนต์ (แต่แนะนำไม่คืนถ้า public)
+            // 'email'     => (string)$account->email,
+            // 'tel'       => (string)$account->tel,
         ],
         'kpi' => [
             'research' => $cntResearch,
@@ -461,5 +483,6 @@ class ReportController extends Controller
         ],
     ];
 }
+
 
 }
