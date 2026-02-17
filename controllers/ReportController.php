@@ -358,74 +358,127 @@ class ReportController extends Controller
         return true;
     }
 
-    private function relToArray($rel): ?array
-    {
-        if (!$rel) return null;
-        if (is_object($rel) && method_exists($rel, 'getAttributes')) {
-            return $rel->getAttributes();
-        }
-        if (is_array($rel)) return $rel;
-        return null;
+private function relToArrayFull($rel)
+{
+    if (!$rel) return null;
+
+    // hasOne AR
+    if (is_object($rel) && method_exists($rel, 'getAttributes')) {
+        return $rel->getAttributes();
     }
 
-public function actionLascApi($username = null)
+    // hasMany array of ARs
+    if (is_array($rel)) {
+        $out = [];
+        foreach ($rel as $item) {
+            if (is_object($item) && method_exists($item, 'getAttributes')) {
+                $out[] = $item->getAttributes();
+            } else {
+                $out[] = $item;
+            }
+        }
+        return $out;
+    }
+
+    return null;
+}
+
+private function serializeModelWithRelations($m, array $relations, string $queryUsername): array
+{
+    $data = $m->getAttributes();
+
+    $ownerUsername = isset($data['username']) ? (string)$data['username'] : '';
+    $isOwner = ($ownerUsername !== '' && $ownerUsername === $queryUsername);
+
+    // ✅ ไม่เปิดเผยเจ้าของงานถ้าไม่ใช่ตัวเอง
+    if (!$isOwner && array_key_exists('username', $data)) {
+        $data['username'] = null; // หรือจะ unset($data['username']) ก็ได้
+    }
+
+    foreach ($relations as $relName) {
+        // ✅ ถ้าไม่ใช่ owner ห้ามคืนข้อมูลบุคคลของเจ้าของงาน
+        if (!$isOwner && $relName === 'user') {
+            continue;
+        }
+        $data[$relName] = $this->relToArrayFull($m->$relName);
+    }
+
+    return $data;
+}
+
+public function actionLascApi($username = null, $personal_id = null, $id = null)
 {
     Yii::$app->response->format = Response::FORMAT_JSON;
     $req = Yii::$app->request;
 
-    $u = trim((string)$username);
-    if ($u === '') {
+    // ---------- resolve username ----------
+    $u = null;
+    if ($username !== null && trim($username) !== '') {
+        $u = trim((string)$username);
+    } elseif ($personal_id !== null && trim($personal_id) !== '') {
+        $u = trim((string)$personal_id);
+    } elseif ($id !== null) {
+        $acc = Account::findOne((int)$id);
+        if (!$acc) {
+            Yii::$app->response->statusCode = 404;
+            return ['success' => false, 'message' => 'Account not found'];
+        }
+        $u = (string)$acc->username;
+    }
+    if ($u === null || $u === '') {
         Yii::$app->response->statusCode = 400;
-        return ['success' => false, 'message' => 'Missing username'];
+        return ['success' => false, 'message' => 'Missing parameter: username or personal_id or id'];
     }
 
-    // ===============================
-    // Verify Signature
-    // ===============================
+    // ---------- verify signature ----------
     $ts  = (string)$req->get('ts', '');
     $sig = (string)$req->get('sig', '');
-    $secret = Yii::$app->params['lascApiKey'] ?? '';
+    $secret = (string)(Yii::$app->params['lascApiKey'] ?? '');
 
     if ($secret === '' || $ts === '' || $sig === '') {
         Yii::$app->response->statusCode = 401;
-        return ['success' => false, 'message' => 'Unauthorized'];
+        return ['success' => false, 'message' => 'Unauthorized: missing ts or sig'];
     }
 
-    if (abs(time() - (int)$ts) > 300) {
+    $tsInt = (int)$ts;
+    if ($tsInt <= 0 || abs(time() - $tsInt) > 300) {
         Yii::$app->response->statusCode = 401;
-        return ['success' => false, 'message' => 'Signature expired'];
+        return ['success' => false, 'message' => 'Unauthorized: signature expired/invalid ts'];
     }
 
-    $expected = hash_hmac('sha256', $u . '|' . $ts, $secret);
+    $expected = hash_hmac('sha256', $u . '|' . $tsInt, $secret);
     if (!hash_equals($expected, $sig)) {
         Yii::$app->response->statusCode = 401;
-        return ['success' => false, 'message' => 'Invalid signature'];
+        return ['success' => false, 'message' => 'Unauthorized: invalid signature'];
     }
 
-    // ===============================
-    // Account
-    // ===============================
-    $account = Account::find()
-        ->with(['hasorg'])
-        ->where(['username' => $u])
-        ->one();
-
-    if (!$account) {
+    // =========================================================
+    // Account + org(full) (เฉพาะคนนี้)
+    // =========================================================
+    $accountAR = Account::find()->with(['hasorg'])->where(['username' => $u])->one();
+    if (!$accountAR) {
         Yii::$app->response->statusCode = 404;
-        return ['success' => false, 'message' => 'Account not found'];
+        return ['success' => false, 'message' => 'Account not found for username'];
     }
 
-    $accountData = [
-        'username' => $account->username,
-        'uname'    => $account->uname,
-        'luname'   => $account->luname,
-        'org'      => $account->hasorg ? $account->hasorg->getAttributes() : null,
+    $accountOut = [
+        'username' => (string)$accountAR->username,
+        'uname'    => (string)$accountAR->uname,
+        'luname'   => (string)$accountAR->luname,
+        'org_id'   => (int)$accountAR->org_id,
+        'org'      => $this->relToArrayFull($accountAR->hasorg),
     ];
 
-    // ===============================
-    // Helper: ดึงงาน owner + contributor
-    // ===============================
-    $getItems = function($modelClass, $refType, $pkField) use ($u) {
+    // =========================================================
+    // helper: owner + contributor ids แล้วคืน model + relations
+    // =========================================================
+    $getFullItems = function(
+        string $modelClass,
+        string $refType,
+        string $pkField,
+        array  $withRelations,
+        string $orderField
+    ) use ($u) {
 
         // owner ids
         $ownerIds = $modelClass::find()
@@ -433,76 +486,110 @@ public function actionLascApi($username = null)
             ->where(['username' => $u])
             ->column();
 
-        // contributor ids
-        $contributorRows = WorkContributor::find()
-            ->select(['ref_id','role_code','contribution_pct'])
-            ->where([
-                'ref_type' => $refType,
-                'username' => $u
-            ])
+        // contributor rows (เฉพาะของ username นี้)
+        $wcRows = WorkContributor::find()
+            ->select(['ref_id', 'role_code', 'contribution_pct', 'work_hours'])
+            ->where(['ref_type' => $refType, 'username' => $u])
             ->asArray()
             ->all();
 
-        $contributorIds = array_column($contributorRows, 'ref_id');
-
-        $allIds = array_unique(array_merge($ownerIds, $contributorIds));
+        $contribIds = array_map('intval', array_column($wcRows, 'ref_id'));
+        $allIds = array_values(array_unique(array_merge(array_map('intval', $ownerIds), $contribIds)));
 
         if (empty($allIds)) return [];
 
-        $models = $modelClass::find()
-            ->where([$pkField => $allIds])
-            ->orderBy([$pkField => SORT_DESC])
-            ->asArray()
-            ->all();
-
-        $contribMap = [];
-        foreach ($contributorRows as $row) {
-            $contribMap[$row['ref_id']] = [
-                'role_code' => $row['role_code'],
-                'contribution_pct' => (float)$row['contribution_pct']
-            ];
+        // map contributor row by ref_id
+        $wcMap = [];
+        foreach ($wcRows as $r) {
+            $wcMap[(int)$r['ref_id']] = $r;
         }
 
+        // fetch full ARs
+        $models = $modelClass::find()
+            ->with($withRelations)
+            ->where(['in', $pkField, $allIds])
+            ->orderBy([$orderField => SORT_DESC])
+            ->all();
+
         $out = [];
-
         foreach ($models as $m) {
-            $id = $m[$pkField];
+            $attrs = $this->serializeModelWithRelations($m, $withRelations, $u);
 
-            $isOwner = ($m['username'] === $u);
+            $id = (int)$m->$pkField;
+            $isOwner = ((string)($m->username ?? '') === $u);
 
-            $role = $isOwner ? 'owner' : ($contribMap[$id]['role_code'] ?? null);
-            $pct  = $isOwner ? 100 : ($contribMap[$id]['contribution_pct'] ?? null);
+            $myRole = $isOwner ? 'owner' : ($wcMap[$id]['role_code'] ?? null);
+            $myPct  = $isOwner ? 100.0   : (isset($wcMap[$id]['contribution_pct']) ? (float)$wcMap[$id]['contribution_pct'] : null);
+            $myHrs  = $isOwner ? null    : (isset($wcMap[$id]['work_hours']) ? (float)$wcMap[$id]['work_hours'] : null);
 
-            $m['my_role'] = $role;
-            $m['my_contribution_pct'] = $pct;
+            $attrs['my_is_owner'] = $isOwner;
+            $attrs['my_role'] = $myRole;
+            $attrs['my_contribution_pct'] = $myPct;
+            $attrs['my_work_hours'] = $myHrs;
 
-            unset($m['username']); // ไม่จำเป็นต้องคืน owner ซ้ำ
-
-            $out[] = $m;
+            $out[] = $attrs;
         }
 
         return $out;
     };
 
-    // ===============================
-    // ดึงข้อมูลแต่ละโมดูล
-    // ===============================
-    $research = $getItems(Researchpro::class, 'researchpro', 'projectID');
-    $article  = $getItems(Article::class, 'article', 'article_id');
-    $util     = $getItems(Utilization::class, 'utilization', 'utilization_id');
-    $service  = $getItems(AcademicService::class, 'academic_service', 'service_id');
+    // =========================================================
+    // ระบุ relations "แบบเต็ม" ตาม model ที่คุณมีจริง
+    // (อิงจากไฟล์โมเดลที่คุณอัปโหลด)
+    // =========================================================
+    $research = $getFullItems(
+        Researchpro::class,
+        'researchpro',
+        'projectID',
+        ['hasorg','dist','amph','prov','restypes','resstatuss','habranchs','resFunds','agencys','user'],
+        'projectID'
+    );
+
+    $article = $getFullItems(
+        Article::class,
+        'article',
+        'article_id',
+        ['hasorg','publi','habranch','haec','user'],
+        'article_id'
+    );
+
+    $utilization = $getFullItems(
+        Utilization::class,
+        'utilization',
+        'utilization_id',
+        ['hasorg','utilization','dist','amph','prov','user'],
+        'utilization_id'
+    );
+
+    $academicService = $getFullItems(
+        AcademicService::class,
+        'academic_service',
+        'service_id',
+        ['serviceType','user'],
+        'service_id'
+    );
 
     return [
         'success' => true,
-        'account' => $accountData,
+        'message' => 'LASC API profile retrieved successfully',
+        'meta' => [
+            'version' => '2.0-owner+contributor-full-relations-private',
+            'generated_at' => date('c'),
+        ],
+        'query' => [
+            'username' => $u,
+            'ts' => $tsInt,
+        ],
+        'account' => $accountOut,
         'data' => [
-            'research'         => $research,
-            'article'          => $article,
-            'utilization'      => $util,
-            'academic_service' => $service,
+            'research' => $research,
+            'article'  => $article,
+            'utilization' => $utilization,
+            'academic_service' => $academicService,
         ],
     ];
 }
+
 
 
 }
