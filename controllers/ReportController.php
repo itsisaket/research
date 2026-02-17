@@ -30,46 +30,58 @@ class ReportController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                // ✅ เปิดให้ทุกคนเรียกได้ แต่คุมด้วย HMAC ใน actionLascApi()
+                'ruleConfig' => [
+                    'class' => \app\components\HanumanRule::class,
+                ],
+                'only' => ['index'],
                 'rules' => [
                     [
-                        'actions' => ['index', 'lasc-api'],
+                        'actions' => ['index'],
                         'allow'   => true,
-                        'roles'   => ['?', '@'],
+                        'roles'   => ['?', '@'], // ✅ guest + login
                     ],
                 ],
+                'denyCallback' => function ($rule, $action) {
+                    Yii::warning([
+                        'route'   => $action->uniqueId,
+                        'action'  => $action->id,
+                        'isGuest' => Yii::$app->user->isGuest,
+                        'uid'     => Yii::$app->user->id,
+                        'ip'      => Yii::$app->request->userIP,
+                    ], 'ACCESS_DENIED_REPORT_INDEX');
+
+                    throw new \yii\web\ForbiddenHttpException('ไม่ได้รับอนุญาตให้เข้าถึงหน้านี้ (report/index)');
+                },
             ],
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
-                    'lasc-api' => ['GET'],
-                    'delete' => ['POST'],
-                    'delete-contributor' => ['POST'],
-                    'update-contributor-pct' => ['POST'],
+                    'index' => ['GET'],
                 ],
             ],
         ];
     }
 
 
-    /* =========================================================
-     * actionIndex (ตามโค้ดที่คุณส่งมา)
-     * ========================================================= */
+
     public function actionIndex()
     {
-        $user        = Yii::$app->user->identity;
-        $session     = Yii::$app->session;
-        $sessionOrg  = $session['ty'] ?? null;
-        $isSelfRole  = false;
+        $user       = Yii::$app->user->identity;      // อาจเป็น null
+        $isGuest    = Yii::$app->user->isGuest;
 
-        // position 1,2 เห็นเฉพาะของตัวเอง
-        if ($user && ((int)$user->position === 1 || (int)$user->position === 2)) {
+        $session    = Yii::$app->session;
+        $sessionOrg = $session['ty'] ?? null;
+
+        $isSelfRole = false;
+
+        // position 1,2 เห็นเฉพาะของตัวเอง (เฉพาะตอน login)
+        if (!$isGuest && $user && ((int)$user->position === 1 || (int)$user->position === 2)) {
             $isSelfRole = true;
         }
 
         /* =========================================================
-         * 1) กราฟ 5 ปีย้อนหลัง (จำนวนโครงการ + งบประมาณรายปี)
-         * ========================================================= */
+        * 1) กราฟ 5 ปีย้อนหลัง (จำนวนโครงการ + งบประมาณรายปี)
+        * ========================================================= */
         $seriesY        = [];
         $budgetSeriesY  = [];
         $categoriesY    = [];
@@ -89,7 +101,8 @@ class ReportController extends Controller
             if ($isSelfRole) {
                 $q->andWhere(['username' => $user->username]);
             } else {
-                if ($user && (int)$user->position !== 4) {
+                // ✅ guest ไม่กรอง org (ให้เห็นภาพรวม)
+                if (!$isGuest && $user && (int)$user->position !== 4) {
                     if (!empty($sessionOrg)) {
                         $q->andWhere(['org_id' => $sessionOrg]);
                     } elseif (!empty($user->org_id)) {
@@ -107,29 +120,34 @@ class ReportController extends Controller
         }
 
         /* =========================================================
-         * 2) กราฟแยกตามหน่วยงาน (Organize)
-         * ========================================================= */
+        * 2) กราฟแยกตามหน่วยงาน (Organize)
+        * ========================================================= */
         $seriesO     = [];
         $categoriesO = [];
 
         $orgQuery = Organize::find()->orderBy(['org_id' => SORT_ASC]);
-        if ($user && (int)$user->position !== 4 && !empty($sessionOrg)) {
+
+        // ✅ guest เห็นทุกหน่วยงาน
+        if (!$isGuest && $user && (int)$user->position !== 4 && !empty($sessionOrg)) {
             $orgQuery->andWhere(['org_id' => $sessionOrg]);
         }
+
         $orgs = $orgQuery->all();
 
         foreach ($orgs as $org) {
             $oq = Researchpro::find()->where(['org_id' => $org->org_id]);
+
             if ($isSelfRole) {
                 $oq->andWhere(['username' => $user->username]);
             }
+
             $seriesO[]     = (int) $oq->count();
             $categoriesO[] = $org->org_name;
         }
 
         /* =========================================================
-         * 3) กล่องสรุปบน (วิจัย/บทความ/แผนงาน/บริการ)
-         * ========================================================= */
+        * 3) กล่องสรุปบน (วิจัย/บทความ/แผนงาน/บริการ)
+        * ========================================================= */
         if ($isSelfRole) {
             $username = $user->username;
 
@@ -138,8 +156,9 @@ class ReportController extends Controller
             $counttype3 = AcademicService::find()->where(['username' => $username])->count();
             $counttype4 = Article::find()->where(['username' => $username])->count();
 
-            $countuser = trim($user->uname . ' ' . $user->luname);
+            $countuser = trim((string)$user->uname . ' ' . (string)$user->luname);
         } else {
+            // ✅ guest และคนอื่น ๆ เห็นรวมทั้งหมด
             $counttype1 = Researchpro::find()->where(['researchTypeID' => 1])->count();
             $counttype2 = Researchpro::find()->where(['researchTypeID' => 2])->count();
             $counttype3 = AcademicService::find()->count();
@@ -149,14 +168,15 @@ class ReportController extends Controller
         }
 
         /* =========================================================
-         * 4) สรุป 5 ประเด็นหลัก (รวมทุกปีที่มองเห็น)
-         * ========================================================= */
+        * 4) สรุป 5 ประเด็นหลัก (รวมทุกปีที่มองเห็น)
+        * ========================================================= */
         $baseQuery = Researchpro::find();
 
         if ($isSelfRole) {
             $baseQuery->andWhere(['username' => $user->username]);
         } else {
-            if ($user && (int)$user->position !== 4) {
+            // ✅ guest ไม่กรอง org
+            if (!$isGuest && $user && (int)$user->position !== 4) {
                 if (!empty($sessionOrg)) {
                     $baseQuery->andWhere(['org_id' => $sessionOrg]);
                 } elseif (!empty($user->org_id)) {
@@ -212,8 +232,8 @@ class ReportController extends Controller
         }
 
         /* =========================================================
-         * 5) แหล่งทุนรายปี (เฉพาะที่มีโครงการจริงในช่วง 5 ปี)
-         * ========================================================= */
+        * 5) แหล่งทุนรายปี (เฉพาะที่มีโครงการจริงในช่วง 5 ปี)
+        * ========================================================= */
         $agencyMap = ResGency::find()
             ->select(['fundingAgencyID', 'fundingAgencyName'])
             ->indexBy('fundingAgencyID')
@@ -238,7 +258,8 @@ class ReportController extends Controller
                 if ($isSelfRole) {
                     $aq->andWhere(['username' => $user->username]);
                 } else {
-                    if ($user && (int)$user->position !== 4) {
+                    // ✅ guest ไม่กรอง org
+                    if (!$isGuest && $user && (int)$user->position !== 4) {
                         if (!empty($sessionOrg)) {
                             $aq->andWhere(['org_id' => $sessionOrg]);
                         } elseif (!empty($user->org_id)) {
@@ -301,5 +322,7 @@ class ReportController extends Controller
             'fundingTotalNonZero' => $fundingTotalNonZero,
         ]);
     }
+
+
 
 }
