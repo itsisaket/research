@@ -7,6 +7,7 @@ use yii\web\Controller;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use yii\web\Response;
+use yii\web\ForbiddenHttpException;
 
 // Models (Index)
 use app\models\Researchpro;
@@ -25,8 +26,9 @@ use app\models\WorkContributor;
 
 class ReportController extends Controller
 {
-    public function beforeAction($action)
+     public function beforeAction($action)
     {
+        // API ใช้ GET + HMAC → ไม่ต้อง CSRF
         if ($action->id === 'lasc-api') {
             $this->enableCsrfValidation = false;
         }
@@ -38,15 +40,36 @@ class ReportController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only'  => ['index', 'lasc-api'],
+
+                // ✅ สำคัญ: ให้ AccessControl ใช้ HanumanRule
+                'ruleConfig' => [
+                    'class' => \app\components\HanumanRule::class,
+                ],
+
+                // ✅ จำกัดให้ filter เฉพาะ 2 action นี้พอ (กันไปบล็อกตัวอื่น)
+                'only' => ['index', 'lasc-api'],
+
                 'rules' => [
                     [
-                        'actions' => ['index', 'lasc-api'],
+                        'actions' => ['index','lasc-api'],
                         'allow'   => true,
-                        'roles'   => ['?', '@'],
+                        'roles'   => ['?', '@'], // guest + login
                     ],
                 ],
+
+                // ✅ ช่วย debug ถ้ายังโดนบล็อก
+                'denyCallback' => function ($rule, $action) {
+                    Yii::warning([
+                        'route' => $action->uniqueId,
+                        'action' => $action->id,
+                        'isGuest' => Yii::$app->user->isGuest,
+                        'uid' => Yii::$app->user->id,
+                        'ip' => Yii::$app->request->userIP,
+                    ], 'ACCESS_DENIED_REPORT');
+                    throw new ForbiddenHttpException('ไม่ได้รับอนุญาตให้เข้าถึงหน้านี้');
+                },
             ],
+
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
