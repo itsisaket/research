@@ -25,14 +25,20 @@ use app\models\WorkContributor;
 
 class ReportController extends Controller
 {
+    public function beforeAction($action)
+    {
+        if ($action->id === 'lasc-api') {
+            $this->enableCsrfValidation = false;
+        }
+        return parent::beforeAction($action);
+    }
+
     public function behaviors()
     {
         return [
             'access' => [
                 'class' => AccessControl::class,
-                // ✅ เปิดให้เรียกได้ แต่คุมด้วย HMAC ใน actionLascApi()
-                // ถ้าคุณใช้ HanumanRule อยู่แล้ว ให้เปิดบรรทัดนี้ได้
-                // 'ruleConfig' => ['class' => \app\components\HanumanRule::class],
+                'only'  => ['index', 'lasc-api'],
                 'rules' => [
                     [
                         'actions' => ['index', 'lasc-api'],
@@ -42,14 +48,15 @@ class ReportController extends Controller
                 ],
             ],
             'verbs' => [
-            'class' => VerbFilter::class,
-            'actions' => [
-                'lasc-api' => ['GET'],
-                'index'    => ['GET'],
-            ],
+                'class' => VerbFilter::class,
+                'actions' => [
+                    'index'    => ['GET'],
+                    'lasc-api' => ['GET'],
+                ],
             ],
         ];
     }
+
 
     /* =========================================================
      * actionIndex (ตามโค้ดที่คุณส่งมา)
