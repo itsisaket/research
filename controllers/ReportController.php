@@ -42,14 +42,11 @@ class ReportController extends Controller
                 ],
             ],
             'verbs' => [
-                'class' => VerbFilter::class,
-                'actions' => [
-                    'lasc-api' => ['GET'],
-                    // actions อื่น ๆ ของคุณ (ถ้ามี)
-                    'delete' => ['POST'],
-                    'delete-contributor' => ['POST'],
-                    'update-contributor-pct' => ['POST'],
-                ],
+            'class' => VerbFilter::class,
+            'actions' => [
+                'lasc-api' => ['GET'],
+                'index'    => ['GET'],
+            ],
             ],
         ];
     }
