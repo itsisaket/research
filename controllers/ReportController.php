@@ -561,6 +561,32 @@ class ReportController extends Controller
             return ['role_code_form' => null, 'pct_form' => null];
         };
 
+        // เติม owner เป็น contributor ถ้าไม่มีอยู่แล้ว (ไม่เขียนลง DB)
+        $ensureOwnerContributor = function(array $contributors, string $ownerUsername, array $ownerAccountOut) {
+            $ownerUsername = trim($ownerUsername);
+
+            if ($ownerUsername === '') return $contributors;
+
+            // ถ้ามี owner อยู่แล้ว ไม่ต้องเติม
+            foreach ($contributors as $c) {
+                if (($c['username'] ?? '') === $ownerUsername) {
+                    return $contributors;
+                }
+            }
+
+            // เติม owner เป็นคนแรก
+            array_unshift($contributors, [
+                'username'         => $ownerUsername,
+                'account'          => $ownerAccountOut,   // full account + org
+                'role_code'        => 'owner',
+                'contribution_pct' => 100.0,
+                'work_hours'       => null,
+                'sort_order'       => 0,
+            ]);
+
+            return $contributors;
+        };
+
         // =========================================================
         // Compose outputs + full relations + contributors
         // =========================================================
@@ -572,7 +598,9 @@ class ReportController extends Controller
             foreach (($wcAllMap['researchpro'][$rid] ?? []) as $row) {
                 $contributors[] = $mapContributorRow($row);
             }
+            $contributors = $ensureOwnerContributor($contributors, (string)$m->username, $accountOut);
             $self = $findSelf($contributors);
+
 
             $researchOut[] = [
                 'projectNameTH'     => (string)$m->projectNameTH,
@@ -598,6 +626,8 @@ class ReportController extends Controller
             ];
         }
 
+
+
         $articleOut = [];
         foreach ($articleARs as $m) {
             $aid = (int)$m->article_id;
@@ -606,6 +636,7 @@ class ReportController extends Controller
             foreach (($wcAllMap['article'][$aid] ?? []) as $row) {
                 $contributors[] = $mapContributorRow($row);
             }
+            $contributors = $ensureOwnerContributor($contributors, (string)$m->username, $accountOut);
             $self = $findSelf($contributors);
 
             $articleOut[] = [
@@ -635,7 +666,7 @@ class ReportController extends Controller
             foreach (($wcAllMap['utilization'][$uid] ?? []) as $row) {
                 $contributors[] = $mapContributorRow($row);
             }
-
+            $contributors = $ensureOwnerContributor($contributors, (string)$m->username, $accountOut);
             $utilOut[] = [
                 'project_name'       => (string)$m->project_name,
                 'username'           => (string)$m->username,
@@ -657,7 +688,7 @@ class ReportController extends Controller
             foreach (($wcAllMap['academic_service'][$sid] ?? []) as $row) {
                 $contributors[] = $mapContributorRow($row);
             }
-
+            $contributors = $ensureOwnerContributor($contributors, (string)$m->username, $accountOut);
             $serviceOut[] = [
                 'username'        => (string)$m->username,
                 'service_date'    => $this->toIsoDate($m->service_date),
