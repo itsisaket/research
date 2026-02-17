@@ -8,19 +8,20 @@ use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use yii\web\Response;
 
-use app\models\Account;
+// Models (Index)
 use app\models\Researchpro;
-use app\models\Article;
-use app\models\Utilization;
-use app\models\AcademicService;
-use app\models\WorkContributor;
-
-// สำหรับ actionIndex เดิมของคุณ (ถ้าคุณใช้)
+use app\models\Account;
 use app\models\Organize;
 use app\models\Restype;
 use app\models\Resstatus;
 use app\models\ResFund;
 use app\models\ResGency;
+use app\models\Article;
+use app\models\AcademicService;
+
+// Models (API)
+use app\models\Utilization;
+use app\models\WorkContributor;
 
 class ReportController extends Controller
 {
@@ -29,7 +30,9 @@ class ReportController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                // ✅ เปิดให้ทุกคนเรียกได้ แต่คุมด้วย HMAC ใน actionLascApi()
+                // ✅ เปิดให้เรียกได้ แต่คุมด้วย HMAC ใน actionLascApi()
+                // ถ้าคุณใช้ HanumanRule อยู่แล้ว ให้เปิดบรรทัดนี้ได้
+                // 'ruleConfig' => ['class' => \app\components\HanumanRule::class],
                 'rules' => [
                     [
                         'actions' => ['index', 'lasc-api'],
@@ -42,6 +45,7 @@ class ReportController extends Controller
                 'class' => VerbFilter::class,
                 'actions' => [
                     'lasc-api' => ['GET'],
+                    // actions อื่น ๆ ของคุณ (ถ้ามี)
                     'delete' => ['POST'],
                     'delete-contributor' => ['POST'],
                     'update-contributor-pct' => ['POST'],
@@ -50,38 +54,276 @@ class ReportController extends Controller
         ];
     }
 
-    /**
-     * actionIndex: คง logic เดิมของคุณไว้ได้เลย
-     * (ถ้าคุณมี actionIndex ยาวอยู่แล้ว ให้คงของเดิมไว้)
-     */
+    /* =========================================================
+     * actionIndex (ตามโค้ดที่คุณส่งมา)
+     * ========================================================= */
     public function actionIndex()
     {
-        // ✅ ใส่โค้ด actionIndex เดิมของคุณไว้ตรงนี้ (กราฟ/สรุป ฯลฯ)
-        return $this->render('index');
+        $user        = Yii::$app->user->identity;
+        $session     = Yii::$app->session;
+        $sessionOrg  = $session['ty'] ?? null;
+        $isSelfRole  = false;
+
+        // position 1,2 เห็นเฉพาะของตัวเอง
+        if ($user && ((int)$user->position === 1 || (int)$user->position === 2)) {
+            $isSelfRole = true;
+        }
+
+        /* =========================================================
+         * 1) กราฟ 5 ปีย้อนหลัง (จำนวนโครงการ + งบประมาณรายปี)
+         * ========================================================= */
+        $seriesY        = [];
+        $budgetSeriesY  = [];
+        $categoriesY    = [];
+
+        $currentYearAD = (int) date('Y');
+        $currentYearTH = $currentYearAD + 543;
+
+        $yearsTH = [];
+        for ($i = 0; $i < 5; $i++) {
+            $yearsTH[] = $currentYearTH - $i;
+        }
+        $yearsTH = array_reverse($yearsTH);
+
+        foreach ($yearsTH as $yearTH) {
+            $q = Researchpro::find()->where(['projectYearsubmit' => $yearTH]);
+
+            if ($isSelfRole) {
+                $q->andWhere(['username' => $user->username]);
+            } else {
+                if ($user && (int)$user->position !== 4) {
+                    if (!empty($sessionOrg)) {
+                        $q->andWhere(['org_id' => $sessionOrg]);
+                    } elseif (!empty($user->org_id)) {
+                        $q->andWhere(['org_id' => $user->org_id]);
+                    }
+                }
+            }
+
+            $countProject  = (int) (clone $q)->count();
+            $sumBudgetYear = (int) (clone $q)->sum('budgets');
+
+            $seriesY[]       = $countProject;
+            $budgetSeriesY[] = $sumBudgetYear;
+            $categoriesY[]   = (string) $yearTH;
+        }
+
+        /* =========================================================
+         * 2) กราฟแยกตามหน่วยงาน (Organize)
+         * ========================================================= */
+        $seriesO     = [];
+        $categoriesO = [];
+
+        $orgQuery = Organize::find()->orderBy(['org_id' => SORT_ASC]);
+        if ($user && (int)$user->position !== 4 && !empty($sessionOrg)) {
+            $orgQuery->andWhere(['org_id' => $sessionOrg]);
+        }
+        $orgs = $orgQuery->all();
+
+        foreach ($orgs as $org) {
+            $oq = Researchpro::find()->where(['org_id' => $org->org_id]);
+            if ($isSelfRole) {
+                $oq->andWhere(['username' => $user->username]);
+            }
+            $seriesO[]     = (int) $oq->count();
+            $categoriesO[] = $org->org_name;
+        }
+
+        /* =========================================================
+         * 3) กล่องสรุปบน (วิจัย/บทความ/แผนงาน/บริการ)
+         * ========================================================= */
+        if ($isSelfRole) {
+            $username = $user->username;
+
+            $counttype1 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 1])->count();
+            $counttype2 = Researchpro::find()->where(['username' => $username, 'researchTypeID' => 2])->count();
+            $counttype3 = AcademicService::find()->where(['username' => $username])->count();
+            $counttype4 = Article::find()->where(['username' => $username])->count();
+
+            $countuser = trim($user->uname . ' ' . $user->luname);
+        } else {
+            $counttype1 = Researchpro::find()->where(['researchTypeID' => 1])->count();
+            $counttype2 = Researchpro::find()->where(['researchTypeID' => 2])->count();
+            $counttype3 = AcademicService::find()->count();
+            $counttype4 = Article::find()->count();
+
+            $countuser = Account::find()->count();
+        }
+
+        /* =========================================================
+         * 4) สรุป 5 ประเด็นหลัก (รวมทุกปีที่มองเห็น)
+         * ========================================================= */
+        $baseQuery = Researchpro::find();
+
+        if ($isSelfRole) {
+            $baseQuery->andWhere(['username' => $user->username]);
+        } else {
+            if ($user && (int)$user->position !== 4) {
+                if (!empty($sessionOrg)) {
+                    $baseQuery->andWhere(['org_id' => $sessionOrg]);
+                } elseif (!empty($user->org_id)) {
+                    $baseQuery->andWhere(['org_id' => $user->org_id]);
+                }
+            }
+        }
+
+        $totalBudgets = (int) (clone $baseQuery)->sum('budgets');
+
+        $typeData = [];
+        $typeRows = (clone $baseQuery)
+            ->select(['researchTypeID', 'cnt' => 'COUNT(*)'])
+            ->groupBy('researchTypeID')
+            ->orderBy('researchTypeID')
+            ->asArray()
+            ->all();
+        foreach ($typeRows as $row) {
+            $typeData[$row['researchTypeID']] = (int) $row['cnt'];
+        }
+
+        $fundData = [];
+        $fundRows = (clone $baseQuery)
+            ->select(['researchFundID', 'cnt' => 'COUNT(*)'])
+            ->groupBy('researchFundID')
+            ->orderBy('researchFundID')
+            ->asArray()
+            ->all();
+        foreach ($fundRows as $row) {
+            $fundData[$row['researchFundID']] = (int) $row['cnt'];
+        }
+
+        $statusData = [];
+        $statusRows = (clone $baseQuery)
+            ->select(['jobStatusID', 'cnt' => 'COUNT(*)'])
+            ->groupBy('jobStatusID')
+            ->orderBy('jobStatusID')
+            ->asArray()
+            ->all();
+        foreach ($statusRows as $row) {
+            $statusData[$row['jobStatusID']] = (int) $row['cnt'];
+        }
+
+        $agencyData = [];
+        $agencyRows = (clone $baseQuery)
+            ->select(['fundingAgencyID', 'cnt' => 'COUNT(*)'])
+            ->groupBy('fundingAgencyID')
+            ->orderBy('fundingAgencyID')
+            ->asArray()
+            ->all();
+        foreach ($agencyRows as $row) {
+            $agencyData[$row['fundingAgencyID']] = (int) $row['cnt'];
+        }
+
+        /* =========================================================
+         * 5) แหล่งทุนรายปี (เฉพาะที่มีโครงการจริงในช่วง 5 ปี)
+         * ========================================================= */
+        $agencyMap = ResGency::find()
+            ->select(['fundingAgencyID', 'fundingAgencyName'])
+            ->indexBy('fundingAgencyID')
+            ->asArray()
+            ->all();
+
+        $fundingSeries       = [];
+        $fundingTotalNonZero = [];
+
+        $candidateAgencyIds = array_keys($agencyData);
+
+        foreach ($candidateAgencyIds as $agencyId) {
+            $dataPerYear     = [];
+            $totalThisAgency = 0;
+
+            foreach ($yearsTH as $yearTH) {
+                $aq = Researchpro::find()->where([
+                    'projectYearsubmit' => $yearTH,
+                    'fundingAgencyID'   => $agencyId,
+                ]);
+
+                if ($isSelfRole) {
+                    $aq->andWhere(['username' => $user->username]);
+                } else {
+                    if ($user && (int)$user->position !== 4) {
+                        if (!empty($sessionOrg)) {
+                            $aq->andWhere(['org_id' => $sessionOrg]);
+                        } elseif (!empty($user->org_id)) {
+                            $aq->andWhere(['org_id' => $user->org_id]);
+                        }
+                    }
+                }
+
+                $c = (int) $aq->count();
+                $dataPerYear[] = $c;
+                $totalThisAgency += $c;
+            }
+
+            if ($totalThisAgency > 0) {
+                $fundingSeries[] = [
+                    'name' => $agencyMap[$agencyId]['fundingAgencyName'] ?? ('แหล่งทุน ' . $agencyId),
+                    'data' => $dataPerYear,
+                ];
+
+                $fundingTotalNonZero[] = [
+                    'id'    => $agencyId,
+                    'name'  => $agencyMap[$agencyId]['fundingAgencyName'] ?? ('แหล่งทุน ' . $agencyId),
+                    'total' => $totalThisAgency,
+                ];
+            }
+        }
+
+        $restypeMap   = Restype::find()->select(['restypeid', 'restypename'])->indexBy('restypeid')->asArray()->all();
+        $resfundMap   = ResFund::find()->select(['researchFundID', 'researchFundName'])->indexBy('researchFundID')->asArray()->all();
+        $resstatusMap = Resstatus::find()->select(['statusid', 'statusname'])->indexBy('statusid')->asArray()->all();
+
+        return $this->render('index', [
+            'seriesY'        => $seriesY,
+            'budgetSeriesY'  => $budgetSeriesY,
+            'categoriesY'    => $categoriesY,
+
+            'seriesO'        => $seriesO,
+            'categoriesO'    => $categoriesO,
+
+            'counttype1'     => $counttype1,
+            'counttype2'     => $counttype2,
+            'counttype3'     => $counttype3,
+            'counttype4'     => $counttype4,
+            'countuser'      => $countuser,
+
+            'isSelfRole'     => $isSelfRole,
+
+            'totalBudgets'   => $totalBudgets,
+            'typeData'       => $typeData,
+            'fundData'       => $fundData,
+            'statusData'     => $statusData,
+            'agencyData'     => $agencyData,
+
+            'restypeMap'     => $restypeMap,
+            'resfundMap'     => $resfundMap,
+            'resstatusMap'   => $resstatusMap,
+            'agencyMap'      => $agencyMap,
+
+            'fundingSeries'       => $fundingSeries,
+            'fundingTotalNonZero' => $fundingTotalNonZero,
+        ]);
     }
 
     /* =========================================================
-     * Helpers
+     * Helpers สำหรับ API
      * ========================================================= */
 
-    /** แปลงวันให้เป็น YYYY-MM-DD (รองรับ dd-mm-yyyy และ datetime) */
     private function toIsoDate($v): ?string
     {
         if ($v === null) return null;
         $s = trim((string)$v);
         if ($s === '') return null;
 
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $s)) return $s;                 // yyyy-mm-dd
-        if (preg_match('/^\d{2}-\d{2}-\d{4}$/', $s)) {                          // dd-mm-yyyy
-            [$d, $m, $y] = explode('-', $s);
-            return $y . '-' . $m . '-' . $d;
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $s)) return $s;
+        if (preg_match('/^\d{2}-\d{2}-\d{4}$/', $s)) {
+            [$d,$m,$y] = explode('-', $s);
+            return "$y-$m-$d";
         }
-        if (preg_match('/^\d{4}-\d{2}-\d{2}\s+/', $s)) return substr($s, 0, 10); // datetime -> date
+        if (preg_match('/^\d{4}-\d{2}-\d{2}\s+/', $s)) return substr($s, 0, 10);
 
         return $s;
     }
 
-    /** rate limit กันยิงถี่ (ต่อ IP) */
     private function throttle(string $key, int $limit = 60, int $seconds = 60): bool
     {
         $cacheKey = 'lasc_api_' . $key;
@@ -97,34 +339,20 @@ class ReportController extends Controller
         return true;
     }
 
-    /** แปลง ActiveRecord relation -> attributes(full row) */
     private function relToArray($rel): ?array
     {
         if (!$rel) return null;
-
         if (is_object($rel) && method_exists($rel, 'getAttributes')) {
             return $rel->getAttributes();
         }
         if (is_array($rel)) return $rel;
-
         return null;
     }
 
-    /**
-     * LASC API (JSON) - FULL RELATIONS
-     *
-     * รับ:
-     *  - username|personal_id|id
-     *  - ts (unix time)
-     *  - sig = HMAC_SHA256(username|ts, params['lascApiKey'])
-     *
-     * ส่ง:
-     *  - account: username, uname, luname, org_id + org(full)
-     *  - latest.research: fields ตามสเปก + fundingAgency(full) + researchType(full) + researchFund(full) + role/pct
-     *  - latest.article: fields ตามสเปก + publication(full) + role/pct
-     *  - latest.utilization: fields ตามสเปก + utilizationType(full)
-     *  - latest.academic_service: fields ตามสเปก + serviceType(full)
-     */
+    /* =========================================================
+     * LASC API: Full relations + คืนผู้ร่วมหลายคนแบบเต็ม
+     * Route: /research/report/lasc-api?username=...&ts=...&sig=...
+     * ========================================================= */
     public function actionLascApi($username = null, $personal_id = null, $id = null)
     {
         Yii::$app->response->format = Response::FORMAT_JSON;
@@ -143,11 +371,9 @@ class ReportController extends Controller
 
         // ---------- resolve username ----------
         $u = null;
-
         if ($username !== null && trim($username) !== '') {
             $u = trim((string)$username);
         } elseif ($personal_id !== null && trim($personal_id) !== '') {
-            // ในระบบคุณ personal_id = username
             $u = trim((string)$personal_id);
         } elseif ($id !== null) {
             $acc = Account::findOne((int)$id);
@@ -187,7 +413,7 @@ class ReportController extends Controller
             return ['success' => false, 'message' => 'Unauthorized: signature expired'];
         }
 
-        $payload  = $u . '|' . $tsInt; // MUST match client
+        $payload  = $u . '|' . $tsInt;
         $expected = hash_hmac('sha256', $payload, $secret);
 
         if (!hash_equals($expected, $sig)) {
@@ -196,7 +422,7 @@ class ReportController extends Controller
         }
 
         // =========================================================
-        // 1) Account + Org(full)  (Account relation: hasorg)
+        // Account + org(full)
         // =========================================================
         $accountAR = Account::find()
             ->with(['hasorg'])
@@ -217,42 +443,7 @@ class ReportController extends Controller
         ];
 
         // =========================================================
-        // 2) WorkContributor map (เฉพาะ role/pct ของ “คนที่ query”)
-        //    ทำไว้สำหรับ research/article
-        // =========================================================
-        $wcRows = WorkContributor::find()
-            ->select(['ref_type', 'ref_id', 'role_code', 'contribution_pct', 'sort_order'])
-            ->where(['username' => $u])
-            ->andWhere(['in', 'ref_type', ['researchpro', 'article']])
-            ->orderBy(['ref_type' => SORT_ASC, 'ref_id' => SORT_ASC, 'sort_order' => SORT_ASC])
-            ->asArray()
-            ->all();
-
-        $wcMap = [
-            'researchpro' => [],
-            'article' => [],
-        ];
-
-        foreach ($wcRows as $wc) {
-            $t   = (string)($wc['ref_type'] ?? '');
-            $rid = (int)($wc['ref_id'] ?? 0);
-            if ($rid <= 0 || !isset($wcMap[$t])) continue;
-
-            // เอาแถวแรกเป็นค่า (ถ้ามีหลายแถว)
-            if (!isset($wcMap[$t][$rid])) {
-                $wcMap[$t][$rid] = [
-                    'role_code_form' => $wc['role_code'] ?? null,
-                    'pct_form'       => isset($wc['contribution_pct']) ? (float)$wc['contribution_pct'] : null,
-                ];
-            }
-        }
-
-        // =========================================================
-        // 3) latest.research + relations full
-        //    Researchpro relations ที่มีอยู่จริงในไฟล์คุณ:
-        //      - agencys   (ResGency)
-        //      - restypes  (Restype)
-        //      - resFunds  (ResFund)
+        // ดึง latest ARs ก่อน เพื่อเอา IDs สำหรับ contributors
         // =========================================================
         $researchARs = Researchpro::find()
             ->with(['agencys', 'restypes', 'resFunds'])
@@ -260,12 +451,130 @@ class ReportController extends Controller
             ->orderBy(['projectID' => SORT_DESC])
             ->limit(10)
             ->all();
+        $researchIds = array_map(fn($m) => (int)$m->projectID, $researchARs);
 
+        $articleARs = Article::find()
+            ->with(['publi'])
+            ->where(['username' => $u])
+            ->orderBy(['article_id' => SORT_DESC])
+            ->limit(10)
+            ->all();
+        $articleIds = array_map(fn($m) => (int)$m->article_id, $articleARs);
+
+        $utilARs = Utilization::find()
+            ->with(['utilization'])
+            ->where(['username' => $u])
+            ->orderBy(['utilization_id' => SORT_DESC])
+            ->limit(10)
+            ->all();
+        $utilIds = array_map(fn($m) => (int)$m->utilization_id, $utilARs);
+
+        $serviceARs = AcademicService::find()
+            ->with(['serviceType'])
+            ->where(['username' => $u])
+            ->orderBy(['service_id' => SORT_DESC])
+            ->limit(10)
+            ->all();
+        $serviceIds = array_map(fn($m) => (int)$m->service_id, $serviceARs);
+
+        // =========================================================
+        // Batch contributors (ทุก ref_type ของ latest) + map account ของผู้ร่วม
+        // =========================================================
+        $wcAllMap = [
+            'researchpro' => [],
+            'article' => [],
+            'utilization' => [],
+            'academic_service' => [],
+        ];
+
+        $allContributorUsernames = [];
+
+        $or = ['or'];
+        if (!empty($researchIds)) $or[] = ['and', ['ref_type' => 'researchpro'], ['in', 'ref_id', $researchIds]];
+        if (!empty($articleIds))  $or[] = ['and', ['ref_type' => 'article'], ['in', 'ref_id', $articleIds]];
+        if (!empty($utilIds))     $or[] = ['and', ['ref_type' => 'utilization'], ['in', 'ref_id', $utilIds]];
+        if (!empty($serviceIds))  $or[] = ['and', ['ref_type' => 'academic_service'], ['in', 'ref_id', $serviceIds]];
+
+        $wcRows = [];
+        if (count($or) > 1) {
+            $wcRows = WorkContributor::find()
+                ->select(['ref_type', 'ref_id', 'username', 'role_code', 'contribution_pct', 'work_hours', 'sort_order'])
+                ->andWhere($or)
+                ->orderBy(['ref_type' => SORT_ASC, 'ref_id' => SORT_ASC, 'sort_order' => SORT_ASC])
+                ->asArray()
+                ->all();
+        }
+
+        foreach ($wcRows as $row) {
+            $t   = (string)($row['ref_type'] ?? '');
+            $rid = (int)($row['ref_id'] ?? 0);
+            if ($rid <= 0 || !isset($wcAllMap[$t])) continue;
+
+            $wcAllMap[$t][$rid][] = $row;
+
+            $un = trim((string)($row['username'] ?? ''));
+            if ($un !== '') $allContributorUsernames[$un] = true;
+        }
+
+        // map account ของผู้ร่วม (full + org full)
+        $accMap = [];
+        if (!empty($allContributorUsernames)) {
+            $usernames = array_keys($allContributorUsernames);
+            $accRows = Account::find()
+                ->with(['hasorg'])
+                ->where(['in', 'username', $usernames])
+                ->all();
+
+            foreach ($accRows as $a) {
+                $accMap[(string)$a->username] = [
+                    'username' => (string)$a->username,
+                    'uname'    => (string)$a->uname,
+                    'luname'   => (string)$a->luname,
+                    'org_id'   => (int)$a->org_id,
+                    'org'      => $this->relToArray($a->hasorg),
+                ];
+            }
+        }
+
+        $mapContributorRow = function(array $row) use ($accMap) {
+            $un = trim((string)($row['username'] ?? ''));
+            return [
+                'username'         => $un !== '' ? $un : null,
+                'account'          => $un !== '' ? ($accMap[$un] ?? null) : null,
+                'role_code'        => $row['role_code'] ?? null,
+                'contribution_pct' => isset($row['contribution_pct']) ? (float)$row['contribution_pct'] : null,
+                'work_hours'       => isset($row['work_hours']) ? (float)$row['work_hours'] : null,
+                'sort_order'       => isset($row['sort_order']) ? (int)$row['sort_order'] : null,
+            ];
+        };
+
+        // helper หา role/pct ของผู้ query (สะดวกต่อ client)
+        $findSelf = function(array $contributors) use ($u) {
+            foreach ($contributors as $c) {
+                if (($c['username'] ?? '') === $u) {
+                    return [
+                        'role_code_form' => $c['role_code'] ?? null,
+                        'pct_form'       => $c['contribution_pct'] ?? null,
+                    ];
+                }
+            }
+            return ['role_code_form' => null, 'pct_form' => null];
+        };
+
+        // =========================================================
+        // Compose outputs + full relations + contributors
+        // =========================================================
         $researchOut = [];
         foreach ($researchARs as $m) {
             $rid = (int)$m->projectID;
+
+            $contributors = [];
+            foreach (($wcAllMap['researchpro'][$rid] ?? []) as $row) {
+                $contributors[] = $mapContributorRow($row);
+            }
+            $self = $findSelf($contributors);
+
             $researchOut[] = [
-                // fields ตามสเปก
                 'projectNameTH'     => (string)$m->projectNameTH,
                 'username'          => (string)$m->username,
                 'projectYearsubmit' => (int)$m->projectYearsubmit,
@@ -276,33 +585,30 @@ class ReportController extends Controller
                 'projectEndDate'    => $this->toIsoDate($m->projectEndDate),
                 'researchFundID'    => (int)$m->researchFundID,
 
-                // role/pct ของ “คนที่ query”
-                'role_code_form'    => $wcMap['researchpro'][$rid]['role_code_form'] ?? null,
-                'pct_form'          => $wcMap['researchpro'][$rid]['pct_form'] ?? null,
-
-                // ✅ FULL RELATIONS (ทั้งแถว)
                 'fundingAgency' => $this->relToArray($m->agencys),
                 'researchType'  => $this->relToArray($m->restypes),
                 'researchFund'  => $this->relToArray($m->resFunds),
+
+                // self role/pct
+                'role_code_form' => $self['role_code_form'],
+                'pct_form'       => $self['pct_form'],
+
+                // contributors full
+                'contributors'   => $contributors,
             ];
         }
-
-        // =========================================================
-        // 4) latest.article + publication(full)
-        //    Article relation ที่มีอยู่จริงในไฟล์คุณ: publi (Publication)
-        // =========================================================
-        $articleARs = Article::find()
-            ->with(['publi'])
-            ->where(['username' => $u])
-            ->orderBy(['article_id' => SORT_DESC])
-            ->limit(10)
-            ->all();
 
         $articleOut = [];
         foreach ($articleARs as $m) {
             $aid = (int)$m->article_id;
+
+            $contributors = [];
+            foreach (($wcAllMap['article'][$aid] ?? []) as $row) {
+                $contributors[] = $mapContributorRow($row);
+            }
+            $self = $findSelf($contributors);
+
             $articleOut[] = [
-                // fields ตามสเปก
                 'article_th'       => (string)$m->article_th,
                 'username'         => (string)$m->username,
                 'publication_type' => (int)$m->publication_type,
@@ -310,30 +616,27 @@ class ReportController extends Controller
                 'journal'          => (string)$m->journal,
                 'refer'            => (string)$m->refer,
 
-                // role/pct ของ “คนที่ query”
-                'role_code_form'   => $wcMap['article'][$aid]['role_code_form'] ?? null,
-                'pct_form'         => $wcMap['article'][$aid]['pct_form'] ?? null,
-
-                // ✅ FULL RELATION
                 'publication'      => $this->relToArray($m->publi),
+
+                // self role/pct
+                'role_code_form'   => $self['role_code_form'],
+                'pct_form'         => $self['pct_form'],
+
+                // contributors full
+                'contributors'     => $contributors,
             ];
         }
 
-        // =========================================================
-        // 5) latest.utilization + utilizationType(full)
-        //    Utilization relation ที่มีอยู่จริงในไฟล์คุณ: utilization (Utilization_type)
-        // =========================================================
-        $utilARs = Utilization::find()
-            ->with(['utilization'])
-            ->where(['username' => $u])
-            ->orderBy(['utilization_id' => SORT_DESC])
-            ->limit(10)
-            ->all();
-
         $utilOut = [];
         foreach ($utilARs as $m) {
+            $uid = (int)$m->utilization_id;
+
+            $contributors = [];
+            foreach (($wcAllMap['utilization'][$uid] ?? []) as $row) {
+                $contributors[] = $mapContributorRow($row);
+            }
+
             $utilOut[] = [
-                // fields ตามสเปก
                 'project_name'       => (string)$m->project_name,
                 'username'           => (string)$m->username,
                 'utilization_type'   => (int)$m->utilization_type,
@@ -341,26 +644,21 @@ class ReportController extends Controller
                 'utilization_detail' => (string)$m->utilization_detail,
                 'utilization_refer'  => (string)$m->utilization_refer,
 
-                // ✅ FULL RELATION
                 'utilizationType'    => $this->relToArray($m->utilization),
+                'contributors'       => $contributors,
             ];
         }
 
-        // =========================================================
-        // 6) latest.academic_service + serviceType(full)
-        //    AcademicService relation ที่มีอยู่จริงในไฟล์คุณ: serviceType (AcademicServiceType)
-        // =========================================================
-        $serviceARs = AcademicService::find()
-            ->with(['serviceType'])
-            ->where(['username' => $u])
-            ->orderBy(['service_id' => SORT_DESC])
-            ->limit(10)
-            ->all();
-
         $serviceOut = [];
         foreach ($serviceARs as $m) {
+            $sid = (int)$m->service_id;
+
+            $contributors = [];
+            foreach (($wcAllMap['academic_service'][$sid] ?? []) as $row) {
+                $contributors[] = $mapContributorRow($row);
+            }
+
             $serviceOut[] = [
-                // fields ตามสเปก
                 'username'        => (string)$m->username,
                 'service_date'    => $this->toIsoDate($m->service_date),
                 'type_id'         => (int)$m->type_id,
@@ -371,19 +669,16 @@ class ReportController extends Controller
                 'reference_url'   => (string)$m->reference_url,
                 'attachment_path' => $m->attachment_path,
 
-                // ✅ FULL RELATION
                 'serviceType'     => $this->relToArray($m->serviceType),
+                'contributors'    => $contributors,
             ];
         }
 
-        // =========================================================
-        // 7) Return JSON
-        // =========================================================
         return [
             'success' => true,
             'message' => 'LASC API profile retrieved successfully',
             'meta' => [
-                'version' => '1.1-full-relations',
+                'version' => '1.2-full-relations+contributors',
                 'generated_at' => date('c'),
             ],
             'query' => [
