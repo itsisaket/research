@@ -9,7 +9,9 @@ use yii\filters\AccessControl;
 use yii\web\Response;
 use yii\web\ForbiddenHttpException;
 
-// Models (Index)
+use app\models\WorkContributor;
+use app\models\Utilization;
+
 use app\models\Researchpro;
 use app\models\Account;
 use app\models\Organize;
@@ -17,64 +19,33 @@ use app\models\Restype;
 use app\models\Resstatus;
 use app\models\ResFund;
 use app\models\ResGency;
+
 use app\models\Article;
 use app\models\AcademicService;
 
-// Models (API)
-use app\models\Utilization;
-use app\models\WorkContributor;
-
 class ReportController extends Controller
 {
-     public function beforeAction($action)
-    {
-        // API ใช้ GET + HMAC → ไม่ต้อง CSRF
-        if ($action->id === 'lasc-api') {
-            $this->enableCsrfValidation = false;
-        }
-        return parent::beforeAction($action);
-    }
-
     public function behaviors()
     {
         return [
             'access' => [
                 'class' => AccessControl::class,
-
-                // ✅ สำคัญ: ให้ AccessControl ใช้ HanumanRule
-                'ruleConfig' => [
-                    'class' => \app\components\HanumanRule::class,
-                ],
-
-                // ✅ จำกัดให้ filter เฉพาะ 2 action นี้พอ (กันไปบล็อกตัวอื่น)
-                'only' => ['index', 'lasc-api'],
-
+                // ✅ เปิดให้ทุกคนเรียกได้ แต่คุมด้วย HMAC ใน actionLascApi()
                 'rules' => [
                     [
-                        'actions' => ['index','lasc-api'],
+                        'actions' => ['index', 'lasc-api'],
                         'allow'   => true,
-                        'roles'   => ['?', '@'], // guest + login
+                        'roles'   => ['?', '@'],
                     ],
                 ],
-
-                // ✅ ช่วย debug ถ้ายังโดนบล็อก
-                'denyCallback' => function ($rule, $action) {
-                    Yii::warning([
-                        'route' => $action->uniqueId,
-                        'action' => $action->id,
-                        'isGuest' => Yii::$app->user->isGuest,
-                        'uid' => Yii::$app->user->id,
-                        'ip' => Yii::$app->request->userIP,
-                    ], 'ACCESS_DENIED_REPORT');
-                    throw new ForbiddenHttpException('ไม่ได้รับอนุญาตให้เข้าถึงหน้านี้');
-                },
             ],
-
             'verbs' => [
                 'class' => VerbFilter::class,
                 'actions' => [
-                    'index'    => ['GET'],
                     'lasc-api' => ['GET'],
+                    'delete' => ['POST'],
+                    'delete-contributor' => ['POST'],
+                    'update-contributor-pct' => ['POST'],
                 ],
             ],
         ];
