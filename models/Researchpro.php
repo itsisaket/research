@@ -48,7 +48,7 @@ class Researchpro extends \yii\db\ActiveRecord
             [['projectNameTH', 'projectNameEN', 'username', 'org_id', 'projectYearsubmit', 'budgets', 'fundingAgencyID', 'researchFundID', 'researchTypeID', 'projectStartDate', 'projectEndDate', 'jobStatusID', 'researchArea', 'sub_district', 'district', 'province','branch'], 'required'],
             [['username', 'org_id', 'projectYearsubmit', 'budgets', 'fundingAgencyID', 'researchFundID', 'researchTypeID', 'jobStatusID', 'sub_district', 'district', 'province','branch'], 'integer'],
             [['projectStartDate', 'projectEndDate'], 'safe'],
-            [['projectNameTH', 'projectNameEN'], 'string', 'max' => 100],
+            [['projectNameTH', 'projectNameEN'], 'string'],
             [['researchArea','documentid'], 'string'],
         ];
     }
@@ -62,7 +62,7 @@ class Researchpro extends \yii\db\ActiveRecord
             'projectID' => 'รหัสโครงการ',
             'projectNameTH' => 'ชื่อโครงการภาษาไทย',
             'projectNameEN' => 'ชื่อโครงการภาษาอังกฤษ',
-            'username' => 'นักวิจัย',
+            'username' => 'ผู้บันทึก/เจ้าของเรื่อง',
             'org_id' => 'หน่วยงาน',
             'projectYearsubmit' => 'ปีงบประมาณ',
             'budgets' => 'งบประมาณ',

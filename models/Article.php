@@ -41,7 +41,7 @@ class Article extends \yii\db\ActiveRecord
             [['article_th', 'article_eng', 'username', 'org_id', 'publication_type', 'article_publish', 'journal','status_ec','branch'], 'required'],
             [['username', 'org_id', 'publication_type','research_id','status_ec','branch'], 'integer'],
             [['article_publish','refer','documentid'], 'string'],
-            [['article_th', 'article_eng', 'journal'], 'string', 'max' => 200],
+            [['article_th', 'article_eng', 'journal'], 'string'],
         ];
     }
 
@@ -54,7 +54,7 @@ class Article extends \yii\db\ActiveRecord
             'article_id' => 'รหัสบทความ',
             'article_th' => 'ชื่อบทความ(ไทย)',
             'article_eng' => 'ชื่อบทความ(Eng)',
-            'username' => 'นักวิจัย',
+            'username' => 'ผู้บันทึก/เจ้าของเรื่อง',
             'org_id' => 'หน่วยงาน',
             'publication_type' => 'ประเภทฐาน',
             'article_publish' => 'วันที่เผยแพร่',

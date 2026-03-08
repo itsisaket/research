@@ -38,7 +38,7 @@ class Utilization extends \yii\db\ActiveRecord
             [['username', 'org_id', 'utilization_type', 'sub_district', 'district', 'province', 'research_id'], 'integer'],
             [['utilization_detail', 'utilization_refer', 'documentid'], 'string'],
             [['utilization_date'], 'safe'],
-            [['utilization_add'], 'string', 'max' => 100],
+            [['utilization_add'], 'string'],
         ];
     }
 
@@ -47,7 +47,7 @@ class Utilization extends \yii\db\ActiveRecord
         return [
             'utilization_id'   => 'รหัส',
             'project_name'     => 'โครงการวิจัย/งานสร้างสรรค์',
-            'username'              => 'นักวิจัย',
+            'username'         => 'ผู้บันทึก/เจ้าของเรื่อง',
             'org_id'           => 'หน่วยงาน',
             'utilization_type' => 'ลักษณะของการใช้ประโยชน์',
             'utilization_add'  => 'หน่วยงานใช้ประโยชน์',
