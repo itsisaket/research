@@ -73,24 +73,21 @@ public function actionIndex()
 
     $isSelfRole = false;
 
+    // position 1,2 เห็นของตนเอง + งานที่มีส่วนร่วม
     if (!$isGuest && $user && ((int)$user->position === 1 || (int)$user->position === 2)) {
         $isSelfRole = true;
     }
 
     // =========================================================
-    // ปีปัจจุบัน
+    // ปีปัจจุบัน + filter ช่วงปี
     // =========================================================
     $currentYearAD = (int) date('Y');
     $currentYearTH = $currentYearAD + 543;
 
-    // =========================================================
-    // รับค่าค้นหาจาก GET
-    // =========================================================
     $request  = Yii::$app->request;
     $yearFrom = (int) $request->get('year_from', $currentYearTH - 4);
     $yearTo   = (int) $request->get('year_to', $currentYearTH);
 
-    // กันค่าผิด
     if ($yearFrom <= 0) {
         $yearFrom = $currentYearTH - 4;
     }
@@ -100,46 +97,148 @@ public function actionIndex()
     if ($yearFrom > $yearTo) {
         [$yearFrom, $yearTo] = [$yearTo, $yearFrom];
     }
-
-    // จำกัดช่วงไม่ให้กว้างเกินไป (ถ้าต้องการ)
-    // เช่น ไม่เกิน 15 ปี
     if (($yearTo - $yearFrom) > 15) {
         $yearFrom = $yearTo - 15;
     }
 
     $yearsTH = range($yearFrom, $yearTo);
 
-    /* =========================================================
-     * helper สำหรับ query สิทธิ์การมองเห็น
-     * ========================================================= */
-    $applyScope = function ($q) use ($isSelfRole, $isGuest, $user, $sessionOrg) {
-        if ($isSelfRole) {
-            $q->andWhere(['username' => $user->username]);
-        } else {
-            if (!$isGuest && $user && (int)$user->position !== 4) {
-                if (!empty($sessionOrg)) {
-                    $q->andWhere(['org_id' => $sessionOrg]);
-                } elseif (!empty($user->org_id)) {
-                    $q->andWhere(['org_id' => $user->org_id]);
-                }
+    // แปลง พ.ศ. -> ค.ศ. สำหรับตารางที่เก็บเป็น date
+    $yearFromAD = $yearFrom - 543;
+    $yearToAD   = $yearTo - 543;
+
+    $dateStart = sprintf('%04d-01-01', $yearFromAD);
+    $dateEnd   = sprintf('%04d-12-31', $yearToAD);
+
+    // =========================================================
+    // helper
+    // =========================================================
+    $mergeIds = function(array $ownerIds, array $contribIds): array {
+        $ids = array_merge(array_map('intval', $ownerIds), array_map('intval', $contribIds));
+        $ids = array_values(array_unique(array_filter($ids)));
+        return $ids;
+    };
+
+    $getContributorIds = function(string $refType, string $username): array {
+        return WorkContributor::find()
+            ->select('ref_id')
+            ->where([
+                'ref_type' => $refType,
+                'username' => $username,
+            ])
+            ->column();
+    };
+
+    // =========================================================
+    // preload owner/contributor ids for self-role
+    // =========================================================
+    $researchIdsSelf = [];
+    $articleIdsSelf  = [];
+    $serviceIdsSelf  = [];
+    $utilIdsSelf     = [];
+
+    if ($isSelfRole && $user) {
+        $username = (string)$user->username;
+
+        // research
+        $researchOwnerIds   = Researchpro::find()->select('projectID')->where(['username' => $username])->column();
+        $researchContribIds = $getContributorIds('researchpro', $username);
+        $researchIdsSelf    = $mergeIds($researchOwnerIds, $researchContribIds);
+
+        // article
+        $articleOwnerIds   = Article::find()->select('article_id')->where(['username' => $username])->column();
+        $articleContribIds = $getContributorIds('article', $username);
+        $articleIdsSelf    = $mergeIds($articleOwnerIds, $articleContribIds);
+
+        // academic service
+        $serviceOwnerIds   = AcademicService::find()->select('service_id')->where(['username' => $username])->column();
+        $serviceContribIds = $getContributorIds('academic_service', $username);
+        $serviceIdsSelf    = $mergeIds($serviceOwnerIds, $serviceContribIds);
+
+        // utilization
+        $utilOwnerIds   = Utilization::find()->select('utilization_id')->where(['username' => $username])->column();
+        $utilContribIds = $getContributorIds('utilization', $username);
+        $utilIdsSelf    = $mergeIds($utilOwnerIds, $utilContribIds);
+    }
+
+    $applyOrgScope = function($q) use ($isGuest, $user, $sessionOrg) {
+        // guest เห็นภาพรวม
+        if (!$isGuest && $user && (int)$user->position !== 4) {
+            if (!empty($sessionOrg)) {
+                $q->andWhere(['org_id' => $sessionOrg]);
+            } elseif (!empty($user->org_id)) {
+                $q->andWhere(['org_id' => $user->org_id]);
             }
         }
         return $q;
     };
 
+    $buildResearchQuery = function() use ($isSelfRole, $researchIdsSelf, $applyOrgScope) {
+        $q = Researchpro::find();
+
+        if ($isSelfRole) {
+            if (empty($researchIdsSelf)) {
+                $q->andWhere('0=1');
+            } else {
+                $q->andWhere(['in', 'projectID', $researchIdsSelf]);
+            }
+        } else {
+            $q = $applyOrgScope($q);
+        }
+
+        return $q;
+    };
+
+    $buildArticleQuery = function() use ($isSelfRole, $articleIdsSelf, $applyOrgScope, $dateStart, $dateEnd) {
+        $q = Article::find();
+
+        if ($isSelfRole) {
+            if (empty($articleIdsSelf)) {
+                $q->andWhere('0=1');
+            } else {
+                $q->andWhere(['in', 'article_id', $articleIdsSelf]);
+            }
+        } else {
+            $q = $applyOrgScope($q);
+        }
+
+        // กรองตาม article_publish
+        $q->andWhere(['between', 'DATE(article_publish)', $dateStart, $dateEnd]);
+
+        return $q;
+    };
+
+    $buildServiceQuery = function() use ($isSelfRole, $serviceIdsSelf, $applyOrgScope, $dateStart, $dateEnd) {
+        $q = AcademicService::find();
+
+        if ($isSelfRole) {
+            if (empty($serviceIdsSelf)) {
+                $q->andWhere('0=1');
+            } else {
+                $q->andWhere(['in', 'service_id', $serviceIdsSelf]);
+            }
+        } else {
+            $q = $applyOrgScope($q);
+        }
+
+        // กรองตาม service_date
+        $q->andWhere(['between', 'DATE(service_date)', $dateStart, $dateEnd]);
+
+        return $q;
+    };
+
     /* =========================================================
-     * 1) กราฟรายปี
+     * 1) กราฟรายปี (จำนวนโครงการ + งบประมาณรายปี)
      * ========================================================= */
-    $seriesY        = [];
-    $budgetSeriesY  = [];
-    $categoriesY    = [];
+    $seriesY       = [];
+    $budgetSeriesY = [];
+    $categoriesY   = [];
 
     foreach ($yearsTH as $yearTH) {
-        $q = Researchpro::find()->where(['projectYearsubmit' => $yearTH]);
-        $q = $applyScope($q);
+        $q = $buildResearchQuery()->andWhere(['projectYearsubmit' => $yearTH]);
 
         $countProject  = (int) (clone $q)->count();
-        $sumBudgetYear = (int) ((clone $q)->sum('budgets') ?: 0);
+        $sumBudgetYear = (float) ((clone $q)->sum('budgets') ?: 0);
 
         $seriesY[]       = $countProject;
         $budgetSeriesY[] = $sumBudgetYear;
@@ -154,20 +253,16 @@ public function actionIndex()
 
     $orgQuery = Organize::find()->orderBy(['org_id' => SORT_ASC]);
 
-    if (!$isGuest && $user && (int)$user->position !== 4 && !empty($sessionOrg)) {
+    if (!$isGuest && $user && (int)$user->position !== 4 && !empty($sessionOrg) && !$isSelfRole) {
         $orgQuery->andWhere(['org_id' => $sessionOrg]);
     }
 
     $orgs = $orgQuery->all();
 
     foreach ($orgs as $org) {
-        $oq = Researchpro::find()
-            ->where(['org_id' => $org->org_id])
+        $oq = $buildResearchQuery()
+            ->andWhere(['org_id' => $org->org_id])
             ->andWhere(['between', 'projectYearsubmit', $yearFrom, $yearTo]);
-
-        if ($isSelfRole) {
-            $oq->andWhere(['username' => $user->username]);
-        }
 
         $seriesO[]     = (int) $oq->count();
         $categoriesO[] = $org->org_name;
@@ -175,54 +270,47 @@ public function actionIndex()
 
     /* =========================================================
      * 3) กล่องสรุปบน
+     * ทุกกล่องใช้ช่วงปีเดียวกัน
      * ========================================================= */
-    if ($isSelfRole) {
-        $username = $user->username;
-
-        $counttype1 = Researchpro::find()
-            ->where(['username' => $username, 'researchTypeID' => 1])
+    if ($isSelfRole && $user) {
+        $counttype1 = (int) $buildResearchQuery()
+            ->andWhere(['researchTypeID' => 1])
             ->andWhere(['between', 'projectYearsubmit', $yearFrom, $yearTo])
             ->count();
 
-        $counttype2 = Researchpro::find()
-            ->where(['username' => $username, 'researchTypeID' => 2])
+        $counttype2 = (int) $buildResearchQuery()
+            ->andWhere(['researchTypeID' => 2])
             ->andWhere(['between', 'projectYearsubmit', $yearFrom, $yearTo])
             ->count();
 
-        $counttype3 = AcademicService::find()
-            ->where(['username' => $username])
-            ->count();
-
-        $counttype4 = Article::find()
-            ->where(['username' => $username])
-            ->count();
+        $counttype3 = (int) $buildServiceQuery()->count();
+        $counttype4 = (int) $buildArticleQuery()->count();
 
         $countuser = trim((string)$user->uname . ' ' . (string)$user->luname);
     } else {
-        $counttype1 = Researchpro::find()
-            ->where(['researchTypeID' => 1])
+        $counttype1 = (int) $buildResearchQuery()
+            ->andWhere(['researchTypeID' => 1])
             ->andWhere(['between', 'projectYearsubmit', $yearFrom, $yearTo])
             ->count();
 
-        $counttype2 = Researchpro::find()
-            ->where(['researchTypeID' => 2])
+        $counttype2 = (int) $buildResearchQuery()
+            ->andWhere(['researchTypeID' => 2])
             ->andWhere(['between', 'projectYearsubmit', $yearFrom, $yearTo])
             ->count();
 
-        $counttype3 = AcademicService::find()->count();
-        $counttype4 = Article::find()->count();
-        $countuser  = Account::find()->count();
+        $counttype3 = (int) $buildServiceQuery()->count();
+        $counttype4 = (int) $buildArticleQuery()->count();
+
+        $countuser = (int) Account::find()->count();
     }
 
     /* =========================================================
-     * 4) สรุปข้อมูลรวมตามช่วงปี
+     * 4) สรุปข้อมูลโครงการ
      * ========================================================= */
-    $baseQuery = Researchpro::find()
+    $baseQuery = $buildResearchQuery()
         ->andWhere(['between', 'projectYearsubmit', $yearFrom, $yearTo]);
 
-    $baseQuery = $applyScope($baseQuery);
-
-    $totalBudgets = (int) ((clone $baseQuery)->sum('budgets') ?: 0);
+    $totalBudgets = (float) ((clone $baseQuery)->sum('budgets') ?: 0);
 
     $typeData = [];
     $typeRows = (clone $baseQuery)
@@ -231,7 +319,6 @@ public function actionIndex()
         ->orderBy('researchTypeID')
         ->asArray()
         ->all();
-
     foreach ($typeRows as $row) {
         $typeData[$row['researchTypeID']] = (int) $row['cnt'];
     }
@@ -243,7 +330,6 @@ public function actionIndex()
         ->orderBy('researchFundID')
         ->asArray()
         ->all();
-
     foreach ($fundRows as $row) {
         $fundData[$row['researchFundID']] = (int) $row['cnt'];
     }
@@ -255,7 +341,6 @@ public function actionIndex()
         ->orderBy('jobStatusID')
         ->asArray()
         ->all();
-
     foreach ($statusRows as $row) {
         $statusData[$row['jobStatusID']] = (int) $row['cnt'];
     }
@@ -267,7 +352,6 @@ public function actionIndex()
         ->orderBy('fundingAgencyID')
         ->asArray()
         ->all();
-
     foreach ($agencyRows as $row) {
         $agencyData[$row['fundingAgencyID']] = (int) $row['cnt'];
     }
@@ -291,12 +375,10 @@ public function actionIndex()
         $totalThisAgency = 0;
 
         foreach ($yearsTH as $yearTH) {
-            $aq = Researchpro::find()->where([
+            $aq = $buildResearchQuery()->andWhere([
                 'projectYearsubmit' => $yearTH,
                 'fundingAgencyID'   => $agencyId,
             ]);
-
-            $aq = $applyScope($aq);
 
             $c = (int) $aq->count();
             $dataPerYear[] = $c;
@@ -317,9 +399,23 @@ public function actionIndex()
         }
     }
 
-    $restypeMap   = Restype::find()->select(['restypeid', 'restypename'])->indexBy('restypeid')->asArray()->all();
-    $resfundMap   = ResFund::find()->select(['researchFundID', 'researchFundName'])->indexBy('researchFundID')->asArray()->all();
-    $resstatusMap = Resstatus::find()->select(['statusid', 'statusname'])->indexBy('statusid')->asArray()->all();
+    $restypeMap = Restype::find()
+        ->select(['restypeid', 'restypename'])
+        ->indexBy('restypeid')
+        ->asArray()
+        ->all();
+
+    $resfundMap = ResFund::find()
+        ->select(['researchFundID', 'researchFundName'])
+        ->indexBy('researchFundID')
+        ->asArray()
+        ->all();
+
+    $resstatusMap = Resstatus::find()
+        ->select(['statusid', 'statusname'])
+        ->indexBy('statusid')
+        ->asArray()
+        ->all();
 
     return $this->render('index', [
         'seriesY'        => $seriesY,
@@ -351,7 +447,6 @@ public function actionIndex()
         'fundingSeries'       => $fundingSeries,
         'fundingTotalNonZero' => $fundingTotalNonZero,
 
-        // ส่งไป view
         'yearFrom' => $yearFrom,
         'yearTo'   => $yearTo,
     ]);

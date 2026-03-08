@@ -137,6 +137,7 @@ if (!empty($model->org_id)) {
             'autoclose' => true,
             'format' => 'yyyy-mm-dd',
             'todayHighlight' => true,
+            'container' => 'body',
           ],
         ]) ?>
       </div>

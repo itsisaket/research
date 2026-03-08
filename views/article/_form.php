@@ -135,6 +135,7 @@ if (empty($model->article_publish)) {
             'autoclose' => true,
             'format' => 'dd-mm-yyyy',
             'todayHighlight' => true,
+            'container' => 'body',
           ],
         ]) ?>
       </div>

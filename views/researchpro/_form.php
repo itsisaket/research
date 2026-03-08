@@ -181,6 +181,7 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
             'autoclose' => true,
             'format' => 'dd-mm-yyyy',
             'todayHighlight' => true,
+            'container' => 'body',
           ],
         ]) ?>
       </div>
@@ -194,6 +195,7 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
             'autoclose' => true,
             'format' => 'dd-mm-yyyy',
             'todayHighlight' => true,
+            'container' => 'body',
           ],
         ]) ?>
       </div>

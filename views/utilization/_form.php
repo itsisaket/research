@@ -131,6 +131,7 @@ if (empty($model->province)) {
             'autoclose' => true,
             'format' => 'dd-mm-yyyy',
             'todayHighlight' => true,
+            'container' => 'body',
           ],
         ]) ?>
       </div>
