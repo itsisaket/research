@@ -1,266 +1,421 @@
-/* ===============================
-   PURPLE–GOLD THEME OVERRIDES
-   =============================== */
+/* =========================================================
+   BERRY CUSTOM THEME
+   Purple / Blue / Gold
+   Clean Version
+   ========================================================= */
 
-/* พาเล็ตสีหลัก (ประกาศครั้งเดียว) */
-:root {
-  /* Purple core */
-  --purple-500: #9333ea;
-  --purple-600: #7e22ce;
-  --purple-700: #6b21a8;
-  --purple-100: #ede9fe;
 
-  /* Gold / Amber accent */
-  --gold-500: #f59e0b;
-  --gold-400: #fbbf24;
-  --gold-100: #fef3c7;
+/* =========================================================
+   GLOBAL
+   ========================================================= */
 
-  /* Blue / Green / Others */
-  --blue-500: #0ea5e9;
-  --blue-600: #0369a1;
-  --red-500: #ef4444;
-  --green-500: #22c55e;
-  --orange-500: #f97316;
-
-  /* Gray */
-  --gray-50: #f8fafc;
-  --gray-100: #edf1f7;
-  --gray-600: #475569;
-
-  /* Bootstrap tune */
-  --bs-primary: var(--purple-600);
-  --bs-primary-rgb: 126, 34, 206;
-  --bs-secondary: var(--gold-500);
-  --bs-secondary-rgb: 245, 158, 11;
-  --bs-link-color: var(--purple-600);
-  --bs-link-hover-color: var(--purple-700);
-  --bs-focus-ring-color: rgba(126, 34, 206, 0.35);
+body{
+  background:#1f2f97 !important;
 }
 
-/* ======= Global / Body ======= */
-body {
-  background-color: #ffffff !important;
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+.pc-sidebar{
+  background:linear-gradient(180deg,#7a1fff 0%,#a93df3 100%) !important;
+  box-shadow:6px 0 20px rgba(0,0,0,.08);
 }
 
-/* ======= Sidebar (berry tone) ======= */
-.pc-sidebar {
-  background-color: var(--purple-500) !important;
-}
-.pc-sidebar .pc-caption label {
-  color: #fff !important;
-}
-.pc-sidebar .pc-item .pc-link {
-  color: #fff !important;
-  border-radius: 8px;
-  transition: all .2s ease-in-out;
-}
-.pc-sidebar .pc-item .pc-link .pc-micon i {
-  color: #fff !important;
-  opacity: 1 !important;
-}
-.pc-sidebar .pc-item .pc-link:hover,
-.pc-sidebar .pc-item.active .pc-link {
-  background-color: var(--purple-600) !important;
-  color: #fff !important;
-  padding-left: 18px;
-}
-.pc-sidebar .pc-item .pc-link:hover .pc-micon i,
-.pc-sidebar .pc-item.active .pc-link .pc-micon i {
-  color: var(--gold-400) !important;
+/* section title */
+
+.pc-sidebar .pc-caption{
+  padding-top:14px;
+  padding-bottom:8px;
 }
 
-/* ===============================
-   BERRY DASHBOARD – REPORT PAGE
-   =============================== */
-
-/* พื้นหลังส่วน content ให้เป็นเทาอ่อนแบบ berry */
-.pc-content,
-.report-index {
-  background: var(--gray-100) !important;
+.pc-sidebar .pc-caption label{
+  color:#ffffff !important;
+  font-size:1.25rem !important;
+  font-weight:700 !important;
+  letter-spacing:.3px;
 }
 
-/* การ์ดหลักในหน้า report */
-.report-index .card.dashboard-card {
-  border: none;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: 0 16px 28px rgba(15, 23, 42, 0.04);
-  background: #fff;
+/* menu item */
+
+.pc-sidebar .pc-navbar > .pc-item{
+  margin-bottom:6px;
 }
 
-.report-index .card-header.bg-gradient-primary {
-  background: linear-gradient(135deg, #7e22ce 0%, #0ea5e9 100%) !important;
-  border: none;
-  border-top-left-radius: 18px;
-  border-top-right-radius: 18px;
+.pc-sidebar .pc-item .pc-link{
+
+  display:flex;
+  align-items:center;
+  gap:12px;
+
+  min-height:58px;
+  padding:12px 18px !important;
+  border-radius:10px;
+
+  color:#ffffff !important;
+  font-size:1.55rem !important;
+  font-weight:700 !important;
+  line-height:1.35;
+
+  transition:all .25s ease;
 }
 
-/* ====== Grid บนสุด (แบบภาพ berry) ====== */
-.mui-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 16px;
-  margin-bottom: 1.25rem;
+/* menu text */
+
+.pc-sidebar .pc-item .pc-link .pc-mtext{
+  color:#ffffff !important;
+  font-size:1.55rem !important;
+  font-weight:700 !important;
 }
 
-.mui-item {
-  background: #fff;
-  border-radius: 16px;
-  padding: 14px 16px 14px 16px;
-  box-shadow: 0 14px 35px rgba(15, 23, 42, 0.03);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 88px;
+/* icon */
+
+.pc-sidebar .pc-item .pc-link .pc-micon,
+.pc-sidebar .pc-item .pc-link .pc-micon i,
+.pc-sidebar .pc-item .pc-link .pc-micon svg{
+
+  color:#ffffff !important;
+  font-size:1.7rem !important;
+  width:30px;
+  min-width:30px;
 }
 
-.mui-item .mui-title {
-  font-size: .7rem;
-  text-transform: uppercase;
-  letter-spacing: .01em;
-  color: #6b7280;
-  margin-bottom: 4px;
+/* hover */
+
+.pc-sidebar .pc-item .pc-link:hover{
+  background:rgba(255,255,255,.12) !important;
+  transform:translateX(4px);
 }
 
-.mui-item .mui-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1.1;
+/* active */
+
+.pc-sidebar .pc-item.active > .pc-link,
+.pc-sidebar .pc-item .pc-link.active{
+
+  background:rgba(255,255,255,.15) !important;
 }
 
-.mui-item .mui-sub {
-  font-size: .65rem;
-  color: #9ca3af;
+.pc-sidebar .pc-item.active > .pc-link .pc-mtext,
+.pc-sidebar .pc-item.active > .pc-link .pc-micon,
+.pc-sidebar .pc-item.active > .pc-link .pc-micon i,
+.pc-sidebar .pc-item.active > .pc-link .pc-micon svg{
+
+  color:#ffd44a !important;
 }
 
-.mui-item .mui-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  font-size: 1.3rem;
-  color: #fff;
+
+/* =========================================================
+   SUB MENU
+   ========================================================= */
+
+.pc-sidebar .pc-submenu{
+
+  background:rgba(38,58,180,.82) !important;
+  padding:14px 10px 14px 12px;
 }
 
-/* การ์ดสีเต็ม 3 ใบบนสุด */
-.mui-item.full-purple {
-  background: linear-gradient(135deg, #6b21a8 0%, #9333ea 85%);
-  color: #fff;
-}
-.mui-item.full-blue {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 85%);
-  color: #fff;
-}
-.mui-item.full-red {
-  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 90%);
-  color: #fff;
-}
-.mui-item.full-purple .mui-title,
-.mui-item.full-blue .mui-title,
-.mui-item.full-red .mui-title {
-  color: rgba(255, 255, 255, .8);
-}
-.mui-item.full-purple .mui-sub,
-.mui-item.full-blue .mui-sub,
-.mui-item.full-red .mui-sub {
-  color: rgba(255, 255, 255, .55);
-}
-.mui-item.full-purple .mui-icon,
-.mui-item.full-blue .mui-icon,
-.mui-item.full-red .mui-icon {
-  background: rgba(255, 255, 255, .1);
+.pc-sidebar .pc-submenu .pc-item .pc-link{
+
+  min-height:50px;
+  padding:10px 14px !important;
+  border-radius:10px;
+
+  font-size:1.32rem !important;
+  font-weight:700 !important;
+
+  color:rgba(255,255,255,.95) !important;
 }
 
-/* Icon สีชุดรอง */
-.mui-icon.blue { background: rgba(14, 165, 233, .15); color: #0ea5e9; }
-.mui-icon.green { background: rgba(34, 197, 94, .12); color: #22c55e; }
+.pc-sidebar .pc-submenu .pc-item .pc-link .pc-mtext{
 
-/* ====== small-box แบบ berry ข้างกราฟ ====== */
-.berry-smallbox {
-  position: relative;
-  border-radius: 14px;
-  padding: 0.9rem 0.9rem 0.85rem 0.9rem;
-  color: #fff;
-  box-shadow: 0 10px 24px rgba(15,23,42,.06);
-  overflow: hidden;
-  margin-bottom: .85rem;
-}
-.berry-smallbox .inner .label {
-  font-size: .68rem;
-  text-transform: uppercase;
-  letter-spacing: .03em;
-  opacity: .9;
-}
-.berry-smallbox .inner .value {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin-bottom: .1rem;
-}
-.berry-smallbox .icon {
-  position: absolute;
-  right: .75rem;
-  top: .35rem;
-  font-size: 2.4rem;
-  opacity: .2;
+  font-size:1.32rem !important;
+  font-weight:700 !important;
+
+  color:rgba(255,255,255,.95) !important;
 }
 
-.bg-berry-success {
-  background: linear-gradient(140deg, #22c55e 0%, #16a34a 85%);
-}
-.bg-berry-info {
-  background: linear-gradient(140deg, #0ea5e9 0%, #2563eb 85%);
-}
-.bg-berry-warning {
-  background: linear-gradient(140deg, #f97316 0%, #ea580c 85%);
-}
-.bg-berry-secondary {
-  background: linear-gradient(140deg, #64748b 0%, #475569 85%);
+.pc-sidebar .pc-submenu .pc-item .pc-link .pc-micon,
+.pc-sidebar .pc-submenu .pc-item .pc-link .pc-micon i,
+.pc-sidebar .pc-submenu .pc-item .pc-link .pc-micon svg{
+
+  font-size:1.35rem !important;
+  color:rgba(255,255,255,.95) !important;
 }
 
-/* ====== Highcharts skin ====== */
-.highcharts-container {
-  border-radius: 14px;
-  background: transparent !important;
-}
-.highcharts-title,
-.highcharts-subtitle {
-  display: none;
-}
-.highcharts-axis-line,
-.highcharts-grid-line {
-  stroke: rgba(15, 23, 42, .03);
-}
-.highcharts-xaxis-labels text,
-.highcharts-yaxis-labels text {
-  fill: #4b5563 !important;
-  font-family: "Prompt", sans-serif !important;
-  font-size: 11px !important;
-}
-.highcharts-tooltip-box {
-  fill: #fff;
-  stroke: rgba(0,0,0,.04);
-  filter: drop-shadow(0 6px 20px rgba(15,23,42,.15));
-}
-.highcharts-color-0 { fill: #9333ea; stroke: #9333ea; }
-.highcharts-color-1 { fill: #0ea5e9; stroke: #0ea5e9; }
-.highcharts-color-2 { fill: #22c55e; stroke: #22c55e; }
-.highcharts-color-3 { fill: #f97316; stroke: #f97316; }
+/* active submenu */
 
-/* ====== Responsive ====== */
-@media (max-width: 991.98px) {
-  .mui-grid {
-    grid-template-columns: 1fr 1fr;
+.pc-sidebar .pc-submenu .pc-item.active > .pc-link,
+.pc-sidebar .pc-submenu .pc-item .pc-link:hover{
+
+  background:rgba(255,255,255,.08) !important;
+}
+
+.pc-sidebar .pc-submenu .pc-item.active > .pc-link .pc-mtext,
+.pc-sidebar .pc-submenu .pc-item.active > .pc-link .pc-micon,
+.pc-sidebar .pc-submenu .pc-item.active > .pc-link .pc-micon i,
+.pc-sidebar .pc-submenu .pc-item.active > .pc-link .pc-micon svg{
+
+  color:#ffcc33 !important;
+}
+
+
+
+/* =========================================================
+   MAIN PANEL
+   ========================================================= */
+
+.pc-container,
+.pc-content{
+
+  background:#3247b5 !important;
+}
+
+.pc-sidebar .navbar-content,
+.pc-sidebar .simplebar-content{
+
+  background:transparent !important;
+}
+
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.pc-header{
+
+  background:linear-gradient(90deg,#2f43b7 0%,#344cc7 100%) !important;
+
+  box-shadow:0 4px 18px rgba(0,0,0,.08);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.pc-header .header-wrapper{
+
+  min-height:72px;
+  padding:10px 18px;
+}
+
+/* header button */
+
+.pc-header .pc-head-link{
+
+  color:#ffffff !important;
+  border-radius:12px;
+  transition:all .2s ease;
+}
+
+.pc-header .pc-head-link:hover{
+
+  background:rgba(255,255,255,.12) !important;
+  color:#ffd44a !important;
+}
+
+.pc-header .pc-head-link i{
+
+  font-size:1.45rem !important;
+}
+
+
+/* =========================================================
+   USER AVATAR
+   ========================================================= */
+
+.pc-header .user-avtar,
+.pc-header .user-avatar{
+
+  width:44px !important;
+  height:44px !important;
+
+  border:2px solid rgba(255,255,255,.95) !important;
+  box-shadow:0 4px 12px rgba(0,0,0,.18);
+
+  object-fit:cover;
+  object-position:top;
+}
+
+
+/* =========================================================
+   USER DROPDOWN
+   ========================================================= */
+
+.dropdown-user-profile.pc-h-dropdown{
+
+  min-width:300px;
+
+  border:none !important;
+  border-radius:18px !important;
+
+  overflow:hidden;
+
+  box-shadow:0 18px 40px rgba(15,23,42,.18) !important;
+
+  background:#ffffff !important;
+  padding:0 !important;
+
+  margin-top:12px !important;
+}
+
+/* dropdown header */
+
+.dropdown-user-profile .dropdown-header{
+
+  background:linear-gradient(135deg,#7e22ce 0%,#3b82f6 100%);
+
+  color:#ffffff;
+  padding:18px 18px 12px 18px;
+}
+
+.dropdown-user-profile .dropdown-header h4{
+
+  margin:0 0 6px 0;
+  font-size:1.08rem;
+  font-weight:700;
+
+  color:#ffffff !important;
+}
+
+.dropdown-user-profile .dropdown-header p{
+
+  color:rgba(255,255,255,.88) !important;
+  font-size:.95rem;
+  margin-bottom:0;
+}
+
+/* dropdown item */
+
+.dropdown-user-profile .dropdown-item{
+
+  display:flex;
+  align-items:center;
+  gap:10px;
+
+  padding:12px 18px !important;
+
+  font-size:1rem !important;
+  font-weight:600;
+
+  color:#334155 !important;
+
+  transition:all .18s ease;
+}
+
+.dropdown-user-profile .dropdown-item i{
+
+  font-size:1.2rem !important;
+  color:#7e22ce !important;
+}
+
+.dropdown-user-profile .dropdown-item:hover{
+
+  background:#f6f3ff !important;
+  color:#7e22ce !important;
+}
+
+.dropdown-user-profile .dropdown-item:hover i{
+
+  color:#f59e0b !important;
+}
+
+/* logout */
+
+#nav-logout-btn.dropdown-item:hover{
+
+  background:#fff4f4 !important;
+  color:#dc2626 !important;
+}
+
+#nav-logout-btn.dropdown-item:hover i{
+
+  color:#dc2626 !important;
+}
+
+
+/* =========================================================
+   DATEPICKER / SELECT2 FIX
+   ========================================================= */
+
+.datepicker,
+.datepicker-dropdown,
+.datepicker-dropdown:before,
+.datepicker-dropdown:after,
+.kv-datepicker-container{
+
+  z-index:99999 !important;
+}
+
+.modal .datepicker,
+.modal .datepicker-dropdown,
+.modal .kv-datepicker-container{
+
+  z-index:100000 !important;
+}
+
+/* prevent parent clipping dropdown */
+
+.card,
+.card-body,
+.table-responsive{
+
+  overflow:visible !important;
+}
+
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (min-width:992px){
+
+  .pc-sidebar .pc-item .pc-link,
+  .pc-sidebar .pc-item .pc-link .pc-mtext{
+
+    font-size:1.56rem !important;
   }
+
+  .pc-sidebar .pc-submenu .pc-item .pc-link,
+  .pc-sidebar .pc-submenu .pc-item .pc-link .pc-mtext{
+
+    font-size:1.36rem !important;
+  }
+
 }
-@media (max-width: 575.98px) {
-  .mui-grid {
-    grid-template-columns: 1fr;
+
+@media (max-width:767px){
+
+  .pc-sidebar .pc-caption label{
+
+    font-size:1.02rem !important;
   }
-  .report-index .card.dashboard-card {
-    border-radius: 14px;
+
+  .pc-sidebar .pc-item .pc-link,
+  .pc-sidebar .pc-item .pc-link .pc-mtext{
+
+    font-size:1.12rem !important;
   }
-  .berry-smallbox {
-    border-radius: 12px;
+
+  .pc-sidebar .pc-submenu .pc-item .pc-link,
+  .pc-sidebar .pc-submenu .pc-item .pc-link .pc-mtext{
+
+    font-size:1.02rem !important;
   }
+
+  .pc-header .header-wrapper{
+
+    min-height:64px;
+    padding:8px 12px;
+  }
+
+  .dropdown-user-profile.pc-h-dropdown{
+
+    min-width:270px;
+  }
+
+  .dropdown-user-profile .dropdown-item{
+
+    font-size:.95rem !important;
+  }
+
 }
