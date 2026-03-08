@@ -12,7 +12,7 @@ use app\models\Province;
  * @property int $projectID รหัสโครงการ
  * @property string $projectNameTH ชื่อโครงการภาษาไทย
  * @property string $projectNameEN ชื่อโครงการภาษาอังกฤษ
- * @property int $username หัวหน้าโครงการ
+ * @property int $username นักวิจัย
  * @property int $org_id หน่วยงาน
  * @property int $projectYearsubmit ปีงบประมาณ
  * @property int $budgets งบประมาณ
@@ -62,7 +62,7 @@ class Researchpro extends \yii\db\ActiveRecord
             'projectID' => 'รหัสโครงการ',
             'projectNameTH' => 'ชื่อโครงการภาษาไทย',
             'projectNameEN' => 'ชื่อโครงการภาษาอังกฤษ',
-            'username' => 'หัวหน้าโครงการ',
+            'username' => 'นักวิจัย',
             'org_id' => 'หน่วยงาน',
             'projectYearsubmit' => 'ปีงบประมาณ',
             'budgets' => 'งบประมาณ',
