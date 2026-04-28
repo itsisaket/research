@@ -203,7 +203,7 @@ public function actionIndex()
         }
 
         // กรองตาม article_publish
-        $q->andWhere(['between', 'DATE(article_publish)', $dateStart, $dateEnd]);
+        $q->andWhere(['between', 'article_publish', $dateStart, $dateEnd]);
 
         return $q;
     };
@@ -222,7 +222,7 @@ public function actionIndex()
         }
 
         // กรองตาม service_date
-        $q->andWhere(['between', 'DATE(service_date)', $dateStart, $dateEnd]);
+        $q->andWhere(['between', 'service_date', $dateStart, $dateEnd]);
 
         return $q;
     };

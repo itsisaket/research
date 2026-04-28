@@ -20,6 +20,7 @@ use app\models\ResearchImportForm;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use app\components\HanumanRule;
+use app\components\ExcelExporter;
 use app\models\WorkContributor;
 use yii\web\ForbiddenHttpException;
 
@@ -40,6 +41,12 @@ public function behaviors()
                     'actions' => ['index', 'error'],
                     'allow'   => true,
                     'roles'   => ['?', '@'],
+                ],
+                [
+                    // ✅ Export Excel: ต้องล็อกอินก่อน
+                    'actions' => ['export'],
+                    'allow'   => true,
+                    'roles'   => ['@'],
                 ],
                 [
                     // ✅ เปิด DepDrop ให้คนที่ล็อกอินใช้ได้ทั้งหมด
@@ -250,7 +257,88 @@ protected function mapData($datas, $fieldId, $fieldName)
     }
     return $obj;
 }
-      
+
+    /**
+     * Export ข้อมูลโครงการวิจัย (ตาม filter ปัจจุบัน) เป็นไฟล์ Excel (.xlsx)
+     */
+    public function actionExport()
+    {
+        $session = Yii::$app->session;
+        $ty = $session['ty'] ?? null;
+
+        $searchModel  = new ResearchproSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        if (!Yii::$app->user->isGuest && $ty) {
+            $dataProvider->query->andWhere(['org_id' => $ty]);
+        }
+
+        // ดึงผู้ร่วมโครงการแบบ batch (1 query สำหรับทั้งหน้า)
+        $dataProvider->pagination = false;
+        $models   = $dataProvider->getModels();
+        $refIds   = ArrayHelper::getColumn($models, 'projectID');
+        $contribs = ExcelExporter::fetchContributorsMap('researchpro', $refIds);
+
+        $columns = [
+            ['header' => 'ลำดับ', 'value' => function ($m, $i) { return $i + 1; }, 'format' => 'number'],
+            ['header' => 'รหัสโครงการ', 'value' => 'projectID'],
+            ['header' => 'ชื่อโครงการ (ไทย)', 'value' => 'projectNameTH'],
+            ['header' => 'ชื่อโครงการ (อังกฤษ)', 'value' => 'projectNameEN'],
+            ['header' => 'หน่วยงาน', 'value' => function ($m) {
+                return $m->hasorg->org_name ?? '';
+            }],
+            ['header' => 'หัวหน้าโครงการ', 'value' => function ($m) {
+                if (!$m->user) return '';
+                return trim(($m->user->uname ?? '') . ' ' . ($m->user->luname ?? ''));
+            }],
+            ['header' => 'ผู้ร่วมโครงการ', 'value' => function ($m) use ($contribs) {
+                return $contribs[(int)$m->projectID] ?? '';
+            }],
+            ['header' => 'แหล่งทุน', 'value' => function ($m) {
+                return $m->agencys->fundingAgencyName ?? '';
+            }],
+            ['header' => 'ประเภททุน', 'value' => function ($m) {
+                return $m->resFunds->researchFundName ?? '';
+            }],
+            ['header' => 'ประเภทการวิจัย', 'value' => function ($m) {
+                return $m->restypes->restypename ?? '';
+            }],
+            ['header' => 'สถานะงาน', 'value' => function ($m) {
+                return $m->resstatuss->statusname ?? '';
+            }],
+            ['header' => 'ปีงบประมาณ (พ.ศ.)', 'value' => function ($m) {
+                return $m->projectYearsubmit ?: '';
+            }],
+            ['header' => 'งบประมาณ (บาท)', 'value' => 'budgets', 'format' => 'number'],
+            ['header' => 'วันที่เริ่มต้น', 'value' => function ($m) {
+                return ExcelExporter::formatThaiDate($m->projectStartDate);
+            }],
+            ['header' => 'วันที่สิ้นสุด', 'value' => function ($m) {
+                return ExcelExporter::formatThaiDate($m->projectEndDate);
+            }],
+            ['header' => 'พื้นที่วิจัย', 'value' => 'researchArea'],
+            ['header' => 'จังหวัด', 'value' => function ($m) {
+                return $m->prov->PROVINCE_NAME ?? '';
+            }],
+            ['header' => 'อำเภอ', 'value' => function ($m) {
+                return $m->amph->AMPHUR_NAME ?? '';
+            }],
+            ['header' => 'ตำบล', 'value' => function ($m) {
+                return $m->dist->DISTRICT_NAME ?? '';
+            }],
+            ['header' => 'สาขาวิชา', 'value' => function ($m) {
+                return $m->habranchs->branch_name ?? '';
+            }],
+        ];
+
+        return ExcelExporter::export($dataProvider, $columns, [
+            'filename'   => 'researchpro_' . date('Ymd_His'),
+            'sheetTitle' => 'งานวิจัย',
+            'title'      => 'รายการโครงการวิจัย',
+            'subtitle'   => 'พิมพ์เมื่อ ' . ExcelExporter::formatThaiDate(date('Y-m-d')),
+        ]);
+    }
+
     public function actionImport()
     {
         $model = new ResearchImportForm();

@@ -25,6 +25,20 @@ $this->params['breadcrumbs'][] = $this->title;
                 data-bs-target="#uploadModal">
             <i class="fas fa-file-upload"></i> อัปโหลดไฟล์ Excel
         </button>
+
+        <!-- 🟢 ปุ่ม Export Excel ตาม filter ปัจจุบัน -->
+        <?php if (!Yii::$app->user->isGuest): ?>
+            <?= Html::a(
+                '<i class="fas fa-file-excel"></i> ส่งออก Excel',
+                array_merge(['export'], Yii::$app->request->queryParams),
+                [
+                    'class'   => 'btn btn-outline-success',
+                    'data-pjax' => 0,
+                    'target'  => '_blank',
+                    'rel'     => 'noopener',
+                ]
+            ) ?>
+        <?php endif; ?>
     </p>
 
     <!-- 🔶 แสดง Flash message ทั่วไป -->

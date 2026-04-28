@@ -20,6 +20,19 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <p>
         <?= Html::a('เพิ่มข้อมูล', ['create'], ['class' => 'btn btn-success']) ?>
+
+        <?php if (!Yii::$app->user->isGuest): ?>
+            <?= Html::a(
+                '<i class="fas fa-file-excel"></i> ส่งออก Excel',
+                array_merge(['export'], Yii::$app->request->queryParams),
+                [
+                    'class'   => 'btn btn-outline-success',
+                    'data-pjax' => 0,
+                    'target'  => '_blank',
+                    'rel'     => 'noopener',
+                ]
+            ) ?>
+        <?php endif; ?>
     </p>
 
   <?php echo $this->render('_search', [ 'model' => $searchModel, 'pubItems' => $pubItems,]);?>

@@ -15,6 +15,7 @@ use yii\helpers\ArrayHelper;
 use app\models\Amphur;
 use app\models\District;
 use app\components\HanumanRule;
+use app\components\ExcelExporter;
 
 class UtilizationController extends Controller
 {
@@ -31,6 +32,11 @@ class UtilizationController extends Controller
                         'actions' => ['index', 'error'],
                         'allow'   => true,
                         'roles'   => ['?', '@'],
+                    ],
+                    [
+                        'actions' => ['export'],
+                        'allow'   => true,
+                        'roles'   => ['@'],
                     ],
                     [
                         'actions' => ['get-amphur', 'get-district'],
@@ -71,6 +77,69 @@ class UtilizationController extends Controller
         return $this->render('index', [
             'searchModel'  => $searchModel,
             'dataProvider' => $dataProvider,
+        ]);
+    }
+
+    /**
+     * Export ข้อมูลการนำไปใช้ประโยชน์ (ตาม filter ปัจจุบัน) เป็นไฟล์ Excel (.xlsx)
+     */
+    public function actionExport()
+    {
+        $session = Yii::$app->session;
+        $ty = $session->get('ty');
+
+        $searchModel  = new UtilizationSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        if (!Yii::$app->user->isGuest && $ty) {
+            $dataProvider->query->andWhere(['org_id' => $ty]);
+        }
+
+        // ดึงผู้ร่วมดำเนินงานแบบ batch
+        $dataProvider->pagination = false;
+        $models   = $dataProvider->getModels();
+        $refIds   = ArrayHelper::getColumn($models, 'utilization_id');
+        $contribs = ExcelExporter::fetchContributorsMap('utilization', $refIds);
+
+        $columns = [
+            ['header' => 'ลำดับ', 'value' => function ($m, $i) { return $i + 1; }, 'format' => 'number'],
+            ['header' => 'รหัส', 'value' => 'utilization_id'],
+            ['header' => 'โครงการวิจัย/งานสร้างสรรค์', 'value' => 'project_name'],
+            ['header' => 'เจ้าของรายการ', 'value' => function ($m) {
+                if (!$m->user) return '';
+                return trim(($m->user->uname ?? '') . ' ' . ($m->user->luname ?? ''));
+            }],
+            ['header' => 'ผู้ร่วมดำเนินงาน', 'value' => function ($m) use ($contribs) {
+                return $contribs[(int)$m->utilization_id] ?? '';
+            }],
+            ['header' => 'หน่วยงาน', 'value' => function ($m) {
+                return $m->hasorg->org_name ?? '';
+            }],
+            ['header' => 'ลักษณะของการใช้ประโยชน์', 'value' => function ($m) {
+                return $m->utilization->utilization_type_name ?? '';
+            }],
+            ['header' => 'หน่วยงานที่ใช้ประโยชน์', 'value' => 'utilization_add'],
+            ['header' => 'จังหวัด', 'value' => function ($m) {
+                return $m->getProvinceName();
+            }],
+            ['header' => 'อำเภอ', 'value' => function ($m) {
+                return $m->getAmphurName();
+            }],
+            ['header' => 'ตำบล', 'value' => function ($m) {
+                return $m->getDistrictName();
+            }],
+            ['header' => 'วันที่ดำเนินการ', 'value' => function ($m) {
+                return ExcelExporter::formatThaiDate($m->utilization_date);
+            }],
+            ['header' => 'การใช้ประโยชน์', 'value' => 'utilization_detail'],
+            ['header' => 'ข้อมูลอ้างอิง', 'value' => 'utilization_refer'],
+        ];
+
+        return ExcelExporter::export($dataProvider, $columns, [
+            'filename'   => 'utilization_' . date('Ymd_His'),
+            'sheetTitle' => 'การนำไปใช้ประโยชน์',
+            'title'      => 'รายการการนำไปใช้ประโยชน์',
+            'subtitle'   => 'พิมพ์เมื่อ ' . ExcelExporter::formatThaiDate(date('Y-m-d')),
         ]);
     }
 

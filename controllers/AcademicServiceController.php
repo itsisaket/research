@@ -8,6 +8,7 @@ use app\models\AcademicServiceSearch;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\web\ForbiddenHttpException;
+use app\components\ExcelExporter;
 
 class AcademicServiceController extends Controller
 {
@@ -22,6 +23,12 @@ class AcademicServiceController extends Controller
                         'actions' => ['index',  'error'],
                         'allow'   => true,
                         'roles'   => ['?', '@'],
+                    ],
+                    // Export Excel: ต้องล็อกอินก่อน
+                    [
+                        'actions' => ['export'],
+                        'allow'   => true,
+                        'roles'   => ['@'],
                     ],
                     // ต้อง login และเป็น position 1 หรือ 4
                     [
@@ -53,6 +60,55 @@ class AcademicServiceController extends Controller
         return $this->render('index', [
             'searchModel'  => $searchModel,
             'dataProvider' => $dataProvider,
+        ]);
+    }
+
+    /**
+     * Export ข้อมูลบริการวิชาการ (ตาม filter ปัจจุบัน) เป็นไฟล์ Excel (.xlsx)
+     * - SearchModel มีการจำกัดสิทธิ์ตาม position อยู่แล้ว
+     */
+    public function actionExport()
+    {
+        $searchModel  = new AcademicServiceSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        // ดึงผู้ร่วมดำเนินงานแบบ batch
+        $dataProvider->pagination = false;
+        $models   = $dataProvider->getModels();
+        $refIds   = \yii\helpers\ArrayHelper::getColumn($models, 'service_id');
+        $contribs = ExcelExporter::fetchContributorsMap('academic_service', $refIds);
+
+        $columns = [
+            ['header' => 'ลำดับ', 'value' => function ($m, $i) { return $i + 1; }, 'format' => 'number'],
+            ['header' => 'รหัสรายการ', 'value' => 'service_id'],
+            ['header' => 'เรื่อง', 'value' => 'title'],
+            ['header' => 'ประเภทบริการวิชาการ', 'value' => function ($m) {
+                return $m->serviceType->type_name ?? '';
+            }],
+            ['header' => 'ลักษณะงาน', 'value' => 'work_desc'],
+            ['header' => 'สถานที่', 'value' => 'location'],
+            ['header' => 'วันที่ปฏิบัติงาน', 'value' => function ($m) {
+                return ExcelExporter::formatThaiDate($m->service_date);
+            }],
+            ['header' => 'จำนวนชั่วโมง', 'value' => 'hours', 'format' => 'number'],
+            ['header' => 'เจ้าของรายการ', 'value' => function ($m) {
+                return $m->getOwnerFullname() ?: ($m->username ?? '');
+            }],
+            ['header' => 'ผู้ร่วมดำเนินงาน', 'value' => function ($m) use ($contribs) {
+                return $contribs[(int)$m->service_id] ?? '';
+            }],
+            ['header' => 'ลิงก์/อ้างอิง', 'value' => 'reference_url'],
+            ['header' => 'หมายเหตุ', 'value' => 'note'],
+            ['header' => 'สถานะ', 'value' => function ($m) {
+                return ((int)$m->status === 1) ? 'ใช้งาน' : 'ปิดใช้';
+            }],
+        ];
+
+        return ExcelExporter::export($dataProvider, $columns, [
+            'filename'   => 'academic_service_' . date('Ymd_His'),
+            'sheetTitle' => 'บริการวิชาการ',
+            'title'      => 'รายการบริการวิชาการ',
+            'subtitle'   => 'พิมพ์เมื่อ ' . ExcelExporter::formatThaiDate(date('Y-m-d')),
         ]);
     }
 

@@ -29,12 +29,26 @@ $fmtDate = function ($v) {
       <div class="text-muted small">บันทึกและติดตามรายการบริการวิชาการ</div>
     </div>
 
-    <div>
+    <div class="d-flex flex-wrap gap-2">
       <?php if ($canCreate): ?>
         <?= Html::a('<i class="fas fa-plus me-1"></i> เพิ่มรายการ', ['create'], [
           'class' => 'btn btn-success',
           'encode' => false
         ]) ?>
+      <?php endif; ?>
+
+      <?php if (!Yii::$app->user->isGuest): ?>
+        <?= Html::a(
+            '<i class="fas fa-file-excel me-1"></i> ส่งออก Excel',
+            array_merge(['export'], Yii::$app->request->queryParams),
+            [
+                'class'   => 'btn btn-outline-success',
+                'encode'  => false,
+                'data-pjax' => 0,
+                'target'  => '_blank',
+                'rel'     => 'noopener',
+            ]
+        ) ?>
       <?php endif; ?>
     </div>
   </div>

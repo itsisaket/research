@@ -13,6 +13,7 @@ use yii\filters\AccessControl;
 use app\models\Publication;
 use yii\helpers\ArrayHelper;
 use app\models\WorkContributor;
+use app\components\ExcelExporter;
 
 class ArticleController extends Controller
 {
@@ -29,6 +30,11 @@ class ArticleController extends Controller
                         'actions' => ['index', 'error'],
                         'allow'   => true,
                         'roles'   => ['?', '@'],
+                    ],
+                    [
+                        'actions' => ['export'],
+                        'allow'   => true,
+                        'roles'   => ['@'],
                     ],
                     [
                         'actions' => [
@@ -80,6 +86,66 @@ public function actionIndex()
         'pubItems'     => $pubItems,
     ]);
 }
+
+    /**
+     * Export ข้อมูลการตีพิมพ์เผยแพร่ (ตาม filter ปัจจุบัน) เป็นไฟล์ Excel (.xlsx)
+     */
+    public function actionExport()
+    {
+        $session = Yii::$app->session;
+        $ty = $session['ty'] ?? null;
+
+        $searchModel  = new ArticleSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        if (!Yii::$app->user->isGuest && $ty) {
+            $dataProvider->query->andWhere(['a.org_id' => (int)$ty]);
+        }
+
+        // ดึงผู้เขียนร่วมแบบ batch
+        $dataProvider->pagination = false;
+        $models   = $dataProvider->getModels();
+        $refIds   = ArrayHelper::getColumn($models, 'article_id');
+        $contribs = ExcelExporter::fetchContributorsMap('article', $refIds);
+
+        $columns = [
+            ['header' => 'ลำดับ', 'value' => function ($m, $i) { return $i + 1; }, 'format' => 'number'],
+            ['header' => 'รหัสบทความ', 'value' => 'article_id'],
+            ['header' => 'ชื่อบทความ (ไทย)', 'value' => 'article_th'],
+            ['header' => 'ชื่อบทความ (อังกฤษ)', 'value' => 'article_eng'],
+            ['header' => 'ประเภทฐาน', 'value' => function ($m) {
+                return $m->publi->publication_name ?? '';
+            }],
+            ['header' => 'วารสาร/งานประชุม', 'value' => 'journal'],
+            ['header' => 'วันที่เผยแพร่', 'value' => function ($m) {
+                return ExcelExporter::formatThaiDate($m->article_publish);
+            }],
+            ['header' => 'หน่วยงาน', 'value' => function ($m) {
+                return $m->hasorg->org_name ?? '';
+            }],
+            ['header' => 'นักวิจัยหลัก', 'value' => function ($m) {
+                if (!$m->user) return '';
+                return trim(($m->user->uname ?? '') . ' ' . ($m->user->luname ?? ''));
+            }],
+            ['header' => 'ผู้เขียนร่วม', 'value' => function ($m) use ($contribs) {
+                return $contribs[(int)$m->article_id] ?? '';
+            }],
+            ['header' => 'สาขาวิชา', 'value' => function ($m) {
+                return $m->habranch->branch_name ?? '';
+            }],
+            ['header' => 'จริยธรรมในมนุษย์', 'value' => function ($m) {
+                return $m->haec->ec_name ?? '';
+            }],
+            ['header' => 'อ้างอิง', 'value' => 'refer'],
+        ];
+
+        return ExcelExporter::export($dataProvider, $columns, [
+            'filename'   => 'article_' . date('Ymd_His'),
+            'sheetTitle' => 'การตีพิมพ์เผยแพร่',
+            'title'      => 'รายการการตีพิมพ์เผยแพร่',
+            'subtitle'   => 'พิมพ์เมื่อ ' . ExcelExporter::formatThaiDate(date('Y-m-d')),
+        ]);
+    }
 
     public function actionView($article_id)
     {
