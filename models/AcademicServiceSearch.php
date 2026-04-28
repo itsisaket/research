@@ -8,11 +8,14 @@ use yii\data\ActiveDataProvider;
 
 class AcademicServiceSearch extends AcademicService
 {
+    /** @var string Quick search keyword */
+    public $q;
+
     public function rules()
     {
         return [
             [['service_id', 'type_id', 'org_id', 'status'], 'integer'],
-            [['username', 'title', 'location', 'service_date'], 'safe'],
+            [['username', 'title', 'location', 'service_date', 'q'], 'safe'],
         ];
     }
 
@@ -79,7 +82,28 @@ class AcademicServiceSearch extends AcademicService
         }
 
         /** =========================
-         * Filters จากฟอร์มค้นหา
+         * Quick search (OR LIKE หลาย field)
+         * ========================= */
+        $q = trim((string)$this->q);
+        if ($q !== '') {
+            $isNumeric = ctype_digit($q);
+
+            $or = ['or',
+                ['like', 's.title',     $q],
+                ['like', 's.location',  $q],
+                ['like', 's.work_desc', $q],
+                ['like', 's.note',      $q],
+                ['like', 'u.uname',     $q],
+                ['like', 'u.luname',    $q],
+            ];
+            if ($isNumeric) {
+                $or[] = ['s.service_id' => (int)$q];
+            }
+            $query->andWhere($or);
+        }
+
+        /** =========================
+         * Filters จากฟอร์มค้นหา (Advanced)
          * ========================= */
         $query->andFilterWhere([
             's.service_id' => $this->service_id,

@@ -87,7 +87,7 @@ public function behaviors()
         $dataProvider = $searchModel->search($this->request->queryParams);
 
         if (!Yii::$app->user->isGuest && $ty) {
-            $dataProvider->query->andWhere(['org_id' => $ty]);
+            $dataProvider->query->andWhere(['r.org_id' => $ty]);
         }
 
         $importModel = new ResearchImportForm();
@@ -270,7 +270,7 @@ protected function mapData($datas, $fieldId, $fieldName)
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
         if (!Yii::$app->user->isGuest && $ty) {
-            $dataProvider->query->andWhere(['org_id' => $ty]);
+            $dataProvider->query->andWhere(['r.org_id' => $ty]);
         }
 
         // ดึงผู้ร่วมโครงการแบบ batch (1 query สำหรับทั้งหน้า)

@@ -4,6 +4,7 @@ use yii\helpers\Html;
 use yii\helpers\Url;
 use yii\grid\ActionColumn;
 use yii\grid\GridView;
+use yii\widgets\Pjax;
 
 /* @var $this yii\web\View */
 /* @var $searchModel app\models\UtilizationSearch */
@@ -32,8 +33,21 @@ $this->title = 'การนำไปใช้ประโยชน์';
         <?php endif; ?>
     </p>
 
-  <?php  echo $this->render('_search', [ 'model' => $searchModel]);?>
+  <?php Pjax::begin([
+      'id' => 'pjax-utilization',
+      'timeout' => 8000,
+      'clientOptions' => ['scrollTo' => false],
+  ]); ?>
 
+  <?php echo $this->render('_search', [ 'model' => $searchModel]);?>
+
+  <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="text-muted small">
+          พบทั้งหมด <strong><?= number_format($dataProvider->getTotalCount()) ?></strong> รายการ
+      </div>
+  </div>
+
+  <div class="ss-grid-wrap">
 <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'columns' => [
@@ -75,4 +89,7 @@ $this->title = 'การนำไปใช้ประโยชน์';
 
         ],
     ]); ?>
+  </div>
+
+  <?php Pjax::end(); ?>
 </div>

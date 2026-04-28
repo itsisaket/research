@@ -6,13 +6,24 @@ use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use app\models\Researchpro;
 
+/**
+ * ResearchproSearch
+ * --------------------------------------------------------------
+ *  - $q       : Quick search (OR LIKE หลาย field)
+ *  - field เดิม: projectNameTH, username, projectYearsubmit, fundingAgencyID,
+ *                researchTypeID, jobStatusID, org_id
+ */
 class ResearchproSearch extends Researchpro
 {
+    /** @var string Quick search keyword */
+    public $q;
+
     public function rules()
     {
         return [
-            [['projectID', 'org_id', 'projectYearsubmit', 'fundingAgencyID'], 'integer'],
-            [['projectNameTH', 'username'], 'safe'],
+            [['projectID', 'org_id', 'projectYearsubmit', 'fundingAgencyID',
+              'researchTypeID', 'jobStatusID'], 'integer'],
+            [['projectNameTH', 'username', 'q'], 'safe'],
         ];
     }
 
@@ -23,7 +34,7 @@ class ResearchproSearch extends Researchpro
 
     public function search($params)
     {
-        $query = Researchpro::find();
+        $query = Researchpro::find()->alias('r');
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
@@ -39,15 +50,45 @@ class ResearchproSearch extends Researchpro
             return $dataProvider;
         }
 
-        // ===== exact filters (dropdown) =====
+        // ===== Quick search =====
+        $q = trim((string)$this->q);
+        if ($q !== '') {
+            // ถ้าเป็นตัวเลขล้วน → ค้นหา projectID ตรงด้วย
+            $isNumeric = ctype_digit($q);
+
+            // join ไป Account เพื่อค้นด้วยชื่อ/นามสกุลได้
+            $query->leftJoin('tb_user u', 'u.username = r.username');
+
+            $or = ['or',
+                ['like', 'r.projectNameTH', $q],
+                ['like', 'r.projectNameEN', $q],
+                ['like', 'r.researchArea',  $q],
+                ['like', 'r.documentid',    $q],
+                ['like', 'u.uname',         $q],
+                ['like', 'u.luname',        $q],
+            ];
+            if ($isNumeric) {
+                $or[] = ['r.projectID' => (int)$q];
+                $or[] = ['r.projectYearsubmit' => (int)$q];
+            }
+            $query->andWhere($or);
+        }
+
+        // ===== exact filters (Advanced) =====
         $query->andFilterWhere([
-            'projectYearsubmit' => $this->projectYearsubmit, // ปีเสนอ
-            'fundingAgencyID'   => $this->fundingAgencyID,   // แหล่งทุน (ตรงกับ _search)
+            'r.projectYearsubmit' => $this->projectYearsubmit,
+            'r.fundingAgencyID'   => $this->fundingAgencyID,
+            'r.researchTypeID'    => $this->researchTypeID,
+            'r.jobStatusID'       => $this->jobStatusID,
+            'r.org_id'            => $this->org_id,
         ]);
 
-        // ===== text filters =====
-        $query->andFilterWhere(['like', 'projectNameTH', $this->projectNameTH]); // ชื่อโครงการ
-        $query->andFilterWhere(['like', 'username', $this->username]);          // หัวหน้าโครงการ
+        // ===== text filters (Advanced) =====
+        $query->andFilterWhere(['like', 'r.projectNameTH', $this->projectNameTH]);
+        if (!empty($this->username)) {
+            // ใช้ exact match เพราะ Select2 ส่งค่า username มาตรง
+            $query->andFilterWhere(['r.username' => $this->username]);
+        }
 
         return $dataProvider;
     }

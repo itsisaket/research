@@ -73,10 +73,22 @@ $this->params['breadcrumbs'][] = $this->title;
     <?php endif; ?>
 
 
-    <?php  echo $this->render('_search', ['model' => $searchModel]); ?>
+    <?php Pjax::begin([
+        'id' => 'pjax-researchpro',
+        'timeout' => 8000,
+        'enablePushState' => true,
+        'clientOptions' => ['scrollTo' => false],
+    ]); ?>
 
-    <?php Pjax::begin(['id' => 'pjax-researchpro']); ?>
+    <?php echo $this->render('_search', ['model' => $searchModel]); ?>
 
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="text-muted small">
+            พบทั้งหมด <strong><?= number_format($dataProvider->getTotalCount()) ?></strong> รายการ
+        </div>
+    </div>
+
+    <div class="ss-grid-wrap">
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         // ถ้าคุณมี search model แบบเต็ม ให้เปิดคอมเมนต์นี้ได้
@@ -134,6 +146,7 @@ $this->params['breadcrumbs'][] = $this->title;
             // ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>
+    </div>
 
     <?php Pjax::end(); ?>
 

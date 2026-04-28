@@ -35,8 +35,21 @@ $this->params['breadcrumbs'][] = $this->title;
         <?php endif; ?>
     </p>
 
+  <?php Pjax::begin([
+      'id' => 'pjax-article',
+      'timeout' => 8000,
+      'clientOptions' => ['scrollTo' => false],
+  ]); ?>
+
   <?php echo $this->render('_search', [ 'model' => $searchModel, 'pubItems' => $pubItems,]);?>
 
+  <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="text-muted small">
+          พบทั้งหมด <strong><?= number_format($dataProvider->getTotalCount()) ?></strong> รายการ
+      </div>
+  </div>
+
+  <div class="ss-grid-wrap">
 <?= GridView::widget([
     'dataProvider' => $dataProvider,
     'columns' => [
@@ -83,5 +96,8 @@ $this->params['breadcrumbs'][] = $this->title;
 
     ],
 ]); ?>
+  </div>
+
+  <?php Pjax::end(); ?>
 
 </div>

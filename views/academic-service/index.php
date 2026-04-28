@@ -53,12 +53,22 @@ $fmtDate = function ($v) {
     </div>
   </div>
 
+  <?php Pjax::begin([
+      'id' => 'pjax-academic-service',
+      'timeout' => 10000,
+      'clientOptions' => ['scrollTo' => false],
+  ]); ?>
+
   <?= $this->render('_search', ['model' => $searchModel]); ?>
 
-  <div class="card shadow-sm">
-    <div class="card-body">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="text-muted small">
+          พบทั้งหมด <strong><?= number_format($dataProvider->getTotalCount()) ?></strong> รายการ
+      </div>
+  </div>
 
-      <?php Pjax::begin(['id' => 'pjax-academic-service', 'timeout' => 10000]); ?>
+  <div class="card shadow-sm ss-grid-wrap">
+    <div class="card-body">
 
       <?= GridView::widget([
         'dataProvider' => $dataProvider,
@@ -113,9 +123,9 @@ $fmtDate = function ($v) {
         ],
       ]); ?>
 
-      <?php Pjax::end(); ?>
-
     </div>
   </div>
+
+  <?php Pjax::end(); ?>
 
 </div>

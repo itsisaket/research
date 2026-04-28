@@ -71,7 +71,7 @@ class UtilizationController extends Controller
         $dataProvider = $searchModel->search($this->request->queryParams);
 
         if (!Yii::$app->user->isGuest && $ty) {
-            $dataProvider->query->andWhere(['org_id' => $ty]);
+            $dataProvider->query->andWhere(['u.org_id' => $ty]);
         }
 
         return $this->render('index', [
@@ -92,7 +92,7 @@ class UtilizationController extends Controller
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
         if (!Yii::$app->user->isGuest && $ty) {
-            $dataProvider->query->andWhere(['org_id' => $ty]);
+            $dataProvider->query->andWhere(['u.org_id' => $ty]);
         }
 
         // ดึงผู้ร่วมดำเนินงานแบบ batch
