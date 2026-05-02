@@ -7,6 +7,9 @@ use miloschuman\highcharts\Highcharts;
 /* @var $this yii\web\View */
 /* @var $seriesY array */
 /* @var $budgetSeriesY array */
+/* @var $articleSeriesY array */
+/* @var $utilSeriesY array */
+/* @var $serviceSeriesY array */
 /* @var $categoriesY array */
 /* @var $seriesO array */
 /* @var $categoriesO array */
@@ -732,74 +735,86 @@ $maxOrg = !empty($topOrg) ? max(array_column($topOrg, 'count')) : 1;
         </div>
     <?php else: ?>
 
-    <!-- ============ Combo: จำนวนโครงการ + งบประมาณ รายปี ============ -->
+    <!-- ============ แนวโน้มผลงาน 4 ประเภท รายปี (line) ============ -->
     <div class="section-card">
         <div class="section-card-header">
             <h5>
-                <span class="icon-bg"><i class="fas fa-chart-column"></i></span>
-                แนวโน้มโครงการและงบประมาณรายปี
+                <span class="icon-bg"><i class="fas fa-chart-line"></i></span>
+                แนวโน้มผลงานรายปี (4 ประเภท)
             </h5>
             <span class="meta">
-                <i class="fas fa-square text-primary"></i> โครงการ &nbsp;
-                <i class="fas fa-square" style="color:#f59e0b;"></i> งบประมาณ
+                เปรียบเทียบจำนวนรายการของแต่ละประเภทตามปี
             </span>
         </div>
         <div class="section-card-body">
             <?= Highcharts::widget([
                 'options' => [
                     'accessibility' => ['enabled' => false],
-                    'chart' => ['height' => 340, 'backgroundColor' => 'transparent'],
+                    'chart' => ['type' => 'spline', 'height' => 360, 'backgroundColor' => 'transparent'],
                     'title' => ['text' => ''],
                     'xAxis' => [
                         'categories' => $categoriesY,
-                        'crosshair' => true,
+                        'crosshair'  => true,
+                        'title'      => ['text' => 'ปี พ.ศ.'],
                     ],
                     'yAxis' => [
-                        [
-                            'title' => ['text' => 'จำนวนโครงการ', 'style' => ['color' => '#4f46e5']],
-                            'labels' => ['style' => ['color' => '#4f46e5']],
-                            'allowDecimals' => false,
-                            'min' => 0,
-                        ],
-                        [
-                            'title' => ['text' => 'งบประมาณ (บาท)', 'style' => ['color' => '#f59e0b']],
-                            'labels' => [
-                                'style' => ['color' => '#f59e0b'],
-                                'formatter' => new \yii\web\JsExpression("function() { return this.value >= 1000000 ? (this.value/1000000).toFixed(1)+'M' : this.value.toLocaleString(); }")
-                            ],
-                            'min' => 0,
-                            'opposite' => true,
-                        ],
+                        'title'         => ['text' => 'จำนวน (รายการ)'],
+                        'allowDecimals' => false,
+                        'min'           => 0,
                     ],
-                    'legend' => ['enabled' => true, 'align' => 'right', 'verticalAlign' => 'top'],
-                    'tooltip' => ['shared' => true],
+                    'legend' => [
+                        'enabled'        => true,
+                        'align'          => 'center',
+                        'verticalAlign'  => 'bottom',
+                        'itemStyle'      => ['fontWeight' => '500', 'fontSize' => '12px'],
+                    ],
+                    'tooltip' => [
+                        'shared'      => true,
+                        'borderWidth' => 0,
+                        'shadow'      => true,
+                        'useHTML'     => true,
+                        'headerFormat'=> '<div style="font-weight:600;margin-bottom:4px;">ปี {point.key}</div>',
+                        'pointFormat' => '<span style="color:{point.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
+                    ],
                     'plotOptions' => [
-                        'column' => [
-                            'borderRadius' => 4,
-                            'borderWidth' => 0,
-                            'dataLabels' => ['enabled' => true, 'style' => ['fontWeight' => '600']],
-                        ],
                         'spline' => [
                             'lineWidth' => 3,
-                            'marker' => ['enabled' => true, 'radius' => 5],
+                            'marker'    => [
+                                'enabled' => true,
+                                'radius'  => 4,
+                                'symbol'  => 'circle',
+                                'lineWidth' => 2,
+                                'lineColor' => '#fff',
+                            ],
+                        ],
+                        'series' => [
+                            'cursor' => 'pointer',
+                            'states' => [
+                                'hover' => ['lineWidth' => 4],
+                                'inactive' => ['opacity' => 0.25],
+                            ],
                         ],
                     ],
                     'series' => [
                         [
-                            'type' => 'column',
-                            'name' => 'จำนวนโครงการ',
+                            'name'  => 'งานวิจัย',
                             'color' => '#4f46e5',
-                            'data' => $seriesY,
-                            'yAxis' => 0,
-                            'tooltip' => ['valueSuffix' => ' โครงการ'],
+                            'data'  => $seriesY,
                         ],
                         [
-                            'type' => 'spline',
-                            'name' => 'งบประมาณ',
+                            'name'  => 'การตีพิมพ์เผยแพร่',
+                            'color' => '#f43f5e',
+                            'data'  => $articleSeriesY,
+                        ],
+                        [
+                            'name'  => 'การนำไปใช้ประโยชน์',
+                            'color' => '#10b981',
+                            'data'  => $utilSeriesY,
+                        ],
+                        [
+                            'name'  => 'บริการวิชาการ',
                             'color' => '#f59e0b',
-                            'data' => $budgetSeriesY,
-                            'yAxis' => 1,
-                            'tooltip' => ['valueSuffix' => ' บาท', 'pointFormat' => '<span style="color:{point.color}">●</span> {series.name}: <b>{point.y:,.0f}</b><br/>'],
+                            'data'  => $serviceSeriesY,
                         ],
                     ],
                     'credits' => ['enabled' => false],
@@ -1022,39 +1037,67 @@ $maxOrg = !empty($topOrg) ? max(array_column($topOrg, 'count')) : 1;
     </div>
 
     <!-- ============ แหล่งทุนรายปี (stacked) ============ -->
-    <?php if (!empty($fundingSeries) && count($fundingSeries) > 1): ?>
+    <?php if (!empty($fundingSeries) && count($fundingSeries) >= 1): ?>
     <div class="section-card">
         <div class="section-card-header">
             <h5>
-                <span class="icon-bg emerald"><i class="fas fa-sitemap"></i></span>
-                แหล่งทุนรายปี (Stacked)
+                <span class="icon-bg emerald"><i class="fas fa-chart-line"></i></span>
+                แนวโน้มแหล่งทุนรายปี
             </h5>
-            <span class="meta">เปรียบเทียบสัดส่วนแหล่งทุนในแต่ละปี</span>
+            <span class="meta">แสดงจำนวนโครงการของแต่ละแหล่งทุนตามปี</span>
         </div>
         <div class="section-card-body">
             <?= Highcharts::widget([
                 'options' => [
                     'accessibility' => ['enabled' => false],
-                    'chart' => ['type' => 'column', 'height' => 320, 'backgroundColor' => 'transparent'],
+                    'chart' => ['type' => 'spline', 'height' => 360, 'backgroundColor' => 'transparent'],
                     'title' => ['text' => ''],
                     'xAxis' => [
                         'categories' => $categoriesY,
-                        'crosshair' => true,
+                        'crosshair'  => true,
+                        'title'      => ['text' => 'ปี พ.ศ.'],
                     ],
                     'yAxis' => [
-                        'min' => 0, 'allowDecimals' => false,
-                        'title' => ['text' => 'จำนวนโครงการ'],
+                        'min'           => 0,
+                        'allowDecimals' => false,
+                        'title'         => ['text' => 'จำนวนโครงการ'],
                     ],
-                    'legend' => ['enabled' => true, 'align' => 'right', 'verticalAlign' => 'top'],
-                    'tooltip' => ['shared' => true],
+                    'legend' => [
+                        'enabled'        => true,
+                        'align'          => 'center',
+                        'verticalAlign'  => 'bottom',
+                        'layout'         => 'horizontal',
+                        'itemStyle'      => ['fontWeight' => '500', 'fontSize' => '12px'],
+                        'maxHeight'      => 80,
+                    ],
+                    'tooltip' => [
+                        'shared'       => true,
+                        'borderWidth'  => 0,
+                        'shadow'       => true,
+                        'useHTML'      => true,
+                        'headerFormat' => '<div style="font-weight:600;margin-bottom:4px;">ปี {point.key}</div>',
+                        'pointFormat'  => '<span style="color:{point.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
+                    ],
                     'plotOptions' => [
-                        'column' => [
-                            'stacking' => 'normal',
-                            'borderRadius' => 3, 'borderWidth' => 0,
-                            'dataLabels' => ['enabled' => false],
-                        ]
+                        'spline' => [
+                            'lineWidth' => 2.5,
+                            'marker'    => [
+                                'enabled'   => true,
+                                'radius'    => 4,
+                                'symbol'    => 'circle',
+                                'lineWidth' => 2,
+                                'lineColor' => '#fff',
+                            ],
+                        ],
+                        'series' => [
+                            'cursor' => 'pointer',
+                            'states' => [
+                                'hover'    => ['lineWidth' => 3.5],
+                                'inactive' => ['opacity' => 0.2],
+                            ],
+                        ],
                     ],
-                    'colors' => ['#4f46e5','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#0ea5e9','#d946ef'],
+                    'colors' => ['#4f46e5','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#0ea5e9','#d946ef','#84cc16'],
                     'series' => $fundingSeries,
                     'credits' => ['enabled' => false],
                 ]

@@ -228,21 +228,77 @@ public function actionIndex()
     };
 
     /* =========================================================
-     * 1) กราฟรายปี (จำนวนโครงการ + งบประมาณรายปี)
+     * 1) กราฟแนวโน้ม 4 โมดูล รายปี (พ.ศ.)
+     *    - งานวิจัย  : ใช้ projectYearsubmit (เก็บเป็น พ.ศ. integer)
+     *    - บทความ    : ใช้ article_publish    (date)
+     *    - การนำไปใช้ : ใช้ utilization_date   (date)
+     *    - บริการวิชาการ: ใช้ service_date     (date)
      * ========================================================= */
-    $seriesY       = [];
-    $budgetSeriesY = [];
-    $categoriesY   = [];
+    $seriesY        = [];   // งานวิจัย
+    $budgetSeriesY  = [];   // งบประมาณรวมรายปี (เก็บไว้ใช้ที่อื่น)
+    $articleSeriesY = [];   // การตีพิมพ์เผยแพร่
+    $utilSeriesY    = [];   // นำไปใช้ประโยชน์
+    $serviceSeriesY = [];   // บริการวิชาการ
+    $categoriesY    = [];
+
+    // build "raw" queries (ไม่ apply date filter) สำหรับ 3 โมดูลที่ต้อง filter date เอง
+    $buildArticleQueryRaw = function() use ($isSelfRole, $articleIdsSelf, $applyOrgScope) {
+        $q = Article::find();
+        if ($isSelfRole) {
+            if (empty($articleIdsSelf)) $q->andWhere('0=1');
+            else $q->andWhere(['in', 'article_id', $articleIdsSelf]);
+        } else {
+            $q = $applyOrgScope($q);
+        }
+        return $q;
+    };
+    $buildUtilQueryRaw = function() use ($isSelfRole, $utilIdsSelf, $applyOrgScope) {
+        $q = Utilization::find();
+        if ($isSelfRole) {
+            if (empty($utilIdsSelf)) $q->andWhere('0=1');
+            else $q->andWhere(['in', 'utilization_id', $utilIdsSelf]);
+        } else {
+            $q = $applyOrgScope($q);
+        }
+        return $q;
+    };
+    $buildServiceQueryRaw = function() use ($isSelfRole, $serviceIdsSelf, $applyOrgScope) {
+        $q = AcademicService::find();
+        if ($isSelfRole) {
+            if (empty($serviceIdsSelf)) $q->andWhere('0=1');
+            else $q->andWhere(['in', 'service_id', $serviceIdsSelf]);
+        } else {
+            $q = $applyOrgScope($q);
+        }
+        return $q;
+    };
 
     foreach ($yearsTH as $yearTH) {
-        $q = $buildResearchQuery()->andWhere(['projectYearsubmit' => $yearTH]);
+        $yearAD = $yearTH - 543;
+        $sY = sprintf('%04d-01-01', $yearAD);
+        $eY = sprintf('%04d-12-31', $yearAD);
 
-        $countProject  = (int) (clone $q)->count();
-        $sumBudgetYear = (float) ((clone $q)->sum('budgets') ?: 0);
+        // ----- งานวิจัย -----
+        $rq = $buildResearchQuery()->andWhere(['projectYearsubmit' => $yearTH]);
+        $seriesY[]       = (int)   (clone $rq)->count();
+        $budgetSeriesY[] = (float) ((clone $rq)->sum('budgets') ?: 0);
 
-        $seriesY[]       = $countProject;
-        $budgetSeriesY[] = $sumBudgetYear;
-        $categoriesY[]   = (string) $yearTH;
+        // ----- การตีพิมพ์เผยแพร่ -----
+        $articleSeriesY[] = (int) $buildArticleQueryRaw()
+            ->andWhere(['between', 'article_publish', $sY, $eY])
+            ->count();
+
+        // ----- การนำไปใช้ประโยชน์ -----
+        $utilSeriesY[] = (int) $buildUtilQueryRaw()
+            ->andWhere(['between', 'utilization_date', $sY, $eY])
+            ->count();
+
+        // ----- บริการวิชาการ -----
+        $serviceSeriesY[] = (int) $buildServiceQueryRaw()
+            ->andWhere(['between', 'service_date', $sY, $eY])
+            ->count();
+
+        $categoriesY[] = (string) $yearTH;
     }
 
     /* =========================================================
@@ -458,6 +514,9 @@ public function actionIndex()
     return $this->render('index', [
         'seriesY'        => $seriesY,
         'budgetSeriesY'  => $budgetSeriesY,
+        'articleSeriesY' => $articleSeriesY,
+        'utilSeriesY'    => $utilSeriesY,
+        'serviceSeriesY' => $serviceSeriesY,
         'categoriesY'    => $categoriesY,
 
         'seriesO'        => $seriesO,
