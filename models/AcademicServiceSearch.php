@@ -10,12 +10,17 @@ class AcademicServiceSearch extends AcademicService
 {
     /** @var string Quick search keyword */
     public $q;
+    /** @var string ช่วงวันที่ปฏิบัติงาน (จาก) */
+    public $date_from;
+    /** @var string ช่วงวันที่ปฏิบัติงาน (ถึง) */
+    public $date_to;
 
     public function rules()
     {
         return [
             [['service_id', 'type_id', 'org_id', 'status'], 'integer'],
             [['username', 'title', 'location', 'service_date', 'q'], 'safe'],
+            [['date_from', 'date_to'], 'date', 'format' => 'php:Y-m-d'],
         ];
     }
 
@@ -34,6 +39,15 @@ class AcademicServiceSearch extends AcademicService
             'query' => $query,
             'sort' => [
                 'defaultOrder' => ['service_date' => SORT_DESC, 'service_id' => SORT_DESC],
+                'attributes' => [
+                    'service_id',
+                    'title',
+                    'hours',
+                    'service_date' => [
+                        'asc'  => ['s.service_date' => SORT_ASC],
+                        'desc' => ['s.service_date' => SORT_DESC],
+                    ],
+                ],
             ],
             'pagination' => ['pageSize' => 20],
         ]);
@@ -134,6 +148,14 @@ class AcademicServiceSearch extends AcademicService
             }
 
             $query->andFilterWhere(['s.service_date' => $d]);
+        }
+
+        // ===== ช่วงวันที่ปฏิบัติงาน =====
+        if (!empty($this->date_from)) {
+            $query->andWhere(['>=', 's.service_date', $this->date_from]);
+        }
+        if (!empty($this->date_to)) {
+            $query->andWhere(['<=', 's.service_date', $this->date_to]);
         }
 
         return $dataProvider;

@@ -30,6 +30,11 @@ class AcademicServiceController extends Controller
                         'allow'   => true,
                         'roles'   => ['@'],
                     ],
+                    [
+                        'actions' => ['suggest'],
+                        'allow'   => true,
+                        'roles'   => ['?', '@'],
+                    ],
                     // ต้อง login และเป็น position 1 หรือ 4
                     [
                         'actions' => ['view','create', 'update', 'delete'],
@@ -110,6 +115,76 @@ class AcademicServiceController extends Controller
             'title'      => 'รายการบริการวิชาการ',
             'subtitle'   => 'พิมพ์เมื่อ ' . ExcelExporter::formatThaiDate(date('Y-m-d')),
         ]);
+    }
+
+    /**
+     * Autocomplete suggestions
+     */
+    public function actionSuggest($q = '')
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $q = trim((string)$q);
+        if (mb_strlen($q) < 2) {
+            return ['items' => []];
+        }
+
+        $me = (!Yii::$app->user->isGuest) ? Yii::$app->user->identity : null;
+        $pos = $me ? (int)($me->position ?? 0) : 0;
+
+        $query = AcademicService::find()->alias('s')
+            ->leftJoin('tb_user u', 'u.username = s.username')
+            ->select([
+                's.service_id',
+                's.title',
+                's.location',
+                's.service_date',
+                'u.uname',
+                'u.luname',
+            ])
+            ->andWhere(['or',
+                ['like', 's.title',     $q],
+                ['like', 's.location',  $q],
+                ['like', 's.work_desc', $q],
+                ['like', 'u.uname',     $q],
+                ['like', 'u.luname',    $q],
+            ])
+            ->orderBy(['s.service_date' => SORT_DESC, 's.service_id' => SORT_DESC])
+            ->limit(8)
+            ->asArray();
+
+        // จำกัดสิทธิ์เหมือน SearchModel
+        if (Yii::$app->user->isGuest) {
+            $query->andWhere(['s.status' => 1]);
+        } elseif ($pos === 1) {
+            $query->andWhere(['s.username' => (string)$me->username]);
+        } elseif ($pos !== 4) {
+            $ty = Yii::$app->session->get('ty');
+            $orgId = $ty ?: ($me->org_id ?? null);
+            if (!empty($orgId)) {
+                $query->andWhere(['s.org_id' => (int)$orgId]);
+            } else {
+                $query->andWhere(['s.username' => (string)$me->username]);
+            }
+        }
+
+        $rows = $query->all();
+        $items = [];
+        foreach ($rows as $r) {
+            $name = trim(((string)($r['uname'] ?? '')) . ' ' . ((string)($r['luname'] ?? '')));
+            $sub = $name;
+            if (!empty($r['location'])) {
+                $sub .= ($sub ? ' • ' : '') . $r['location'];
+            }
+            $items[] = [
+                'id'       => (int)$r['service_id'],
+                'title'    => (string)$r['title'],
+                'subtitle' => $sub,
+                'url'      => \yii\helpers\Url::to(['view', 'service_id' => $r['service_id']]),
+            ];
+        }
+
+        return ['items' => $items];
     }
 
     public function actionView($service_id)

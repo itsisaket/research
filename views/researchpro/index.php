@@ -25,20 +25,6 @@ $this->params['breadcrumbs'][] = $this->title;
                 data-bs-target="#uploadModal">
             <i class="fas fa-file-upload"></i> อัปโหลดไฟล์ Excel
         </button>
-
-        <!-- 🟢 ปุ่ม Export Excel ตาม filter ปัจจุบัน -->
-        <?php if (!Yii::$app->user->isGuest): ?>
-            <?= Html::a(
-                '<i class="fas fa-file-excel"></i> ส่งออก Excel',
-                array_merge(['export'], Yii::$app->request->queryParams),
-                [
-                    'class'   => 'btn btn-outline-success',
-                    'data-pjax' => 0,
-                    'target'  => '_blank',
-                    'rel'     => 'noopener',
-                ]
-            ) ?>
-        <?php endif; ?>
     </p>
 
     <!-- 🔶 แสดง Flash message ทั่วไป -->
@@ -82,13 +68,34 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <?php echo $this->render('_search', ['model' => $searchModel]); ?>
 
-    <div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
         <div class="text-muted small">
             พบทั้งหมด <strong><?= number_format($dataProvider->getTotalCount()) ?></strong> รายการ
         </div>
+        <?php if (!Yii::$app->user->isGuest && $dataProvider->getTotalCount() > 0): ?>
+            <?= Html::a(
+                '<i class="fas fa-file-excel me-1"></i> ส่งออก Excel ตามผลค้นหา',
+                array_merge(['export'], Yii::$app->request->queryParams),
+                [
+                    'class'   => 'btn btn-success btn-sm',
+                    'encode'  => false,
+                    'data-pjax' => 0,
+                    'target'  => '_blank',
+                    'rel'     => 'noopener',
+                    'title'   => 'ดาวน์โหลด Excel ตามตัวกรองและคำค้นปัจจุบัน',
+                ]
+            ) ?>
+        <?php endif; ?>
     </div>
 
     <div class="ss-grid-wrap">
+    <?php if ($dataProvider->getTotalCount() === 0): ?>
+        <?= $this->render('@app/views/_shared/_empty_state', [
+            'icon'    => 'fa-folder-open',
+            'title'   => 'ไม่พบโครงการวิจัยตามเงื่อนไข',
+            'message' => 'ลองเปลี่ยนคำค้น หรือกดปุ่ม "ลัด" ด้านบน หรือล้างตัวกรองทั้งหมด',
+        ]) ?>
+    <?php else: ?>
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         // ถ้าคุณมี search model แบบเต็ม ให้เปิดคอมเมนต์นี้ได้
@@ -146,6 +153,7 @@ $this->params['breadcrumbs'][] = $this->title;
             // ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>
+    <?php endif; ?>
     </div>
 
     <?php Pjax::end(); ?>

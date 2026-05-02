@@ -36,20 +36,6 @@ $fmtDate = function ($v) {
           'encode' => false
         ]) ?>
       <?php endif; ?>
-
-      <?php if (!Yii::$app->user->isGuest): ?>
-        <?= Html::a(
-            '<i class="fas fa-file-excel me-1"></i> ส่งออก Excel',
-            array_merge(['export'], Yii::$app->request->queryParams),
-            [
-                'class'   => 'btn btn-outline-success',
-                'encode'  => false,
-                'data-pjax' => 0,
-                'target'  => '_blank',
-                'rel'     => 'noopener',
-            ]
-        ) ?>
-      <?php endif; ?>
     </div>
   </div>
 
@@ -61,15 +47,36 @@ $fmtDate = function ($v) {
 
   <?= $this->render('_search', ['model' => $searchModel]); ?>
 
-  <div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
       <div class="text-muted small">
           พบทั้งหมด <strong><?= number_format($dataProvider->getTotalCount()) ?></strong> รายการ
       </div>
+      <?php if (!Yii::$app->user->isGuest && $dataProvider->getTotalCount() > 0): ?>
+          <?= Html::a(
+              '<i class="fas fa-file-excel me-1"></i> ส่งออก Excel ตามผลค้นหา',
+              array_merge(['export'], Yii::$app->request->queryParams),
+              [
+                  'class'   => 'btn btn-success btn-sm',
+                  'encode'  => false,
+                  'data-pjax' => 0,
+                  'target'  => '_blank',
+                  'rel'     => 'noopener',
+                  'title'   => 'ดาวน์โหลด Excel ตามตัวกรองและคำค้นปัจจุบัน',
+              ]
+          ) ?>
+      <?php endif; ?>
   </div>
 
   <div class="card shadow-sm ss-grid-wrap">
     <div class="card-body">
 
+      <?php if ($dataProvider->getTotalCount() === 0): ?>
+        <?= $this->render('@app/views/_shared/_empty_state', [
+            'icon'    => 'fa-hands-helping',
+            'title'   => 'ไม่พบรายการบริการวิชาการ',
+            'message' => 'ลองเลือกประเภทอื่น หรือกด "ของฉัน" เพื่อดูเฉพาะรายการของท่าน',
+        ]) ?>
+      <?php else: ?>
       <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => null, // ใช้ _search แทน
@@ -122,6 +129,7 @@ $fmtDate = function ($v) {
           ],
         ],
       ]); ?>
+      <?php endif; ?>
 
     </div>
   </div>

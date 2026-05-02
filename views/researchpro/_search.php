@@ -31,53 +31,123 @@ $userItems   = ArrayHelper::map(
 
 $hasAdvanced = !empty($model->projectYearsubmit) || !empty($model->fundingAgencyID)
     || !empty($model->researchTypeID) || !empty($model->jobStatusID)
-    || !empty($model->username) || !empty($model->projectNameTH);
+    || !empty($model->username) || !empty($model->projectNameTH)
+    || !empty($model->date_from) || !empty($model->date_to);
+
+// ===== Preset chips: 4 ปีงบล่าสุด + สถานะ =====
+$buildPresetUrl = function ($attrPath, $value, $extraReset = []) {
+    $params = Yii::$app->request->queryParams;
+    // ล้างปีและสถานะออกก่อน เพื่อกันชนกัน
+    if (!empty($params['ResearchproSearch'])) {
+        foreach (['projectYearsubmit', 'jobStatusID', 'fundingAgencyID', 'researchTypeID'] as $k) {
+            if (in_array($k, $extraReset, true)) {
+                unset($params['ResearchproSearch'][$k]);
+            }
+        }
+    }
+    $parts = explode('.', $attrPath);
+    $ref = &$params;
+    foreach ($parts as $p) {
+        if (!isset($ref[$p]) || !is_array($ref[$p])) $ref[$p] = [];
+        $ref = &$ref[$p];
+    }
+    $ref = $value;
+    unset($params['page']);
+    return Url::to(array_merge(['index'], $params));
+};
+
+// ตัวเลือกสถานะ active 2 อันดับแรก (น่าจะเป็น "กำลังดำเนินการ" และ "เสร็จสมบูรณ์")
+$presetStatuses = array_slice($statusItems, 0, 3, true);
 ?>
 
 <div class="smart-search researchpro-search card shadow-sm mb-3">
     <div class="card-body">
 
+        <!-- ===== Preset chips ===== -->
+        <div class="ss-presets mb-3">
+            <span class="ss-preset-label"><i class="fas fa-bolt me-1"></i> ลัด:</span>
+
+            <?php
+            // ปี 4 อันดับ
+            $presetYears = array_slice($yearItems, 0, 4);
+            foreach ($presetYears as $y => $label):
+                $isActive = ((int)$model->projectYearsubmit === (int)$y);
+                $url = $isActive
+                    ? Url::to(array_merge(['index'], (function () { $p = Yii::$app->request->queryParams; unset($p['ResearchproSearch']['projectYearsubmit']); unset($p['page']); return $p; })()))
+                    : Url::to(array_merge(['index'], (function () use ($y) { $p = Yii::$app->request->queryParams; $p['ResearchproSearch']['projectYearsubmit'] = $y; unset($p['page']); return $p; })()));
+            ?>
+                <a href="<?= $url ?>" class="<?= $isActive ? 'active' : '' ?>" data-pjax="1">
+                    ปี <?= $label ?>
+                </a>
+            <?php endforeach; ?>
+
+            <?php foreach ($presetStatuses as $sid => $sname):
+                $isActive = ((int)$model->jobStatusID === (int)$sid);
+                $url = $isActive
+                    ? Url::to(array_merge(['index'], (function () { $p = Yii::$app->request->queryParams; unset($p['ResearchproSearch']['jobStatusID']); unset($p['page']); return $p; })()))
+                    : Url::to(array_merge(['index'], (function () use ($sid) { $p = Yii::$app->request->queryParams; $p['ResearchproSearch']['jobStatusID'] = $sid; unset($p['page']); return $p; })()));
+            ?>
+                <a href="<?= $url ?>" class="<?= $isActive ? 'active' : '' ?>" data-pjax="1">
+                    <?= Html::encode($sname) ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+
         <?php $form = ActiveForm::begin([
-            'action'   => ['index'],
-            'method'   => 'get',
-            'options'  => ['data-pjax' => 1, 'class' => 'mb-0'],
+            'action'  => ['index'],
+            'method'  => 'get',
+            'options' => ['data-pjax' => 1, 'class' => 'mb-0'],
             'fieldConfig' => ['template' => '{input}{error}'],
         ]); ?>
 
-        <!-- ==================== Quick search row ==================== -->
+        <!-- ===== Quick search row ===== -->
         <div class="row g-2 align-items-center">
             <div class="col-12 col-md">
-                <div class="position-relative">
+                <div class="position-relative ss-ac-wrap">
                     <i class="fas fa-search ss-quick-icon"></i>
                     <?= $form->field($model, 'q')->textInput([
                         'placeholder' => 'พิมพ์ชื่อโครงการ / ชื่อหัวหน้าโครงการ / รหัส / ปี เพื่อค้นหา...',
-                        'class' => 'form-control ss-quick-input',
+                        'class' => 'form-control form-control-lg ss-quick-input',
                         'autocomplete' => 'off',
+                        'data-suggest-url' => Url::to(['suggest']),
                     ])->label(false) ?>
                     <button type="button" class="ss-quick-clear" title="ล้างคำค้น">&times;</button>
                 </div>
             </div>
 
             <div class="col-12 col-md-auto">
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-outline-secondary btn-sm" type="button"
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <button class="btn btn-outline-secondary btn-sm position-relative" type="button"
                             data-bs-toggle="collapse" data-bs-target="#rp-adv"
                             aria-expanded="<?= $hasAdvanced ? 'true' : 'false' ?>">
-                        <i class="fas fa-sliders-h me-1"></i> ตัวกรองเพิ่มเติม
+                        <i class="fas fa-sliders-h me-1"></i> ตัวกรอง
                     </button>
-                    <?= Html::a('<i class="fas fa-undo me-1"></i> รีเซ็ต', ['index'], [
-                        'class'   => 'btn btn-outline-secondary btn-sm',
-                        'encode'  => false,
+
+                    <?= $this->render('@app/views/_shared/_sort_dropdown', [
+                        'options' => [
+                            ['value' => '-projectYearsubmit', 'label' => 'ปีล่าสุด',     'icon' => 'fa-arrow-down-wide-short'],
+                            ['value' => 'projectYearsubmit',  'label' => 'ปีเก่าสุด',    'icon' => 'fa-arrow-up-wide-short'],
+                            ['value' => '-budgets',           'label' => 'งบประมาณมาก',  'icon' => 'fa-money-bill-trend-up'],
+                            ['value' => 'budgets',            'label' => 'งบประมาณน้อย', 'icon' => 'fa-money-bill-1'],
+                            ['value' => 'projectNameTH',      'label' => 'ชื่อ ก-ฮ',     'icon' => 'fa-arrow-down-a-z'],
+                        ],
+                        'current' => Yii::$app->request->get('sort', '-projectYearsubmit'),
+                    ]) ?>
+
+                    <?= Html::a('<i class="fas fa-undo"></i>', ['index'], [
+                        'class'  => 'btn btn-outline-secondary btn-sm',
+                        'encode' => false,
                         'data-pjax' => 0,
+                        'title'  => 'รีเซ็ตทั้งหมด',
                     ]) ?>
                     <span class="ss-loading small">
-                        <span class="spinner-border spinner-border-sm"></span> กำลังค้นหา...
+                        <span class="spinner-border spinner-border-sm"></span>
                     </span>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== Advanced filters (collapse) ==================== -->
+        <!-- ===== Advanced filters ===== -->
         <div class="collapse <?= $hasAdvanced ? 'show' : '' ?> mt-3" id="rp-adv">
             <div class="row g-3">
                 <div class="col-12 col-md-4">
@@ -124,15 +194,30 @@ $hasAdvanced = !empty($model->projectYearsubmit) || !empty($model->fundingAgency
                         'pluginOptions' => ['allowClear' => true],
                     ])->label(false) ?>
                 </div>
+
+                <!-- ===== ช่วงวันที่เริ่มโครงการ ===== -->
+                <div class="col-12">
+                    <?= $this->render('@app/views/_shared/_date_range_presets', [
+                        'model'       => $model,
+                        'searchClass' => 'ResearchproSearch',
+                        'label'       => 'ช่วงวันที่เริ่มโครงการ:',
+                    ]) ?>
+                </div>
+                <div class="col-12 col-md-9">
+                    <?= $this->render('@app/views/_shared/_date_range_field', [
+                        'form'  => $form,
+                        'model' => $model,
+                        'label' => 'ช่วงวันที่เริ่มโครงการ',
+                        'hint'  => 'หรือเลือกช่วงด้วยปฏิทิน — กรองโครงการที่เริ่มในช่วงนี้',
+                    ]) ?>
+                </div>
             </div>
         </div>
 
-        <!-- ==================== Active filter chips ==================== -->
+        <!-- ===== Active filter chips ===== -->
         <?php
         $chips = [];
-        if (!empty($model->q)) {
-            $chips[] = ['label' => 'ค้น: '.$model->q, 'attr' => 'q'];
-        }
+        if (!empty($model->q)) $chips[] = ['label' => 'ค้น: '.$model->q, 'attr' => 'q'];
         if (!empty($model->username) && isset($userItems[$model->username])) {
             $chips[] = ['label' => 'หัวหน้า: '.$userItems[$model->username], 'attr' => 'username'];
         }
@@ -148,18 +233,28 @@ $hasAdvanced = !empty($model->projectYearsubmit) || !empty($model->fundingAgency
         if (!empty($model->jobStatusID) && isset($statusItems[$model->jobStatusID])) {
             $chips[] = ['label' => 'สถานะ: '.$statusItems[$model->jobStatusID], 'attr' => 'jobStatusID'];
         }
+        // chip ช่วงวันที่ — ลบทั้งคู่พร้อมกัน
+        if (!empty($model->date_from) || !empty($model->date_to)) {
+            $rangeLabel = 'วันที่: ' . ($model->date_from ?: '...') . ' ถึง ' . ($model->date_to ?: '...');
+            $chips[] = ['label' => $rangeLabel, 'attr' => '__daterange__'];
+        }
         ?>
         <?php if (!empty($chips)): ?>
             <div class="mt-3 d-flex flex-wrap gap-2">
                 <?php foreach ($chips as $c):
                     $params = Yii::$app->request->queryParams;
-                    if (isset($params['ResearchproSearch'][$c['attr']])) {
+                    if ($c['attr'] === '__daterange__') {
+                        // ลบ date_from + date_to พร้อมกัน
+                        if (isset($params['ResearchproSearch'])) {
+                            unset($params['ResearchproSearch']['date_from'], $params['ResearchproSearch']['date_to']);
+                        }
+                    } elseif (isset($params['ResearchproSearch'][$c['attr']])) {
                         unset($params['ResearchproSearch'][$c['attr']]);
                     }
                 ?>
                     <span class="ss-chip">
                         <?= Html::encode($c['label']) ?>
-                        <a href="<?= Url::to(array_merge(['index'], $params)) ?>" data-pjax="0" title="ลบตัวกรอง">&times;</a>
+                        <a href="<?= Url::to(array_merge(['index'], $params)) ?>" data-pjax="1" title="ลบตัวกรอง">&times;</a>
                     </span>
                 <?php endforeach; ?>
             </div>

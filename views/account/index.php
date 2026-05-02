@@ -26,12 +26,13 @@ $profileMap = $profileMap ?? [];
       </div>
     </div>
 
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
       <?= Html::a('<i class="bi bi-arrow-clockwise"></i> รีเฟรช', ['index'], [
           'class' => 'btn btn-outline-secondary',
           'encode' => false,
           'data-pjax' => 1,
       ]) ?>
+
       <?php if ($isAdmin): ?>
         <?= Html::a('<i class="bi bi-person-plus"></i> เพิ่มผู้ใช้', ['create'], [
             'class' => 'btn btn-primary',
@@ -44,14 +45,45 @@ $profileMap = $profileMap ?? [];
   <div class="card shadow-sm border-0">
     <div class="card-body">
 
-      <?php Pjax::begin(['id' => 'grid-user-pjax','timeout'=>5000]) ?>
+      <?php Pjax::begin([
+          'id' => 'grid-user-pjax',
+          'timeout' => 8000,
+          'clientOptions' => ['scrollTo' => false],
+      ]) ?>
 
       <!-- ===== Search ===== -->
       <div class="mb-3">
         <?= $this->render('_search', ['model' => $searchModel]); ?>
       </div>
 
-      <div class="table-responsive">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <div class="text-muted small">
+          พบทั้งหมด <strong><?= number_format($dataProvider->getTotalCount()) ?></strong> ราย
+        </div>
+        <?php if (!Yii::$app->user->isGuest && $dataProvider->getTotalCount() > 0): ?>
+            <?= Html::a(
+                '<i class="fas fa-file-excel me-1"></i> ส่งออก Excel ตามผลค้นหา',
+                array_merge(['export'], Yii::$app->request->queryParams),
+                [
+                    'class'   => 'btn btn-success btn-sm',
+                    'encode'  => false,
+                    'data-pjax' => 0,
+                    'target'  => '_blank',
+                    'rel'     => 'noopener',
+                    'title'   => 'ดาวน์โหลด Excel ตามตัวกรองและคำค้นปัจจุบัน',
+                ]
+            ) ?>
+        <?php endif; ?>
+      </div>
+
+      <div class="table-responsive ss-grid-wrap">
+        <?php if ($dataProvider->getTotalCount() === 0): ?>
+            <?= $this->render('@app/views/_shared/_empty_state', [
+                'icon'    => 'fa-user-slash',
+                'title'   => 'ไม่พบบุคลากรตามเงื่อนไข',
+                'message' => 'ลองเลือกตำแหน่ง หรือหน่วยงานอื่น หรือล้างตัวกรอง',
+            ]) ?>
+        <?php else: ?>
         <?= GridView::widget([
             'dataProvider' => $dataProvider,
             'tableOptions' => ['class' => 'table table-hover table-striped align-middle mb-0'],
@@ -143,6 +175,7 @@ $profileMap = $profileMap ?? [];
                 ],
             ],
         ]); ?>
+        <?php endif; ?>
       </div>
 
       <?php Pjax::end() ?>

@@ -39,6 +39,11 @@ class UtilizationController extends Controller
                         'roles'   => ['@'],
                     ],
                     [
+                        'actions' => ['suggest'],
+                        'allow'   => true,
+                        'roles'   => ['?', '@'],
+                    ],
+                    [
                         'actions' => ['get-amphur', 'get-district'],
                         'allow'   => true,
                         'roles'   => ['@'],
@@ -141,6 +146,65 @@ class UtilizationController extends Controller
             'title'      => 'รายการการนำไปใช้ประโยชน์',
             'subtitle'   => 'พิมพ์เมื่อ ' . ExcelExporter::formatThaiDate(date('Y-m-d')),
         ]);
+    }
+
+    /**
+     * Autocomplete suggestions
+     */
+    public function actionSuggest($q = '')
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $q = trim((string)$q);
+        if (mb_strlen($q) < 2) {
+            return ['items' => []];
+        }
+
+        $session = Yii::$app->session;
+        $ty = $session->get('ty');
+
+        $query = Utilization::find()->alias('u')
+            ->leftJoin('tb_user a', 'a.username = u.username')
+            ->select([
+                'u.utilization_id',
+                'u.project_name',
+                'u.utilization_add',
+                'u.utilization_date',
+                'a.uname',
+                'a.luname',
+            ])
+            ->andWhere(['or',
+                ['like', 'u.project_name',       $q],
+                ['like', 'u.utilization_add',    $q],
+                ['like', 'u.utilization_detail', $q],
+                ['like', 'a.uname',              $q],
+                ['like', 'a.luname',             $q],
+            ])
+            ->orderBy(['u.utilization_id' => SORT_DESC])
+            ->limit(8)
+            ->asArray();
+
+        if (!Yii::$app->user->isGuest && $ty) {
+            $query->andWhere(['u.org_id' => (int)$ty]);
+        }
+
+        $rows = $query->all();
+        $items = [];
+        foreach ($rows as $r) {
+            $name = trim(((string)($r['uname'] ?? '')) . ' ' . ((string)($r['luname'] ?? '')));
+            $sub = $name;
+            if (!empty($r['utilization_add'])) {
+                $sub .= ($sub ? ' • ' : '') . $r['utilization_add'];
+            }
+            $items[] = [
+                'id'       => (int)$r['utilization_id'],
+                'title'    => (string)$r['project_name'],
+                'subtitle' => $sub,
+                'url'      => \yii\helpers\Url::to(['view', 'utilization_id' => $r['utilization_id']]),
+            ];
+        }
+
+        return ['items' => $items];
     }
 
     public function actionView($utilization_id)

@@ -37,6 +37,11 @@ class ArticleController extends Controller
                         'roles'   => ['@'],
                     ],
                     [
+                        'actions' => ['suggest'],
+                        'allow'   => true,
+                        'roles'   => ['?', '@'],
+                    ],
+                    [
                         'actions' => [
                             'view', 'create', 'update', 'delete',
                             'add-contributors', 'delete-contributor', 'update-contributor-pct'
@@ -145,6 +150,63 @@ public function actionIndex()
             'title'      => 'รายการการตีพิมพ์เผยแพร่',
             'subtitle'   => 'พิมพ์เมื่อ ' . ExcelExporter::formatThaiDate(date('Y-m-d')),
         ]);
+    }
+
+    /**
+     * Autocomplete suggestions สำหรับ quick search
+     */
+    public function actionSuggest($q = '')
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $q = trim((string)$q);
+        if (mb_strlen($q) < 2) {
+            return ['items' => []];
+        }
+
+        $session = Yii::$app->session;
+        $ty = $session['ty'] ?? null;
+
+        $query = Article::find()->alias('a')
+            ->leftJoin('tb_user u', 'u.username = a.username')
+            ->select([
+                'a.article_id',
+                'a.article_th',
+                'a.journal',
+                'a.article_publish',
+                'u.uname',
+                'u.luname',
+            ])
+            ->andWhere(['or',
+                ['like', 'a.article_th',  $q],
+                ['like', 'a.article_eng', $q],
+                ['like', 'a.journal',     $q],
+                ['like', 'a.refer',       $q],
+                ['like', 'u.uname',       $q],
+                ['like', 'u.luname',      $q],
+            ])
+            ->orderBy(['a.article_id' => SORT_DESC])
+            ->limit(8)
+            ->asArray();
+
+        if (!Yii::$app->user->isGuest && $ty) {
+            $query->andWhere(['a.org_id' => (int)$ty]);
+        }
+
+        $rows = $query->all();
+        $items = [];
+        foreach ($rows as $r) {
+            $name = trim(((string)($r['uname'] ?? '')) . ' ' . ((string)($r['luname'] ?? '')));
+            $sub = trim($name . ($r['journal'] ? ' • ' . $r['journal'] : ''));
+            $items[] = [
+                'id'       => (int)$r['article_id'],
+                'title'    => (string)$r['article_th'],
+                'subtitle' => $sub,
+                'url'      => \yii\helpers\Url::to(['view', 'article_id' => $r['article_id']]),
+            ];
+        }
+
+        return ['items' => $items];
     }
 
     public function actionView($article_id)

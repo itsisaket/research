@@ -16,6 +16,10 @@ class UtilizationSearch extends Utilization
 {
     /** @var string Quick search keyword */
     public $q;
+    /** @var string ช่วงวันที่ดำเนินการ (จาก) */
+    public $date_from;
+    /** @var string ช่วงวันที่ดำเนินการ (ถึง) */
+    public $date_to;
 
     public function rules()
     {
@@ -25,6 +29,7 @@ class UtilizationSearch extends Utilization
             [['project_name', 'username', 'q'], 'safe'],
             [['utilization_add', 'utilization_date', 'utilization_detail',
               'utilization_refer'], 'safe'],
+            [['date_from', 'date_to'], 'date', 'format' => 'php:Y-m-d'],
         ];
     }
 
@@ -40,7 +45,15 @@ class UtilizationSearch extends Utilization
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'sort' => [
-                'defaultOrder' => ['utilization_id' => SORT_DESC],
+                'defaultOrder' => ['utilization_date' => SORT_DESC, 'utilization_id' => SORT_DESC],
+                'attributes' => [
+                    'utilization_id',
+                    'project_name',
+                    'utilization_date' => [
+                        'asc'  => ['u.utilization_date' => SORT_ASC],
+                        'desc' => ['u.utilization_date' => SORT_DESC],
+                    ],
+                ],
             ],
         ]);
 
@@ -95,6 +108,14 @@ class UtilizationSearch extends Utilization
         $query->andFilterWhere(['like', 'u.utilization_add',    $this->utilization_add])
               ->andFilterWhere(['like', 'u.utilization_detail', $this->utilization_detail])
               ->andFilterWhere(['like', 'u.utilization_refer',  $this->utilization_refer]);
+
+        // ===== ช่วงวันที่ดำเนินการ =====
+        if (!empty($this->date_from)) {
+            $query->andWhere(['>=', 'u.utilization_date', $this->date_from]);
+        }
+        if (!empty($this->date_to)) {
+            $query->andWhere(['<=', 'u.utilization_date', $this->date_to]);
+        }
 
         return $dataProvider;
     }

@@ -18,6 +18,10 @@ class ArticleSearch extends Article
 
     /** @var string Quick search keyword */
     public $q;
+    /** @var string ช่วงวันที่เผยแพร่ (จาก) */
+    public $date_from;
+    /** @var string ช่วงวันที่เผยแพร่ (ถึง) */
+    public $date_to;
 
     public function rules()
     {
@@ -25,6 +29,7 @@ class ArticleSearch extends Article
             [['article_id', 'org_id', 'publication_type', 'branch'], 'integer'],
             [['article_th', 'article_eng', 'article_publish', 'journal',
               'refer', 'username', 'researcher_name', 'q'], 'safe'],
+            [['date_from', 'date_to'], 'date', 'format' => 'php:Y-m-d'],
         ];
     }
 
@@ -41,7 +46,15 @@ class ArticleSearch extends Article
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
             'sort' => [
-                'defaultOrder' => ['article_id' => SORT_DESC],
+                'defaultOrder' => ['article_publish' => SORT_DESC, 'article_id' => SORT_DESC],
+                'attributes' => [
+                    'article_id',
+                    'article_th',
+                    'article_publish' => [
+                        'asc'  => ['a.article_publish' => SORT_ASC],
+                        'desc' => ['a.article_publish' => SORT_DESC],
+                    ],
+                ],
             ],
             'pagination' => ['pageSize' => 20],
         ]);
@@ -93,6 +106,14 @@ class ArticleSearch extends Article
         // username (Select2 → exact match)
         if (!empty($this->username)) {
             $query->andFilterWhere(['a.username' => $this->username]);
+        }
+
+        // ===== ช่วงวันที่เผยแพร่ =====
+        if (!empty($this->date_from)) {
+            $query->andWhere(['>=', 'a.article_publish', $this->date_from]);
+        }
+        if (!empty($this->date_to)) {
+            $query->andWhere(['<=', 'a.article_publish', $this->date_to]);
         }
 
         return $dataProvider;

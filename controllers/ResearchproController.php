@@ -49,6 +49,12 @@ public function behaviors()
                     'roles'   => ['@'],
                 ],
                 [
+                    // ✅ Autocomplete suggest: ทุกคนค้นได้
+                    'actions' => ['suggest'],
+                    'allow'   => true,
+                    'roles'   => ['?', '@'],
+                ],
+                [
                     // ✅ เปิด DepDrop ให้คนที่ล็อกอินใช้ได้ทั้งหมด
                     'actions' => ['get-amphur', 'get-district'],
                     'allow'   => true,
@@ -99,6 +105,61 @@ public function behaviors()
         ]);
     }
 
+
+    /**
+     * Autocomplete suggestions สำหรับ quick search
+     * GET ?q=keyword → JSON [{id,title,subtitle,url}, ...]
+     */
+    public function actionSuggest($q = '')
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $q = trim((string)$q);
+        if (mb_strlen($q) < 2) {
+            return ['items' => []];
+        }
+
+        $session = Yii::$app->session;
+        $ty = $session['ty'] ?? null;
+
+        $query = Researchpro::find()->alias('r')
+            ->leftJoin('tb_user u', 'u.username = r.username')
+            ->select([
+                'r.projectID',
+                'r.projectNameTH',
+                'r.projectYearsubmit',
+                'u.uname',
+                'u.luname',
+            ])
+            ->andWhere(['or',
+                ['like', 'r.projectNameTH', $q],
+                ['like', 'r.projectNameEN', $q],
+                ['like', 'r.researchArea',  $q],
+                ['like', 'u.uname',         $q],
+                ['like', 'u.luname',        $q],
+            ])
+            ->orderBy(['r.projectYearsubmit' => SORT_DESC, 'r.projectID' => SORT_DESC])
+            ->limit(8)
+            ->asArray();
+
+        if (!Yii::$app->user->isGuest && $ty) {
+            $query->andWhere(['r.org_id' => (int)$ty]);
+        }
+
+        $rows = $query->all();
+        $items = [];
+        foreach ($rows as $r) {
+            $name = trim(((string)($r['uname'] ?? '')) . ' ' . ((string)($r['luname'] ?? '')));
+            $items[] = [
+                'id'       => (int)$r['projectID'],
+                'title'    => (string)$r['projectNameTH'],
+                'subtitle' => $name . ($r['projectYearsubmit'] ? ' • ปี ' . $r['projectYearsubmit'] : ''),
+                'url'      => \yii\helpers\Url::to(['view', 'projectID' => $r['projectID']]),
+            ];
+        }
+
+        return ['items' => $items];
+    }
 
     public function actionView($projectID)
     {

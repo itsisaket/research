@@ -417,6 +417,44 @@ public function actionIndex()
         ->asArray()
         ->all();
 
+    /* =========================================================
+     * 6) Donut series สำหรับ pie/donut charts
+     * ========================================================= */
+    $typeDonut = [];
+    foreach ($typeData as $tid => $cnt) {
+        $name = $restypeMap[$tid]['restypename'] ?? ('ประเภท ' . $tid);
+        $typeDonut[] = ['name' => $name, 'y' => (int)$cnt];
+    }
+
+    $statusDonut = [];
+    foreach ($statusData as $sid => $cnt) {
+        $name = $resstatusMap[$sid]['statusname'] ?? ('สถานะ ' . $sid);
+        $statusDonut[] = ['name' => $name, 'y' => (int)$cnt];
+    }
+
+    $fundDonut = [];
+    foreach ($fundData as $fid => $cnt) {
+        $name = $resfundMap[$fid]['researchFundName'] ?? ('ทุน ' . $fid);
+        $fundDonut[] = ['name' => $name, 'y' => (int)$cnt];
+    }
+
+    /* =========================================================
+     * 7) ปีนี้ vs ปีก่อน — เพื่อแสดง trend
+     * ========================================================= */
+    $totalThisRange = array_sum($seriesY);
+    $totalProjects  = $totalThisRange;
+    $avgPerYear = !empty($yearsTH) ? round($totalProjects / count($yearsTH), 1) : 0;
+
+    // หาปีที่มีโครงการมากสุด
+    $peakYear = null;
+    $peakCount = 0;
+    foreach ($categoriesY as $i => $yLabel) {
+        if (($seriesY[$i] ?? 0) > $peakCount) {
+            $peakCount = (int)$seriesY[$i];
+            $peakYear = $yLabel;
+        }
+    }
+
     return $this->render('index', [
         'seriesY'        => $seriesY,
         'budgetSeriesY'  => $budgetSeriesY,
@@ -446,6 +484,15 @@ public function actionIndex()
 
         'fundingSeries'       => $fundingSeries,
         'fundingTotalNonZero' => $fundingTotalNonZero,
+
+        'typeDonut'      => $typeDonut,
+        'statusDonut'    => $statusDonut,
+        'fundDonut'      => $fundDonut,
+
+        'totalProjects'  => $totalProjects,
+        'avgPerYear'     => $avgPerYear,
+        'peakYear'       => $peakYear,
+        'peakCount'      => $peakCount,
 
         'yearFrom' => $yearFrom,
         'yearTo'   => $yearTo,

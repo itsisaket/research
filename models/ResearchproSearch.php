@@ -17,6 +17,10 @@ class ResearchproSearch extends Researchpro
 {
     /** @var string Quick search keyword */
     public $q;
+    /** @var string ช่วงวันที่ (จาก) — รูปแบบ Y-m-d */
+    public $date_from;
+    /** @var string ช่วงวันที่ (ถึง) */
+    public $date_to;
 
     public function rules()
     {
@@ -24,6 +28,7 @@ class ResearchproSearch extends Researchpro
             [['projectID', 'org_id', 'projectYearsubmit', 'fundingAgencyID',
               'researchTypeID', 'jobStatusID'], 'integer'],
             [['projectNameTH', 'username', 'q'], 'safe'],
+            [['date_from', 'date_to'], 'date', 'format' => 'php:Y-m-d'],
         ];
     }
 
@@ -40,6 +45,12 @@ class ResearchproSearch extends Researchpro
             'query' => $query,
             'sort' => [
                 'defaultOrder' => ['projectYearsubmit' => SORT_DESC, 'projectID' => SORT_DESC],
+                'attributes' => [
+                    'projectID',
+                    'projectNameTH',
+                    'projectYearsubmit',
+                    'budgets',
+                ],
             ],
             'pagination' => ['pageSize' => 20],
         ]);
@@ -82,6 +93,14 @@ class ResearchproSearch extends Researchpro
             'r.jobStatusID'       => $this->jobStatusID,
             'r.org_id'            => $this->org_id,
         ]);
+
+        // ===== ช่วงวันที่เริ่มโครงการ =====
+        if (!empty($this->date_from)) {
+            $query->andWhere(['>=', 'r.projectStartDate', $this->date_from]);
+        }
+        if (!empty($this->date_to)) {
+            $query->andWhere(['<=', 'r.projectStartDate', $this->date_to]);
+        }
 
         // ===== text filters (Advanced) =====
         $query->andFilterWhere(['like', 'r.projectNameTH', $this->projectNameTH]);

@@ -18,19 +18,6 @@ $this->title = 'การนำไปใช้ประโยชน์';
 
     <p>
         <?= Html::a('เพิ่มข้อมูล', ['create'], ['class' => 'btn btn-success']) ?>
-
-        <?php if (!Yii::$app->user->isGuest): ?>
-            <?= Html::a(
-                '<i class="fas fa-file-excel"></i> ส่งออก Excel',
-                array_merge(['export'], Yii::$app->request->queryParams),
-                [
-                    'class'   => 'btn btn-outline-success',
-                    'data-pjax' => 0,
-                    'target'  => '_blank',
-                    'rel'     => 'noopener',
-                ]
-            ) ?>
-        <?php endif; ?>
     </p>
 
   <?php Pjax::begin([
@@ -41,13 +28,34 @@ $this->title = 'การนำไปใช้ประโยชน์';
 
   <?php echo $this->render('_search', [ 'model' => $searchModel]);?>
 
-  <div class="d-flex justify-content-between align-items-center mb-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
       <div class="text-muted small">
           พบทั้งหมด <strong><?= number_format($dataProvider->getTotalCount()) ?></strong> รายการ
       </div>
+      <?php if (!Yii::$app->user->isGuest && $dataProvider->getTotalCount() > 0): ?>
+          <?= Html::a(
+              '<i class="fas fa-file-excel me-1"></i> ส่งออก Excel ตามผลค้นหา',
+              array_merge(['export'], Yii::$app->request->queryParams),
+              [
+                  'class'   => 'btn btn-success btn-sm',
+                  'encode'  => false,
+                  'data-pjax' => 0,
+                  'target'  => '_blank',
+                  'rel'     => 'noopener',
+                  'title'   => 'ดาวน์โหลด Excel ตามตัวกรองและคำค้นปัจจุบัน',
+              ]
+          ) ?>
+      <?php endif; ?>
   </div>
 
   <div class="ss-grid-wrap">
+<?php if ($dataProvider->getTotalCount() === 0): ?>
+    <?= $this->render('@app/views/_shared/_empty_state', [
+        'icon'    => 'fa-handshake-angle',
+        'title'   => 'ไม่พบรายการนำไปใช้ประโยชน์ตามเงื่อนไข',
+        'message' => 'ลองเลือกลักษณะการใช้ประโยชน์อื่น หรือพิมพ์คำค้นใหม่',
+    ]) ?>
+<?php else: ?>
 <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'columns' => [
@@ -89,6 +97,7 @@ $this->title = 'การนำไปใช้ประโยชน์';
 
         ],
     ]); ?>
+<?php endif; ?>
   </div>
 
   <?php Pjax::end(); ?>
