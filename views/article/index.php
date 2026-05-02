@@ -13,6 +13,37 @@ use yii\bootstrap4\Modal;
 
 $this->title = 'การตีพิมพ์เผยแพร่';
 $this->params['breadcrumbs'][] = $this->title;
+
+/**
+ * Format วันที่จาก string หลาย format (DD-MM-YYYY / YYYY-MM-DD / DD/MM/YYYY)
+ * → 'd/m/พ.ศ.'
+ */
+$fmtPublishDate = function ($v) {
+    if (empty($v)) return '-';
+    $s = trim((string)$v);
+
+    // ตัด time ออก ถ้ามี
+    if (strpos($s, ' ') !== false) {
+        $s = explode(' ', $s)[0];
+    }
+
+    // ลอง parse หลาย format
+    $ts = false;
+    foreach (['d-m-Y', 'Y-m-d', 'd/m/Y'] as $fmt) {
+        $dt = DateTime::createFromFormat($fmt, $s);
+        if ($dt !== false) {
+            $ts = $dt->getTimestamp();
+            break;
+        }
+    }
+    if ($ts === false) {
+        $ts = strtotime($s); // fallback
+    }
+    if ($ts === false) {
+        return Html::encode($s); // ไม่ parse ได้ → คืนค่าเดิม
+    }
+    return date('d/m/', $ts) . ((int)date('Y', $ts) + 543);
+};
 ?>
 <div class="article-index">
 
@@ -83,10 +114,12 @@ $this->params['breadcrumbs'][] = $this->title;
           ],
           [
             'attribute' => 'article_publish',
-            'value'=>function($model){
-              return $model->article_publish;
-            }
-          ], 
+            'label' => 'วันที่เผยแพร่',
+            'value' => function($model) use ($fmtPublishDate) {
+                return $fmtPublishDate($model->article_publish);
+            },
+            'contentOptions' => ['style' => 'white-space:nowrap;'],
+          ],
           [
             'attribute' => 'org_id',
             'value'=>function($model){

@@ -2,15 +2,25 @@
 
 namespace app\models;
 
+use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
+use yii\db\Expression;
 use app\models\Article;
 
 /**
  * ArticleSearch
  * --------------------------------------------------------------
  *  - $q              : Quick search (OR LIKE หลาย field)
+ *  - $date_from/$date_to : ช่วงวันที่เผยแพร่
  *  - field เดิม      : article_th, publication_type, researcher_name, username, org_id
+ *
+ *  ⚠ หมายเหตุ:
+ *    ฟิลด์ article_publish ในตารางเก็บเป็น string หลาย format ปนกัน:
+ *      - DD-MM-YYYY (ตามค่า default ของ _form.php)
+ *      - YYYY-MM-DD (ISO)
+ *      - DD/MM/YYYY
+ *    การค้นหา/เรียง จึงต้องใช้ STR_TO_DATE + COALESCE แปลงเป็น DATE ก่อนเปรียบเทียบ
  */
 class ArticleSearch extends Article
 {
@@ -18,9 +28,9 @@ class ArticleSearch extends Article
 
     /** @var string Quick search keyword */
     public $q;
-    /** @var string ช่วงวันที่เผยแพร่ (จาก) */
+    /** @var string ช่วงวันที่เผยแพร่ (จาก) — Y-m-d */
     public $date_from;
-    /** @var string ช่วงวันที่เผยแพร่ (ถึง) */
+    /** @var string ช่วงวันที่เผยแพร่ (ถึง) — Y-m-d */
     public $date_to;
 
     public function rules()
@@ -38,10 +48,25 @@ class ArticleSearch extends Article
         return Model::scenarios();
     }
 
+    /**
+     * SQL expression ที่แปลง article_publish (string หลาย format) → DATE
+     * ใช้ใน WHERE และ ORDER BY
+     */
+    protected function publishDateExpr(): string
+    {
+        return "COALESCE("
+            . "STR_TO_DATE(a.article_publish, '%d-%m-%Y'), "
+            . "STR_TO_DATE(a.article_publish, '%Y-%m-%d'), "
+            . "STR_TO_DATE(a.article_publish, '%d/%m/%Y')"
+            . ")";
+    }
+
     public function search($params)
     {
         $query = Article::find()->alias('a')
             ->joinWith(['user u']); // join ไป Account ผ่าน getUser()
+
+        $dExpr = $this->publishDateExpr();
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
@@ -50,9 +75,10 @@ class ArticleSearch extends Article
                 'attributes' => [
                     'article_id',
                     'article_th',
+                    // ✅ ใช้ Expression เป็น value (ไม่ใช่ key) เพื่อให้ Yii ใส่เข้า ORDER BY ตรงๆ
                     'article_publish' => [
-                        'asc'  => ['a.article_publish' => SORT_ASC],
-                        'desc' => ['a.article_publish' => SORT_DESC],
+                        'asc'  => [new Expression("$dExpr ASC")],
+                        'desc' => [new Expression("$dExpr DESC")],
                     ],
                 ],
             ],
@@ -108,12 +134,16 @@ class ArticleSearch extends Article
             $query->andFilterWhere(['a.username' => $this->username]);
         }
 
-        // ===== ช่วงวันที่เผยแพร่ =====
+        // ===== ช่วงวันที่เผยแพร่ — ใช้ STR_TO_DATE multi-format =====
         if (!empty($this->date_from)) {
-            $query->andWhere(['>=', 'a.article_publish', $this->date_from]);
+            $query->andWhere(
+                new Expression("$dExpr >= :df_article", [':df_article' => $this->date_from])
+            );
         }
         if (!empty($this->date_to)) {
-            $query->andWhere(['<=', 'a.article_publish', $this->date_to]);
+            $query->andWhere(
+                new Expression("$dExpr <= :dt_article", [':dt_article' => $this->date_to])
+            );
         }
 
         return $dataProvider;

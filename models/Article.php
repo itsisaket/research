@@ -67,6 +67,69 @@ class Article extends \yii\db\ActiveRecord
         ];
     }
 
+    /**
+     * ✅ Normalize article_publish เป็น ISO Y-m-d ก่อนบันทึกเสมอ
+     *
+     * รองรับ input จากฟอร์ม/import ในรูปแบบ:
+     *   - DD-MM-YYYY (จาก DatePicker)
+     *   - DD/MM/YYYY
+     *   - YYYY-MM-DD (ISO อยู่แล้ว — ปล่อยผ่าน)
+     *   - YYYY-MM-DD HH:MM:SS (ตัดเหลือเฉพาะ DATE)
+     */
+    public function beforeSave($insert)
+    {
+        if (!parent::beforeSave($insert)) {
+            return false;
+        }
+
+        if (!empty($this->article_publish)) {
+            $this->article_publish = self::normalizeIsoDate((string)$this->article_publish);
+        }
+
+        return true;
+    }
+
+    /**
+     * แปลง string วันที่ (หลาย format) → 'Y-m-d'
+     * ถ้า parse ไม่ได้ คืนค่าเดิม (ให้ Yii validation จัดการ)
+     */
+    public static function normalizeIsoDate(string $s): string
+    {
+        $s = trim($s);
+        if ($s === '') return '';
+
+        // ตัดเวลาออก (ถ้ามี)
+        if (strpos($s, ' ') !== false) {
+            $s = explode(' ', $s)[0];
+        }
+
+        // ถ้าเป็น ISO อยู่แล้ว ไม่ต้องแปลง
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $s)) {
+            return $s;
+        }
+
+        // ลอง parse format ที่รู้จัก
+        foreach (['d-m-Y', 'd/m/Y', 'Y/m/d', 'd.m.Y'] as $fmt) {
+            $dt = \DateTime::createFromFormat($fmt, $s);
+            if ($dt !== false) {
+                $errors = \DateTime::getLastErrors();
+                // PHP 8.2+ คืน false ถ้าไม่มี error ส่วน <8.2 คืน array ที่ warning_count
+                if (is_array($errors) && (($errors['warning_count'] ?? 0) > 0 || ($errors['error_count'] ?? 0) > 0)) {
+                    continue;
+                }
+                return $dt->format('Y-m-d');
+            }
+        }
+
+        // fallback: strtotime (รองรับ d-m-Y ตาม locale ยุโรป)
+        $ts = strtotime($s);
+        if ($ts !== false) {
+            return date('Y-m-d', $ts);
+        }
+
+        return $s; // คืนค่าเดิม → Yii validation จะ reject ถ้าจำเป็น
+    }
+
     public function getUserid()
     {
         $session = Yii::$app->session;

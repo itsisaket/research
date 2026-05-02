@@ -42,10 +42,33 @@ if (!empty($model->username) && !isset($userItems[$model->username])) {
     $userItems[$model->username] = 'รหัสบุคลากร: ' . $model->username;
 }
 
-// 5) วันที่เผยแพร่: default วันนี้
-$today = date('d-m-Y');
+// 5) วันที่เผยแพร่
+//    - DB เก็บเป็น ISO 'Y-m-d' (หลังจากรัน migration + beforeSave normalize)
+//    - DatePicker (kartik) ใช้ format 'dd-mm-yyyy' สำหรับแสดง/รับ input
+//    → ตอน edit: แปลง ISO → DD-MM-YYYY ก่อนแสดง
+//    → ตอน new : default เป็นวันนี้ในรูปแบบ DD-MM-YYYY
+//    → ตอน save: Article::beforeSave() จะแปลงกลับเป็น ISO เอง
 if (empty($model->article_publish)) {
-    $model->article_publish = $today;
+    $model->article_publish = date('d-m-Y');
+} else {
+    $s = trim((string)$model->article_publish);
+    // ตัดเวลาทิ้ง (ถ้ามี)
+    if (strpos($s, ' ') !== false) {
+        $s = explode(' ', $s)[0];
+    }
+    // ถ้าเป็น ISO 'YYYY-MM-DD' → แปลงเป็น 'DD-MM-YYYY' สำหรับ DatePicker
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $s)) {
+        $dt = DateTime::createFromFormat('Y-m-d', $s);
+        if ($dt !== false) {
+            $model->article_publish = $dt->format('d-m-Y');
+        }
+    } elseif (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $s)) {
+        // ถ้าเป็น 'DD/MM/YYYY' → แปลงเป็น 'DD-MM-YYYY'
+        $dt = DateTime::createFromFormat('d/m/Y', $s);
+        if ($dt !== false) {
+            $model->article_publish = $dt->format('d-m-Y');
+        }
+    }
 }
 
 ?>

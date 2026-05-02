@@ -189,7 +189,26 @@ public function actionIndex()
         return $q;
     };
 
-    $buildArticleQuery = function() use ($isSelfRole, $articleIdsSelf, $applyOrgScope, $dateStart, $dateEnd) {
+    /**
+     * helper สร้าง expression ครอบคลุมทั้ง:
+     *  - format date หลายแบบ (DD-MM-YYYY / YYYY-MM-DD / DD/MM/YYYY)
+     *  - ทั้ง ค.ศ. และ พ.ศ. (เผื่อข้อมูลเก่า)
+     */
+    $dateRangeYearExpr = function (string $col, int $yFromAD, int $yToAD, int $yFromTH, int $yToTH) {
+        // $yFrom/$yTo เป็น int ที่ผ่าน type cast แล้ว → ปลอดภัย
+        $sql =
+            "("
+          ." (YEAR(STR_TO_DATE($col, '%d-%m-%Y'))     BETWEEN $yFromAD AND $yToAD)"
+          ." OR (YEAR(STR_TO_DATE($col, '%Y-%m-%d'))  BETWEEN $yFromAD AND $yToAD)"
+          ." OR (YEAR(STR_TO_DATE($col, '%d/%m/%Y'))  BETWEEN $yFromAD AND $yToAD)"
+          ." OR (YEAR(STR_TO_DATE($col, '%d-%m-%Y'))  BETWEEN $yFromTH AND $yToTH)"
+          ." OR (YEAR(STR_TO_DATE($col, '%Y-%m-%d'))  BETWEEN $yFromTH AND $yToTH)"
+          ." OR (YEAR(STR_TO_DATE($col, '%d/%m/%Y'))  BETWEEN $yFromTH AND $yToTH)"
+          .")";
+        return new \yii\db\Expression($sql);
+    };
+
+    $buildArticleQuery = function() use ($isSelfRole, $articleIdsSelf, $applyOrgScope, $dateRangeYearExpr, $yearFromAD, $yearToAD, $yearFrom, $yearTo) {
         $q = Article::find();
 
         if ($isSelfRole) {
@@ -202,13 +221,13 @@ public function actionIndex()
             $q = $applyOrgScope($q);
         }
 
-        // กรองตาม article_publish
-        $q->andWhere(['between', 'article_publish', $dateStart, $dateEnd]);
+        // กรองตาม article_publish — รองรับหลาย format + ค.ศ./พ.ศ.
+        $q->andWhere($dateRangeYearExpr('article_publish', (int)$yearFromAD, (int)$yearToAD, (int)$yearFrom, (int)$yearTo));
 
         return $q;
     };
 
-    $buildServiceQuery = function() use ($isSelfRole, $serviceIdsSelf, $applyOrgScope, $dateStart, $dateEnd) {
+    $buildServiceQuery = function() use ($isSelfRole, $serviceIdsSelf, $applyOrgScope, $dateRangeYearExpr, $yearFromAD, $yearToAD, $yearFrom, $yearTo) {
         $q = AcademicService::find();
 
         if ($isSelfRole) {
@@ -221,8 +240,8 @@ public function actionIndex()
             $q = $applyOrgScope($q);
         }
 
-        // กรองตาม service_date
-        $q->andWhere(['between', 'service_date', $dateStart, $dateEnd]);
+        // กรองตาม service_date — รองรับหลาย format + ค.ศ./พ.ศ.
+        $q->andWhere($dateRangeYearExpr('service_date', (int)$yearFromAD, (int)$yearToAD, (int)$yearFrom, (int)$yearTo));
 
         return $q;
     };
@@ -273,29 +292,47 @@ public function actionIndex()
         return $q;
     };
 
+    /**
+     * helper สร้าง expression สำหรับเช็คปีจากฟิลด์ date string
+     * ที่อาจเก็บได้หลาย format (DD-MM-YYYY / YYYY-MM-DD / DD/MM/YYYY)
+     * และอาจเป็นทั้ง ค.ศ. หรือ พ.ศ.
+     */
+    $yearMatchExpr = function (string $col, int $yearAD, int $yearTH) {
+        // Note: $yearAD, $yearTH เป็น int ที่ผ่าน type cast แล้ว → ปลอดภัยจาก SQL injection
+        $sql =
+            "(YEAR(STR_TO_DATE($col, '%d-%m-%Y')) IN ($yearAD, $yearTH)"
+          ." OR YEAR(STR_TO_DATE($col, '%Y-%m-%d')) IN ($yearAD, $yearTH)"
+          ." OR YEAR(STR_TO_DATE($col, '%d/%m/%Y')) IN ($yearAD, $yearTH)"
+          ." OR YEAR(STR_TO_DATE($col, '%d/%m/%Y %H:%i:%s')) IN ($yearAD, $yearTH)"
+          ." OR YEAR(STR_TO_DATE($col, '%Y-%m-%d %H:%i:%s')) IN ($yearAD, $yearTH))";
+        return new \yii\db\Expression($sql);
+    };
+
     foreach ($yearsTH as $yearTH) {
-        $yearAD = $yearTH - 543;
-        $sY = sprintf('%04d-01-01', $yearAD);
-        $eY = sprintf('%04d-12-31', $yearAD);
+        $yearAD = (int)($yearTH - 543);
+        $yearTHi = (int)$yearTH;
 
         // ----- งานวิจัย -----
-        $rq = $buildResearchQuery()->andWhere(['projectYearsubmit' => $yearTH]);
+        // (projectYearsubmit เก็บเป็น พ.ศ. integer อยู่แล้ว — ตรงกัน)
+        $rq = $buildResearchQuery()->andWhere(['projectYearsubmit' => $yearTHi]);
         $seriesY[]       = (int)   (clone $rq)->count();
         $budgetSeriesY[] = (float) ((clone $rq)->sum('budgets') ?: 0);
 
         // ----- การตีพิมพ์เผยแพร่ -----
+        // article_publish เก็บเป็น string format dd-mm-yyyy (ตามฟอร์ม) อาจปนกับ ISO
         $articleSeriesY[] = (int) $buildArticleQueryRaw()
-            ->andWhere(['between', 'article_publish', $sY, $eY])
+            ->andWhere($yearMatchExpr('article_publish', $yearAD, $yearTHi))
             ->count();
 
         // ----- การนำไปใช้ประโยชน์ -----
+        // utilization_date มี beforeSave แปลงเป็น ISO แต่ใช้ multi-format กันข้อมูลเก่า
         $utilSeriesY[] = (int) $buildUtilQueryRaw()
-            ->andWhere(['between', 'utilization_date', $sY, $eY])
+            ->andWhere($yearMatchExpr('utilization_date', $yearAD, $yearTHi))
             ->count();
 
         // ----- บริการวิชาการ -----
         $serviceSeriesY[] = (int) $buildServiceQueryRaw()
-            ->andWhere(['between', 'service_date', $sY, $eY])
+            ->andWhere($yearMatchExpr('service_date', $yearAD, $yearTHi))
             ->count();
 
         $categoriesY[] = (string) $yearTH;
