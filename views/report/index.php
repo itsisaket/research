@@ -735,92 +735,93 @@ $maxOrg = !empty($topOrg) ? max(array_column($topOrg, 'count')) : 1;
         </div>
     <?php else: ?>
 
-    <!-- ============ แนวโน้มผลงาน 4 ประเภท รายปี (line) ============ -->
+    <!-- ============ แนวโน้มผลงาน 4 ประเภท รายปี (column) ============ -->
     <div class="section-card">
         <div class="section-card-header">
             <h5>
-                <span class="icon-bg"><i class="fas fa-chart-line"></i></span>
+                <span class="icon-bg"><i class="fas fa-chart-column"></i></span>
                 แนวโน้มผลงานรายปี (4 ประเภท)
             </h5>
             <span class="meta">
                 เปรียบเทียบจำนวนรายการของแต่ละประเภทตามปี
             </span>
         </div>
-        <div class="section-card-body">
-            <?= Highcharts::widget([
-                'options' => [
-                    'accessibility' => ['enabled' => false],
-                    'chart' => ['type' => 'spline', 'height' => 360, 'backgroundColor' => 'transparent'],
-                    'title' => ['text' => ''],
-                    'xAxis' => [
-                        'categories' => $categoriesY,
-                        'crosshair'  => true,
-                        'title'      => ['text' => 'ปี พ.ศ.'],
+<div class="section-card-body">
+    <?= Highcharts::widget([
+        'options' => [
+            'accessibility' => ['enabled' => false],
+            // 1. เปลี่ยน type จาก 'column' เป็น 'bar' ตรงนี้
+            'chart' => ['type' => 'bar', 'height' => 360, 'backgroundColor' => 'transparent'],
+            'title' => ['text' => ''],
+            'xAxis' => [
+                'categories' => $categoriesY,
+                'crosshair'  => true,
+                'title'      => ['text' => 'ปี พ.ศ.'],
+            ],
+            'yAxis' => [
+                'title'         => ['text' => 'จำนวน (รายการ)'],
+                'allowDecimals' => false,
+                'min'           => 0,
+            ],
+            'legend' => [
+                'enabled'        => true,
+                'align'          => 'center',
+                'verticalAlign'  => 'bottom',
+                'itemStyle'      => ['fontWeight' => '500', 'fontSize' => '12px'],
+            ],
+            'tooltip' => [
+                'shared'      => true,
+                'borderWidth' => 0,
+                'shadow'      => true,
+                'useHTML'     => true,
+                'headerFormat'=> '<div style="font-weight:600;margin-bottom:4px;">ปี {point.key}</div>',
+                'pointFormat' => '<span style="color:{point.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
+            ],
+            'plotOptions' => [
+                // 2. เปลี่ยนชื่อ key จาก 'column' เป็น 'bar' ตรงนี้
+                'bar' => [
+                    'borderRadius' => 4,
+                    'borderWidth'  => 0,
+                    'pointPadding' => 0.1,
+                    'groupPadding' => 0.12,
+                    'dataLabels'   => [
+                        'enabled' => true,
+                        'style'   => ['fontWeight' => '600', 'fontSize' => '11px', 'textOutline' => 'none'],
                     ],
-                    'yAxis' => [
-                        'title'         => ['text' => 'จำนวน (รายการ)'],
-                        'allowDecimals' => false,
-                        'min'           => 0,
+                ],
+                'series' => [
+                    'cursor' => 'pointer',
+                    'states' => [
+                        'inactive' => ['opacity' => 0.25],
                     ],
-                    'legend' => [
-                        'enabled'        => true,
-                        'align'          => 'center',
-                        'verticalAlign'  => 'bottom',
-                        'itemStyle'      => ['fontWeight' => '500', 'fontSize' => '12px'],
-                    ],
-                    'tooltip' => [
-                        'shared'      => true,
-                        'borderWidth' => 0,
-                        'shadow'      => true,
-                        'useHTML'     => true,
-                        'headerFormat'=> '<div style="font-weight:600;margin-bottom:4px;">ปี {point.key}</div>',
-                        'pointFormat' => '<span style="color:{point.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
-                    ],
-                    'plotOptions' => [
-                        'spline' => [
-                            'lineWidth' => 3,
-                            'marker'    => [
-                                'enabled' => true,
-                                'radius'  => 4,
-                                'symbol'  => 'circle',
-                                'lineWidth' => 2,
-                                'lineColor' => '#fff',
-                            ],
-                        ],
-                        'series' => [
-                            'cursor' => 'pointer',
-                            'states' => [
-                                'hover' => ['lineWidth' => 4],
-                                'inactive' => ['opacity' => 0.25],
-                            ],
-                        ],
-                    ],
-                    'series' => [
-                        [
-                            'name'  => 'งานวิจัย',
-                            'color' => '#4f46e5',
-                            'data'  => $seriesY,
-                        ],
-                        [
-                            'name'  => 'การตีพิมพ์เผยแพร่',
-                            'color' => '#f43f5e',
-                            'data'  => $articleSeriesY,
-                        ],
-                        [
-                            'name'  => 'การนำไปใช้ประโยชน์',
-                            'color' => '#10b981',
-                            'data'  => $utilSeriesY,
-                        ],
-                        [
-                            'name'  => 'บริการวิชาการ',
-                            'color' => '#f59e0b',
-                            'data'  => $serviceSeriesY,
-                        ],
-                    ],
-                    'credits' => ['enabled' => false],
-                ]
-            ]); ?>
-        </div>
+                ],
+            ],
+            'series' => [
+                [
+                    'name'  => 'งานวิจัย',
+                    'color' => '#4f46e5',
+                    'data'  => $seriesY,
+                ],
+                [
+                    'name'  => 'การตีพิมพ์เผยแพร่',
+                    'color' => '#f43f5e',
+                    'data'  => $articleSeriesY,
+                ],
+                [
+                    'name'  => 'การนำไปใช้ประโยชน์',
+                    'color' => '#10b981',
+                    'data'  => $utilSeriesY,
+                ],
+                [
+                    'name'  => 'บริการวิชาการ',
+                    'color' => '#f59e0b',
+                    'data'  => $serviceSeriesY,
+                ],
+            ],
+            'credits' => ['enabled' => false],
+        ]
+    ]); ?>
+</div>
     </div>
 
     <!-- ============ Distribution: 3 Donuts ============ -->
