@@ -751,7 +751,7 @@ $maxOrg = !empty($topOrg) ? max(array_column($topOrg, 'count')) : 1;
         'options' => [
             'accessibility' => ['enabled' => false],
             // 1. เปลี่ยน type จาก 'column' เป็น 'bar' ตรงนี้
-            'chart' => ['type' => 'bar', 'height' => 360, 'backgroundColor' => 'transparent'],
+            'chart' => ['type' => 'column', 'height' => 360, 'backgroundColor' => 'transparent'],
             'title' => ['text' => ''],
             'xAxis' => [
                 'categories' => $categoriesY,
@@ -779,7 +779,7 @@ $maxOrg = !empty($topOrg) ? max(array_column($topOrg, 'count')) : 1;
             ],
             'plotOptions' => [
                 // 2. เปลี่ยนชื่อ key จาก 'column' เป็น 'bar' ตรงนี้
-                'bar' => [
+                'column' => [
                     'borderRadius' => 4,
                     'borderWidth'  => 0,
                     'pointPadding' => 0.1,
