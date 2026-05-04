@@ -5,6 +5,7 @@ namespace app\models;
 
 use Yii;
 use yii\helpers\ArrayHelper;
+use app\models\WorkContributor;
 /**
  * This is the model class for table "tb_article".
  *
@@ -87,6 +88,38 @@ class Article extends \yii\db\ActiveRecord
         }
 
         return true;
+    }
+
+    /**
+     * ✅ Auto-add ผู้บันทึก/เจ้าของเรื่อง เป็นผู้เขียนร่วมโดยอัตโนมัติ
+     *    เมื่อสร้างบทความใหม่ — ใช้ role 'leader' (ผู้เขียนหลัก)
+     *    ป้องกันลืมเพิ่มตัวเองในรายชื่อผู้เขียนร่วม
+     */
+    public function afterSave($insert, $changedAttributes)
+    {
+        parent::afterSave($insert, $changedAttributes);
+
+        if ($insert && !empty($this->username)) {
+            // ตรวจสอบว่ามีในตาราง work_contributor แล้วหรือยัง
+            $exists = WorkContributor::find()
+                ->where([
+                    'ref_type' => 'article',
+                    'ref_id'   => (int)$this->article_id,
+                    'username' => (string)$this->username,
+                ])
+                ->exists();
+
+            if (!$exists) {
+                $wc = new WorkContributor();
+                $wc->ref_type        = 'article';
+                $wc->ref_id          = (int)$this->article_id;
+                $wc->username        = (string)$this->username;
+                $wc->role_code       = 'leader';   // ผู้เขียนหลัก/ผู้รับผิดชอบ
+                $wc->contribution_pct = 100.0;     // เริ่มต้น 100% — แก้ทีหลังเมื่อเพิ่มผู้เขียนร่วม
+                $wc->sort_order      = 1;
+                @$wc->save(false);
+            }
+        }
     }
 
     /**

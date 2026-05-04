@@ -112,9 +112,17 @@ if (empty($model->article_publish)) {
       </div>
     </div>
 
-    <!-- ===== หน่วยงาน / นักวิจัย ===== -->
-    <h4 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและนักวิจัย</h4>
+    <!-- ===== หน่วยงาน / ผู้บันทึก ===== -->
+    <h4 class="mt-4 mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและผู้บันทึก</h4>
     <hr class="mt-2 mb-3">
+
+    <div class="alert alert-info py-2 px-3 small mb-3" role="alert">
+      <i class="fas fa-users me-1"></i>
+      <strong>ผู้บันทึก/เจ้าของเรื่อง</strong>
+      เป็นผู้รับผิดชอบรายการนี้ในระบบ —
+      ส่วน <strong>ผู้เขียนร่วมทุกคน</strong> (พร้อมบทบาทและสัดส่วน %)
+      ให้เพิ่มในหน้า "รายละเอียดบทความ" หลังบันทึก
+    </div>
 
     <div class="row g-3">
       <div class="col-12 col-md-6">
@@ -124,7 +132,12 @@ if (empty($model->article_publish)) {
       </div>
 
       <div class="col-12 col-md-6">
-        <?= $form->field($model, 'username') ?>
+        <?= $form->field($model, 'username', [
+          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-user-edit\"></i></span>\n{input}\n</div>\n{error}"
+        ])
+        ->label('ผู้บันทึก/เจ้าของเรื่อง')
+        ->dropDownList($userItems, ['prompt' => 'เลือกผู้บันทึก/เจ้าของเรื่อง..'])
+        ->hint('คนที่รับผิดชอบและเป็นเจ้าของบทความในระบบ (ผู้เขียนร่วมเพิ่มได้ภายหลัง)') ?>
       </div>
     </div>
 

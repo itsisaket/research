@@ -98,10 +98,27 @@ public function behaviors()
 
         $importModel = new ResearchImportForm();
 
+        // ✅ นับจำนวนผู้ร่วมโครงการแบบ batch (1 query สำหรับทั้งหน้า)
+        $models = $dataProvider->getModels();
+        $projectIds = ArrayHelper::getColumn($models, 'projectID');
+        $contribCount = [];
+        if (!empty($projectIds)) {
+            $rows = (new \yii\db\Query())
+                ->select(['ref_id', 'cnt' => 'COUNT(*)'])
+                ->from('work_contributor')
+                ->where(['ref_type' => 'researchpro', 'ref_id' => $projectIds])
+                ->groupBy('ref_id')
+                ->all();
+            foreach ($rows as $r) {
+                $contribCount[(int)$r['ref_id']] = (int)$r['cnt'];
+            }
+        }
+
         return $this->render('index', [
             'searchModel'  => $searchModel,
             'dataProvider' => $dataProvider,
-            'importModel'  => $importModel,   // ✅ ส่งไปใช้ใน Modal
+            'importModel'  => $importModel,
+            'contribCount' => $contribCount,
         ]);
     }
 
@@ -348,11 +365,11 @@ protected function mapData($datas, $fieldId, $fieldName)
             ['header' => 'หน่วยงาน', 'value' => function ($m) {
                 return $m->hasorg->org_name ?? '';
             }],
-            ['header' => 'หัวหน้าโครงการ', 'value' => function ($m) {
+            ['header' => 'ผู้บันทึก/เจ้าของเรื่อง', 'value' => function ($m) {
                 if (!$m->user) return '';
                 return trim(($m->user->uname ?? '') . ' ' . ($m->user->luname ?? ''));
             }],
-            ['header' => 'ผู้ร่วมโครงการ', 'value' => function ($m) use ($contribs) {
+            ['header' => 'ผู้ร่วมโครงการ (ทุกคน + บทบาท + %)', 'value' => function ($m) use ($contribs) {
                 return $contribs[(int)$m->projectID] ?? '';
             }],
             ['header' => 'แหล่งทุน', 'value' => function ($m) {

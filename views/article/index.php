@@ -10,6 +10,8 @@ use yii\bootstrap4\Modal;
 /* @var $this yii\web\View */
 /* @var $searchModel app\models\ArticleSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
+/* @var $contribCount array */
+$contribCount = $contribCount ?? [];
 
 $this->title = 'การตีพิมพ์เผยแพร่';
 $this->params['breadcrumbs'][] = $this->title;
@@ -128,10 +130,29 @@ $fmtPublishDate = function ($v) {
           ], 
           [
             'attribute' => 'username',
-            'value'=>function($model){
-              return $model->user->uname.' '.$model->user->luname;
-            }
-          ],            
+            'label' => 'ผู้บันทึก',
+            'format' => 'raw',
+            'value' => function($model) {
+                if ($model->user) {
+                    $name = trim(($model->user->uname ?? '') . ' ' . ($model->user->luname ?? ''));
+                    return Html::encode($name !== '' ? $name : $model->username);
+                }
+                return '-';
+            },
+          ],
+          [
+            'label' => 'ผู้เขียนร่วม',
+            'format' => 'raw',
+            'contentOptions' => ['style' => 'width:130px;text-align:center;white-space:nowrap;'],
+            'value' => function($model) use ($contribCount) {
+                $n = (int)($contribCount[(int)$model->article_id] ?? 0);
+                if ($n === 0) {
+                    return '<span class="text-muted small">—</span>';
+                }
+                return '<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-weight:600;">'
+                     . '<i class="fas fa-users me-1"></i>' . $n . ' คน</span>';
+            },
+          ],
 
             
 

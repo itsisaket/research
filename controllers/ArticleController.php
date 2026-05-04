@@ -84,11 +84,27 @@ public function actionIndex()
             'publication_name'
         );
 
+    // ✅ นับจำนวนผู้เขียนร่วม batch
+    $models = $dataProvider->getModels();
+    $articleIds = ArrayHelper::getColumn($models, 'article_id');
+    $contribCount = [];
+    if (!empty($articleIds)) {
+        $rows = (new \yii\db\Query())
+            ->select(['ref_id', 'cnt' => 'COUNT(*)'])
+            ->from('work_contributor')
+            ->where(['ref_type' => 'article', 'ref_id' => $articleIds])
+            ->groupBy('ref_id')
+            ->all();
+        foreach ($rows as $r) {
+            $contribCount[(int)$r['ref_id']] = (int)$r['cnt'];
+        }
+    }
 
     return $this->render('index', [
         'searchModel'  => $searchModel,
         'dataProvider' => $dataProvider,
         'pubItems'     => $pubItems,
+        'contribCount' => $contribCount,
     ]);
 }
 
@@ -128,11 +144,11 @@ public function actionIndex()
             ['header' => 'หน่วยงาน', 'value' => function ($m) {
                 return $m->hasorg->org_name ?? '';
             }],
-            ['header' => 'นักวิจัยหลัก', 'value' => function ($m) {
+            ['header' => 'ผู้บันทึก/เจ้าของเรื่อง', 'value' => function ($m) {
                 if (!$m->user) return '';
                 return trim(($m->user->uname ?? '') . ' ' . ($m->user->luname ?? ''));
             }],
-            ['header' => 'ผู้เขียนร่วม', 'value' => function ($m) use ($contribs) {
+            ['header' => 'ผู้เขียนร่วม (ทุกคน + บทบาท + %)', 'value' => function ($m) use ($contribs) {
                 return $contribs[(int)$m->article_id] ?? '';
             }],
             ['header' => 'สาขาวิชา', 'value' => function ($m) {

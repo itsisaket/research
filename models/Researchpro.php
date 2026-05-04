@@ -5,6 +5,7 @@ namespace app\models;
 use Yii;
 use yii\helpers\ArrayHelper;
 use app\models\Province;
+use app\models\WorkContributor;
 
 /**
  * This is the model class for table "tb_researchpro".
@@ -78,8 +79,38 @@ class Researchpro extends \yii\db\ActiveRecord
             'province' => 'จังหวัด',
             'branch' => 'สาขาวิชา',
             'documentid' => 'ไฟล์เอกสารแนบ',
-            
+
         ];
+    }
+
+    /**
+     * ✅ Auto-add ผู้บันทึก/เจ้าของเรื่อง เป็นผู้ร่วมโครงการอัตโนมัติ
+     *    เมื่อสร้างโครงการใหม่ — ใช้ role 'leader' (หัวหน้าโครงการ)
+     */
+    public function afterSave($insert, $changedAttributes)
+    {
+        parent::afterSave($insert, $changedAttributes);
+
+        if ($insert && !empty($this->username)) {
+            $exists = WorkContributor::find()
+                ->where([
+                    'ref_type' => 'researchpro',
+                    'ref_id'   => (int)$this->projectID,
+                    'username' => (string)$this->username,
+                ])
+                ->exists();
+
+            if (!$exists) {
+                $wc = new WorkContributor();
+                $wc->ref_type         = 'researchpro';
+                $wc->ref_id           = (int)$this->projectID;
+                $wc->username         = (string)$this->username;
+                $wc->role_code        = 'leader';   // หัวหน้าโครงการ
+                $wc->contribution_pct = 100.0;
+                $wc->sort_order       = 1;
+                @$wc->save(false);
+            }
+        }
     }
 
     public function getUserid()
