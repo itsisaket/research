@@ -96,39 +96,6 @@ $money = function ($v) use ($safe) {
           ],
       ]) ?>
 
-      <!-- ===== Section: หน่วยงานและหัวหน้าโครงการ ===== -->
-      <h5 class="mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและหัวหน้าโครงการ</h5>
-      <hr class="mt-2 mb-3">
-
-      <?= DetailView::widget([
-          'model' => $model,
-          'options' => ['class' => 'table table-bordered table-striped mb-4'],
-          'template' => '<tr><th style="width:260px;">{label}</th><td>{value}</td></tr>',
-          'attributes' => [
-              [
-                  'attribute' => 'username',
-                  'label' => 'ผู้บันทึก/เจ้าของเรื่อง',
-                  'value' => function($model) use ($safe) {
-                      $full = trim(($model->user->uname ?? '') . ' ' . ($model->user->luname ?? ''));
-                      return $safe($full !== '' ? $full : null, $safe($model->username ?? null));
-                  },
-              ],
-              [
-                  'attribute' => 'org_id',
-                  'label' => 'หน่วยงาน',
-                  'value' => function($model) use ($safe) {
-                      return $safe($model->hasorg->org_name ?? null);
-                  },
-              ],
-          ],
-      ]) ?>
-
-<?= $this->render('//_shared/_contributors', [
-    'refType' => 'researchpro',
-    'refId' => (int)$model->projectID,
-    'isOwner' => $isOwner,
-    'wrapCard' => false,
-]) ?>
     
       <!-- ===== Section: รายละเอียดโครงการ ===== -->
       <h5 class="mb-2"><i class="fas fa-clipboard-list me-1"></i> รายละเอียดโครงการ</h5>
@@ -250,7 +217,39 @@ $money = function ($v) use ($safe) {
       ]) ?>
 
     </div>
+      <!-- ===== Section: หน่วยงานและหัวหน้าโครงการ ===== -->
+      <h5 class="mb-2"><i class="fas fa-building me-1"></i> หน่วยงานและหัวหน้าโครงการ</h5>
+      <hr class="mt-2 mb-3">
 
+      <?= DetailView::widget([
+          'model' => $model,
+          'options' => ['class' => 'table table-bordered table-striped mb-4'],
+          'template' => '<tr><th style="width:260px;">{label}</th><td>{value}</td></tr>',
+          'attributes' => [
+              [
+                  'attribute' => 'username',
+                  'label' => 'ผู้บันทึก/เจ้าของเรื่อง',
+                  'value' => function($model) use ($safe) {
+                      $full = trim(($model->user->uname ?? '') . ' ' . ($model->user->luname ?? ''));
+                      return $safe($full !== '' ? $full : null, $safe($model->username ?? null));
+                  },
+              ],
+              [
+                  'attribute' => 'org_id',
+                  'label' => 'หน่วยงาน',
+                  'value' => function($model) use ($safe) {
+                      return $safe($model->hasorg->org_name ?? null);
+                  },
+              ],
+          ],
+      ]) ?>
+
+<?= $this->render('//_shared/_contributors', [
+    'refType' => 'researchpro',
+    'refId' => (int)$model->projectID,
+    'isOwner' => $isOwner,
+    'wrapCard' => false,
+]) ?>
     <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
       <div class="text-muted small">
         <i class="fas fa-shield-alt me-1"></i> แสดงปุ่มแก้ไข/ลบเฉพาะเจ้าของเรื่อง (username)
