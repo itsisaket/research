@@ -141,7 +141,7 @@ $this->params['breadcrumbs'][] = $this->title;
             ],
             [
                 'attribute' => 'username',
-                'label' => 'นักวิจัย',
+                'label' => 'ผู้บันทึก/เจ้าของเรื่อง',
                 'value' => function ($model) {
                     if ($model->user) {
                         return trim(($model->user->uname ?? '') . ' ' . ($model->user->luname ?? ''));

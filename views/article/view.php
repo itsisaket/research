@@ -167,7 +167,7 @@ $safe = function ($v, $fallback = '-') {
         'attributes' => [
             [
                 'attribute' => 'username',
-                'label' => 'นักวิจัย',
+                'label' => 'ผู้บันทึก/เจ้าของเรื่อง',
                 'value' => function ($model) use ($safe) {
                     $full = trim(($model->user->uname ?? '') . ' ' . ($model->user->luname ?? ''));
                     return $safe($full !== '' ? $full : null, $safe($model->username ?? null));

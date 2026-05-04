@@ -21,6 +21,7 @@ use app\models\ResFund;
 use app\models\ResGency;
 
 use app\models\Article;
+use app\models\Publication;
 use app\models\AcademicService;
 
 class ReportController extends Controller
@@ -492,6 +493,61 @@ public function actionIndex()
         }
     }
 
+    /* =========================================================
+     * 5b) บทความแยกตามประเภทฐาน (publication_type) รายปี
+     *     - articleByPubSeries: stacked column series (รายปี × ประเภทฐาน)
+     *     - articleByPubDonut : สัดส่วนรวมช่วงปี
+     * ========================================================= */
+    $publicationMap = Publication::find()
+        ->select(['publication_type', 'publication_name'])
+        ->andWhere(['>', 'publication_type', 0])
+        ->indexBy('publication_type')
+        ->asArray()
+        ->all();
+
+    // หาประเภทฐานที่มีข้อมูลในช่วงปีนี้
+    $pubTypesUsed = (clone $buildArticleQueryRaw())
+        ->select('publication_type')
+        ->andWhere($dateRangeYearExpr('article_publish', (int)$yearFromAD, (int)$yearToAD, (int)$yearFrom, (int)$yearTo))
+        ->andWhere(['>', 'publication_type', 0])
+        ->groupBy('publication_type')
+        ->column();
+
+    $articleByPubSeries = [];
+    $articleByPubDonut  = [];
+
+    foreach ($pubTypesUsed as $ptype) {
+        $name = $publicationMap[$ptype]['publication_name'] ?? ('ประเภท ' . $ptype);
+        $dataPerYear = [];
+        $totalThisType = 0;
+
+        foreach ($yearsTH as $yTH) {
+            $yAD = (int)($yTH - 543);
+            $cnt = (int) $buildArticleQueryRaw()
+                ->andWhere(['publication_type' => (int)$ptype])
+                ->andWhere($yearMatchExpr('article_publish', $yAD, (int)$yTH))
+                ->count();
+            $dataPerYear[] = $cnt;
+            $totalThisType += $cnt;
+        }
+
+        $articleByPubSeries[] = [
+            'name' => $name,
+            'data' => $dataPerYear,
+        ];
+        $articleByPubDonut[] = [
+            'name' => $name,
+            'y'    => $totalThisType,
+        ];
+    }
+
+    // เรียง donut จากมากไปน้อย
+    usort($articleByPubDonut, function ($a, $b) {
+        return $b['y'] <=> $a['y'];
+    });
+
+    $totalArticleInRange = array_sum(array_column($articleByPubDonut, 'y'));
+
     $restypeMap = Restype::find()
         ->select(['restypeid', 'restypename'])
         ->indexBy('restypeid')
@@ -580,6 +636,10 @@ public function actionIndex()
 
         'fundingSeries'       => $fundingSeries,
         'fundingTotalNonZero' => $fundingTotalNonZero,
+
+        'articleByPubSeries'  => $articleByPubSeries,
+        'articleByPubDonut'   => $articleByPubDonut,
+        'totalArticleInRange' => $totalArticleInRange,
 
         'typeDonut'      => $typeDonut,
         'statusDonut'    => $statusDonut,

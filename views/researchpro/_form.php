@@ -116,11 +116,7 @@ if (empty($model->projectEndDate))   $model->projectEndDate   = $today;
       </div>
 
       <div class="col-12 col-md-4">
-        <?= $form->field($model, 'username', [
-          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-user-tie\"></i></span>\n{input}\n</div>\n{error}"
-        ])->dropDownList($userItems, [
-          'prompt' => 'เลือกหัวหน้าโครงการ..'
-        ]) ?>
+        <?= $form->field($model, 'username') ?>
       </div>
     </div>
 

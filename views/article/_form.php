@@ -124,9 +124,7 @@ if (empty($model->article_publish)) {
       </div>
 
       <div class="col-12 col-md-6">
-        <?= $form->field($model, 'username', [
-          'template' => "{label}\n<div class=\"input-group\">\n<span class=\"input-group-text\"><i class=\"fas fa-user-tie\"></i></span>\n{input}\n</div>\n{error}"
-        ])->dropDownList($userItems, ['prompt' => 'เลือกนักวิจัย..']) ?>
+        <?= $form->field($model, 'username') ?>
       </div>
     </div>
 

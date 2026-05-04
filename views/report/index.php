@@ -25,6 +25,9 @@ use miloschuman\highcharts\Highcharts;
 /* @var $fundDonut array */
 /* @var $fundingSeries array */
 /* @var $fundingTotalNonZero array */
+/* @var $articleByPubSeries array */
+/* @var $articleByPubDonut array */
+/* @var $totalArticleInRange int */
 /* @var $totalProjects int */
 /* @var $avgPerYear float */
 /* @var $peakYear string|null */
@@ -823,6 +826,149 @@ $maxOrg = !empty($topOrg) ? max(array_column($topOrg, 'count')) : 1;
     ]); ?>
 </div>
     </div>
+
+    <!-- ============ การตีพิมพ์เผยแพร่บทความ แยกตามประเภทฐาน ============ -->
+    <?php if (!empty($articleByPubSeries)): ?>
+    <div class="section-card">
+        <div class="section-card-header">
+            <h5>
+                <span class="icon-bg rose"><i class="fas fa-newspaper"></i></span>
+                การตีพิมพ์เผยแพร่บทความ — แยกตามประเภทฐาน
+            </h5>
+            <span class="meta">
+                รวม <strong><?= number_format((int)$totalArticleInRange) ?></strong> บทความ
+                ใน <?= count($articleByPubDonut) ?> ประเภทฐาน
+            </span>
+        </div>
+        <div class="section-card-body">
+            <div class="row g-3">
+                <!-- Stacked column รายปี -->
+                <div class="col-12 col-lg-8">
+                    <?= Highcharts::widget([
+                        'options' => [
+                            'accessibility' => ['enabled' => false],
+                            'chart' => ['type' => 'column', 'height' => 360, 'backgroundColor' => 'transparent'],
+                            'title' => ['text' => ''],
+                            'xAxis' => [
+                                'categories' => $categoriesY,
+                                'crosshair'  => true,
+                                'title'      => ['text' => 'ปี พ.ศ.'],
+                            ],
+                            'yAxis' => [
+                                'title'         => ['text' => 'จำนวนบทความ'],
+                                'allowDecimals' => false,
+                                'min'           => 0,
+                                'stackLabels'   => [
+                                    'enabled' => true,
+                                    'style'   => ['fontWeight' => '700', 'color' => '#475569', 'textOutline' => 'none'],
+                                ],
+                            ],
+                            'legend' => [
+                                'enabled'        => true,
+                                'align'          => 'center',
+                                'verticalAlign'  => 'bottom',
+                                'itemStyle'      => ['fontWeight' => '500', 'fontSize' => '12px'],
+                            ],
+                            'tooltip' => [
+                                'shared'       => true,
+                                'borderWidth'  => 0,
+                                'shadow'       => true,
+                                'useHTML'      => true,
+                                'headerFormat' => '<div style="font-weight:600;margin-bottom:4px;">ปี {point.key}</div>',
+                                'pointFormat'  => '<span style="color:{point.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
+                                'footerFormat' => '<div style="border-top:1px solid #e5e7eb;margin-top:4px;padding-top:4px;">รวม: <b>{point.total}</b></div>',
+                            ],
+                            'plotOptions' => [
+                                'column' => [
+                                    'stacking'     => 'normal',
+                                    'borderRadius' => 3,
+                                    'borderWidth'  => 0,
+                                    'dataLabels'   => [
+                                        'enabled' => true,
+                                        'style'   => ['fontWeight' => '600', 'fontSize' => '10px', 'textOutline' => 'none', 'color' => '#fff'],
+                                        'filter'  => ['property' => 'y', 'operator' => '>', 'value' => 0],
+                                    ],
+                                ],
+                                'series' => [
+                                    'cursor' => 'pointer',
+                                    'states' => [
+                                        'inactive' => ['opacity' => 0.25],
+                                    ],
+                                ],
+                            ],
+                            'colors' => ['#4f46e5','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#0ea5e9','#84cc16'],
+                            'series' => $articleByPubSeries,
+                            'credits' => ['enabled' => false],
+                        ]
+                    ]); ?>
+                </div>
+
+                <!-- Donut สัดส่วนรวม -->
+                <div class="col-12 col-lg-4">
+                    <?= Highcharts::widget([
+                        'options' => [
+                            'accessibility' => ['enabled' => false],
+                            'chart' => ['type' => 'pie', 'height' => 360, 'backgroundColor' => 'transparent'],
+                            'title' => [
+                                'text'   => 'สัดส่วนรวม',
+                                'style'  => ['fontSize' => '14px', 'fontWeight' => '600', 'color' => '#475569'],
+                                'margin' => 8,
+                            ],
+                            'tooltip' => [
+                                'pointFormat' => '<b>{point.y}</b> บทความ ({point.percentage:.1f}%)',
+                            ],
+                            'plotOptions' => [
+                                'pie' => [
+                                    'innerSize' => '60%',
+                                    'dataLabels' => [
+                                        'enabled' => true,
+                                        'format'  => '{point.name}<br/><b>{point.y}</b>',
+                                        'style'   => ['fontSize' => '11px', 'textOutline' => 'none'],
+                                        'distance' => -25,
+                                    ],
+                                    'showInLegend' => false,
+                                    'borderWidth'  => 2,
+                                    'borderColor'  => '#fff',
+                                ],
+                            ],
+                            'colors' => ['#4f46e5','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#0ea5e9','#84cc16'],
+                            'series' => [['name' => 'บทความ', 'data' => $articleByPubDonut]],
+                            'credits' => ['enabled' => false],
+                        ]
+                    ]); ?>
+
+                    <!-- Legend แยกเป็น list ใต้ donut -->
+                    <ol class="top-list mt-2">
+                        <?php
+                        $maxArt = !empty($articleByPubDonut) ? max(array_column($articleByPubDonut, 'y')) : 1;
+                        $colorPalette = ['#4f46e5','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#0ea5e9','#84cc16'];
+                        foreach ($articleByPubDonut as $i => $row):
+                            if ((int)$row['y'] === 0) continue;
+                            $color = $colorPalette[$i % count($colorPalette)];
+                            $pct = $totalArticleInRange > 0 ? ($row['y'] / $totalArticleInRange) * 100 : 0;
+                            $rankClass = $i === 0 ? 'gold' : ($i === 1 ? 'silver' : ($i === 2 ? 'bronze' : ''));
+                        ?>
+                            <li>
+                                <div class="top-line">
+                                    <span class="top-rank <?= $rankClass ?>">
+                                        <i class="fas fa-circle" style="color:<?= $color ?>;font-size:.55rem;"></i>
+                                    </span>
+                                    <span class="top-name" title="<?= Html::encode($row['name']) ?>">
+                                        <?= Html::encode($row['name']) ?>
+                                    </span>
+                                    <span class="top-count"><?= (int)$row['y'] ?></span>
+                                </div>
+                                <div class="top-bar">
+                                    <div class="top-bar-inner" style="width:<?= ($row['y']/$maxArt)*100 ?>%;background:<?= $color ?>;"></div>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- ============ Distribution: 3 Donuts ============ -->
     <div class="row g-3">

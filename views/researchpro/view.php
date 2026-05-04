@@ -107,7 +107,7 @@ $money = function ($v) use ($safe) {
           'attributes' => [
               [
                   'attribute' => 'username',
-                  'label' => 'หัวหน้าโครงการ',
+                  'label' => 'ผู้บันทึก/เจ้าของเรื่อง',
                   'value' => function($model) use ($safe) {
                       $full = trim(($model->user->uname ?? '') . ' ' . ($model->user->luname ?? ''));
                       return $safe($full !== '' ? $full : null, $safe($model->username ?? null));
